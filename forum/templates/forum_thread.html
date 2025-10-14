@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <div class="navigation">
+        <a href="{% url 'forum:forums' %}">
+            <button class="btn-back">← Back to Forum</button>
+        </a>
+    </div>
+
+    <div class="post-header">
+        {% if post.is_pinned %}
+        <div class="pinned-badge">📌 PINNED POST</div>
+        {% endif %}
+        
+        <h1>{{ post.title }}</h1>
+        
+        <div class="post-meta">
+            <span class="category"><b>{{ post.get_category_display }}</b></span>
+            <span class="sport-category">{{ post.get_sport_category_display }}</span>
+            <!-- {% if post.is_post_hot %} 
+            <span class="hot-badge">🔥 Hot Post</span>
+            {% endif %} -->
+            <span class="date"><i>{{ post.created_at|date:"d M Y, H:i" }}</i></span>
+            <span class="views">Views: {{ post.post_views }}</span>
+        </div>
+    </div>
+
+    <div class="post-content">
+        <p>{{ post.content|linebreaks }}</p>
+    </div>
+
+    <div class="post-footer">
+        <div class="author-info">
+            {% if post.author %}
+                <p><strong>Author:</strong> {{ post.author.username }}</p>
+                <p><small>Joined: {{ post.author.date_joined|date:"M Y" }}</small></p>
+            {% else %}
+                <p><strong>Author:</strong> Anonymous</p>
+            {% endif %}
+        </div>
+
+        {% if post.product_id %}
+        <div class="external-link">
+            <p><strong>Related Product ID:</strong> {{ post.product_id }}</p>
+        </div>
+        {% endif %}
+
+        {% if post.location_id %}
+        <div class="external-link">
+            <p><strong>Related Location ID:</strong> {{ post.location_id }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="post-actions">
+        <!-- Edit and Pin functionality commented out - not implemented in URLs yet -->
+        <!-- 
+        {% if user.is_authenticated and user == post.author %}
+        <a href="{% url 'forum:edit_post' post.id %}">
+            <button class="btn-edit">Edit Post</button>
+        </a>
+        {% endif %}
+        
+        {% if user.is_staff %}
+        <form method="POST" action="{% url 'forum:toggle_pin' post.id %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn-admin">
+                {% if post.is_pinned %}Unpin{% else %}Pin{% endif %} Post
+            </button>
+        </form>
+        {% endif %}
+        -->
+    </div>
+
+    <hr>
+
+    <!-- Reply Section -->
+    <div class="reply-section">
+        {% if user.is_authenticated %}
+        <div class="reply-form">
+            <h3>Reply to this post</h3>
+            <form id="replyForm" method="POST" action="{% url 'forum:add_reply' post.id %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <textarea name="content" rows="4" cols="50" placeholder="Write your reply..." required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-reply">Post Reply</button>
+                    <button type="button" class="btn-cancel" onclick="clearReplyForm()">Clear</button>
+                </div>
+            </form>
+            <div id="replyMessage" style="display:none; margin-top:10px;"></div>
+        </div>
+        {% else %}
+        <div class="login-prompt">
+            <p>Please log in to reply to this post.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <hr>
+
+    <!-- Comments/Replies Section -->
+    <div class="comments-section">
+        <h3>Replies ({{ replies.count }})</h3>
+        
+        {% if not replies %}
+        <div class="no-replies">
+            <p><i>No replies yet. Be the first to share your thoughts!</i></p>
+        </div>
+        {% else %}
+        
+        <div class="replies-list">
+            {% for reply in replies %}
+            <div class="reply-item">
+                <div class="reply-header">
+                    <strong>{{ reply.author.username }}</strong>
+                    <span class="reply-date">{{ reply.created_at|date:"d M Y, H:i" }}</span>
+                    {% if reply.is_edited %}
+                    <span class="edited-badge">(edited)</span>
+                    {% endif %}
+                </div>
+                
+                <div class="reply-content">
+                    <p>{{ reply.content|linebreaks }}</p>
+                </div>
+                
+                <div class="reply-actions">
+                    <!-- Reply editing/deleting/liking commented out - not implemented in URLs yet -->
+                    <!--
+                    {% if user.is_authenticated and user == reply.author %}
+                    <a href="{% url 'forum:edit_reply' reply.id %}">
+                        <button class="btn-edit-small">Edit</button>
+                    </a>
+                    <form method="POST" action="{% url 'forum:delete_reply' reply.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-delete-small" onclick="return confirm('Delete this reply?')">Delete</button>
+                    </form>
+                    {% endif %}
+                    
+                    {% if user.is_authenticated %}
+                    <button class="btn-like-small" onclick="toggleLike('{{ reply.id }}')">
+                        👍 <span id="like-count-{{ reply.id }}">{{ reply.likes.count }}</span>
+                    </button>
+                    {% endif %}
+                    -->
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Reply Button (floating) -->
+    {% if user.is_authenticated %}
+    <div class="quick-reply-btn">
+        <button class="btn-quick-reply" onclick="scrollToReply()">💬 Quick Reply</button>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function clearReplyForm() {
+    document.querySelector('textarea[name="content"]').value = '';
+}
+
+function scrollToReply() {
+    document.querySelector('.reply-section').scrollIntoView({ behavior: 'smooth' });
+    document.querySelector('textarea[name="content"]').focus();
+}
+
+// Handle reply form submission with AJAX
+document.getElementById('replyForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const messageDiv = document.getElementById('replyMessage');
+    
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            messageDiv.style.display = 'block';
+            messageDiv.style.color = 'green';
+            messageDiv.textContent = data.message + ' - Refresh page to see your reply.';
+            clearReplyForm();
+        } else {
+            messageDiv.style.display = 'block';
+            messageDiv.style.color = 'red';
+            messageDiv.textContent = data.error || 'An error occurred.';
+        }
+    })
+    .catch(error => {
+        messageDiv.style.display = 'block';
+        messageDiv.style.color = 'red';
+        messageDiv.textContent = 'Network error occurred.';
+    });
+});
+</script>
+
+{% endblock content %}
