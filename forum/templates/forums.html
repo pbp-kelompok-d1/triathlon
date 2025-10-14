@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <h1>Triathlon Forum</h1>
+
+    <div class="user-info">
+        {% if user.is_authenticated %}
+        <h5>Welcome, {{ user.username }}!</h5>
+        {% else %}
+        <h5>Welcome, Guest!</h5>
+        {% endif %}
+        <p>Last login: {{ last_login }}</p>
+    </div>
+
+    <div class="actions">
+        <a href="{% url 'forum:create_post' %}">
+            <button class="btn-primary">+ Create New Post</button>
+        </a>
+        <a href="/">
+            <button class="btn-secondary">Back to Main</button>
+        </a>
+    </div>
+
+    <hr>
+
+    <div class="filters">
+        <h3>Filter Posts:</h3>
+        <a href="?filter=all">
+            <button type="button" class="filter-btn">All Posts</button>
+        </a>
+        <a href="?filter=my">
+            <button type="button" class="filter-btn">My Posts</button>
+        </a>
+        <a href="?category=running">
+            <button type="button" class="filter-btn">Running</button>
+        </a>
+        <a href="?category=cycling">
+            <button type="button" class="filter-btn">Cycling</button>
+        </a>
+        <a href="?category=swimming">
+            <button type="button" class="filter-btn">Swimming</button>
+        </a>
+    </div>
+
+    <hr>
+
+    {% if not posts %}
+    <div class="no-posts">
+        <p>No forum posts yet. Be the first to start a discussion!</p>
+    </div>
+    {% else %}
+
+    <div class="posts-list">
+        {% for post in posts %}
+        <div class="post-card">
+            {% if post.is_pinned %}
+            <div class="pinned-badge">📌 PINNED</div>
+            {% endif %}
+            
+            <h2><a href="{% url 'forum:post_detail' post.id %}">{{ post.title }}</a></h2>
+
+            <div class="post-meta">
+                <span class="category"><b>{{ post.get_category_display }}</b></span>
+                <span class="sport-category">{{ post.get_sport_category_display }}</span>
+                <!-- Hot badge commented out since is_post_hot property is commented out in model -->
+                <!-- {% if post.is_post_hot %} 
+                <span class="hot-badge">🔥 Hot</span>
+                {% endif %} -->
+                <span class="date"><i>{{ post.created_at|date:"d M Y H:i" }}</i></span>
+                <span class="views">Views: {{ post.post_views }}</span>
+            </div>
+
+            <div class="post-content">
+                <p>{{ post.content|truncatewords:30 }}...</p>
+            </div>
+
+            <div class="post-author">
+                {% if post.author %}
+                <p>By: {{ post.author.username }}</p>
+                {% else %}
+                <p>By: Anonymous</p>
+                {% endif %}
+            </div>
+
+            <div class="post-actions">
+                <a href="{% url 'forum:post_detail' post.id %}">
+                    <button class="btn-read-more">Read More & Discuss</button>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+<hr>
+
+{% endif %}
+
+{% endblock %}
+
+<!-- Sintaks Django {{ npm }}, {{ name }} dan {{ class }}, disebut template variables, 
+digunakan untuk menampilkan nilai dari variabel yang telah didefinisikan dalam context. -->
