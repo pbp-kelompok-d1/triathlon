@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <h1>Triathlon Shop</h1>
+
+    <div class="user-info">
+        {% if user.is_authenticated %}
+        <h5>Welcome, {{ user.username }}</h5>
+        {% else %}
+        <h5>Welcome, Guest!</h5>
+        {% endif %}
+    </div>
+
+    <div class="actions">
+        <a href="{% url 'shop:add_product' %}">
+            <button class="btn-primary">+ Add New Product</button>
+        </a>
+        <a href="/">
+            <button class="btn-secondary">Back to Main</button>
+        </a>
+    </div>
+
+    <div class="products-list">
+        {% if not products %}
+        <div class="no-products">
+            <p>No products available in the shop. Please check back later!</p>
+        </div>
+        {% else %}
+        {% for product in products %}
+        <div class="product-card">
+            <h2><a href="{% url 'shop:product_detail' product.id %}">{{ product.name }}</a></h2>
+            <p>Price: ${{ product.price }}</p>
+            <p>{{ product.description|truncatewords:20 }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+    </div>
+
+    <div class="filters">
+        <h3>Filter Products:</h3>
+        <a href="?filter=all">
+            <button type="button" class="filter-btn">All Products</button>
+        </a>
+        <a href="?category=running">
+            <button type="button" class="filter-btn">Running</button>
+        </a>
+        <a href="?category=cycling">
+            <button type="button" class="filter-btn">Cycling</button>
+        </a>
+        <a href="?category=swimming">
+            <button type="button" class="filter-btn">Swimming</button>
+        </a>
+    </div>
+
+
+
+{% endblock %}

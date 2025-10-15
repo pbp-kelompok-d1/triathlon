@@ -56,3 +56,5 @@ class ForumReply(models.Model):
     def __str__(self):
         return f"Reply by {self.author} on {self.post.title}"
     
+
+    
