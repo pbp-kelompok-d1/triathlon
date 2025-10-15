@@ -43,3 +43,4 @@ class ForumPostForm(forms.ModelForm):
         if len(content) < 10:
             raise forms.ValidationError('Content must be at least 10 characters long.')
         return content
+    
