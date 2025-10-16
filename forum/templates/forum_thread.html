@@ -1,207 +1,442 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<div class="container">
-    <div class="navigation">
-        <a href="{% url 'forum:forums' %}">
-            <button class="btn-back">← Back to Forum</button>
-        </a>
+
+<!-- Header Section -->
+<div class="bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-700 text-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Navigation -->
+    <div class="mb-6">
+      <a href="{% url 'forum:forums' %}" class="inline-flex items-center text-blue-100 hover:text-white transition-colors">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        Back to Forum
+      </a>
     </div>
 
-    <div class="post-header">
-        {% if post.is_pinned %}
-        <div class="pinned-badge">📌 PINNED POST</div>
-        {% endif %}
-        
-        <h1>{{ post.title }}</h1>
-        
-        <div class="post-meta">
-            <span class="category"><b>{{ post.get_category_display }}</b></span>
-            <span class="sport-category">{{ post.get_sport_category_display }}</span>
-            <!-- {% if post.is_post_hot %} 
-            <span class="hot-badge">🔥 Hot Post</span>
-            {% endif %} -->
-            <span class="date"><i>{{ post.created_at|date:"d M Y, H:i" }}</i></span>
-            <span class="views">Views: {{ post.post_views }}</span>
-        </div>
+    <!-- Post Header -->
+    <div class="text-center">
+      {% if post.is_pinned %}
+      <div class="inline-flex items-center px-4 py-2 rounded-full bg-yellow-400 text-yellow-900 text-sm font-medium mb-4">
+        📌 Pinned Discussion
+      </div>
+      {% endif %}
+      
+      <h1 class="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
+        {{ post.title }}
+      </h1>
+      
+      <!-- Category Badges -->
+      <div class="flex flex-wrap justify-center gap-3 mb-6">
+        <span class="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 text-blue-900 text-sm font-medium">
+          {{ post.get_category_display }}
+        </span>
+        <span class="inline-flex items-center px-4 py-2 rounded-full bg-indigo-100 text-indigo-900 text-sm font-medium">
+          {{ post.get_sport_category_display }}
+        </span>
+        <span class="inline-flex items-center px-4 py-2 rounded-full bg-white bg-opacity-20 text-white text-sm font-medium">
+          {{ post.post_views }} views
+        </span>
+      </div>
     </div>
+  </div>
+</div>
 
-    <div class="post-content">
-        <p>{{ post.content|linebreaks }}</p>
-    </div>
-
-    <div class="post-footer">
-        <div class="author-info">
-            {% if post.author %}
-                <p><strong>Author:</strong> {{ post.author.username }}</p>
-                <p><small>Joined: {{ post.author.date_joined|date:"M Y" }}</small></p>
-            {% else %}
-                <p><strong>Author:</strong> Anonymous</p>
-            {% endif %}
-        </div>
-
-        {% if post.product_id %}
-        <div class="external-link">
-            <p><strong>Related Product ID:</strong> {{ post.product_id }}</p>
-        </div>
-        {% endif %}
-
-        {% if post.location_id %}
-        <div class="external-link">
-            <p><strong>Related Location ID:</strong> {{ post.location_id }}</p>
-        </div>
-        {% endif %}
-    </div>
-
-    <div class="post-actions">
-        <!-- Edit and Pin functionality commented out - not implemented in URLs yet -->
-        <!-- 
-        {% if user.is_authenticated and user == post.author %}
-        <a href="{% url 'forum:edit_post' post.id %}">
-            <button class="btn-edit">Edit Post</button>
-        </a>
-        {% endif %}
-        
-        {% if user.is_staff %}
-        <form method="POST" action="{% url 'forum:toggle_pin' post.id %}" style="display: inline;">
-            {% csrf_token %}
-            <button type="submit" class="btn-admin">
-                {% if post.is_pinned %}Unpin{% else %}Pin{% endif %} Post
-            </button>
-        </form>
-        {% endif %}
-        -->
-    </div>
-
-    <hr>
-
-    <!-- Reply Section -->
-    <div class="reply-section">
-        {% if user.is_authenticated %}
-        <div class="reply-form">
-            <h3>Reply to this post</h3>
-            <form id="replyForm" method="POST" action="{% url 'forum:add_reply' post.id %}">
-                {% csrf_token %}
-                <div class="form-group">
-                    <textarea name="content" rows="4" cols="50" placeholder="Write your reply..." required></textarea>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn-reply">Post Reply</button>
-                    <button type="button" class="btn-cancel" onclick="clearReplyForm()">Clear</button>
-                </div>
-            </form>
-            <div id="replyMessage" style="display:none; margin-top:10px;"></div>
-        </div>
-        {% else %}
-        <div class="login-prompt">
-            <p>Please log in to reply to this post.</p>
-        </div>
-        {% endif %}
-    </div>
-
-    <hr>
-
-    <!-- Comments/Replies Section -->
-    <div class="comments-section">
-        <h3>Replies ({{ replies.count }})</h3>
-        
-        {% if not replies %}
-        <div class="no-replies">
-            <p><i>No replies yet. Be the first to share your thoughts!</i></p>
-        </div>
-        {% else %}
-        
-        <div class="replies-list">
-            {% for reply in replies %}
-            <div class="reply-item">
-                <div class="reply-header">
-                    <strong>{{ reply.author.username }}</strong>
-                    <span class="reply-date">{{ reply.created_at|date:"d M Y, H:i" }}</span>
-                    {% if reply.is_edited %}
-                    <span class="edited-badge">(edited)</span>
-                    {% endif %}
-                </div>
-                
-                <div class="reply-content">
-                    <p>{{ reply.content|linebreaks }}</p>
-                </div>
-                
-                <div class="reply-actions">
-                    <!-- Reply editing/deleting/liking commented out - not implemented in URLs yet -->
-                    <!--
-                    {% if user.is_authenticated and user == reply.author %}
-                    <a href="{% url 'forum:edit_reply' reply.id %}">
-                        <button class="btn-edit-small">Edit</button>
-                    </a>
-                    <form method="POST" action="{% url 'forum:delete_reply' reply.id %}" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn-delete-small" onclick="return confirm('Delete this reply?')">Delete</button>
-                    </form>
-                    {% endif %}
-                    
-                    {% if user.is_authenticated %}
-                    <button class="btn-like-small" onclick="toggleLike('{{ reply.id }}')">
-                        👍 <span id="like-count-{{ reply.id }}">{{ reply.likes.count }}</span>
-                    </button>
-                    {% endif %}
-                    -->
-                </div>
+<!-- Main Content -->
+<div class="bg-gray-50 min-h-screen">
+  <div class="px-4 sm:px-6 lg:px-8 py-12">
+    
+    <!-- Original Post -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+      <div class="flex">
+        <!-- Left Sidebar - User Info -->
+        <div class="w-48 bg-gray-50 rounded-l-xl p-4 border-r border-gray-200 flex-shrink-0">
+          <!-- User Avatar -->
+          <div class="text-center mb-4">
+            <div class="w-16 h-16 bg-blue-600 rounded-lg mx-auto mb-2 flex items-center justify-center">
+              <span class="text-white font-bold text-xl">
+                {% if post.author %}{{ post.author.username|first|upper }}{% else %}A{% endif %}
+              </span>
             </div>
-            {% endfor %}
+            <h4 class="font-semibold text-gray-900 text-sm">
+              {% if post.author %}{{ post.author.username }}{% else %}Anonymous{% endif %}
+            </h4>
+            <p class="text-xs text-gray-500 mb-3">Original Poster</p>
+          </div>
+          
+          <!-- User Stats -->
+          <div class="space-y-2 text-xs">
+            {% if post.author %}
+            <div class="flex justify-between">
+              <span class="text-gray-600">Joined:</span>
+              <span class="text-gray-900">{{ post.author.date_joined|date:"M Y" }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Posts:</span>
+              <span class="text-gray-900">-</span>
+            </div>
+            <!-- <div class="flex justify-between">
+              <span class="text-gray-600">Reputation:</span>
+              <span class="text-gray-900">-</span>
+            </div> -->
+            {% endif %}
+          </div>
+          
+          <!-- User Status/Badges -->
+          <!-- <div class="mt-4 pt-4 border-t border-gray-200">
+            <div class="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
+              Online
+            </div>
+          </div> -->
         </div>
-        {% endif %}
+        
+        <!-- Main Content Area -->
+        <div class="flex-1 p-6">
+          <!-- Post Header -->
+          <div class="mb-4">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-gray-500">
+                  {{ post.created_at|date:"M d, Y \a\t g:i A" }}
+                </span>
+                <span class="text-gray-300">•</span>
+                <span class="text-sm text-gray-500">#1</span>
+              </div>
+              <div class="flex gap-2">
+                <button class="text-gray-400 hover:text-gray-600 text-sm">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+                  </svg>
+                </button>
+                <button class="text-gray-400 hover:text-gray-600 text-sm">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Post Content -->
+          <div class="prose prose-gray max-w-none mb-4">
+            {{ post.content|linebreaks }}
+          </div>
+          
+          <!-- External Links -->
+          {% if post.product_id or post.location_id %}
+          <div class="mt-6 pt-4 border-t border-gray-100">
+            <div class="flex gap-3 flex-wrap">
+              {% if post.product_id %}
+              <div class="inline-flex items-center px-3 py-2 bg-green-50 text-green-700 rounded-lg text-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                </svg>
+                Product #{{ post.product_id }}
+              </div>
+              {% endif %}
+              {% if post.location_id %}
+              <div class="inline-flex items-center px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Location #{{ post.location_id }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Post Actions -->
+          <div class="mt-6 pt-4 border-t border-gray-100">
+            <div class="flex items-center gap-4 text-sm">
+              <button class="flex items-center gap-1 text-gray-600 hover:text-blue-600">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path>
+                </svg>
+                Like
+              </button>
+              <button onclick="scrollToReply()" class="flex items-center gap-1 text-gray-600 hover:text-blue-600">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                </svg>
+                Reply
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Quick Reply Button (floating) -->
-    {% if user.is_authenticated %}
-    <div class="quick-reply-btn">
-        <button class="btn-quick-reply" onclick="scrollToReply()">💬 Quick Reply</button>
+    <!-- Reply Form Section -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+      <div class="p-6 border-b border-gray-100">
+        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+          <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+          </svg>
+          Post a Reply
+        </h3>
+      </div>
+      
+      <div class="p-6">
+        <form id="replyForm" method="POST" action="{% url 'forum:add_reply' post.id %}">
+          {% csrf_token %}
+          <div class="mb-4">
+            <textarea 
+              name="content" 
+              rows="5" 
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" 
+              placeholder="Write your reply..."
+              required
+            ></textarea>
+          </div>
+          <div class="flex justify-between items-center">
+            <div class="flex gap-3">
+              <button 
+                type="button" 
+                onclick="clearReplyForm()" 
+                class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Clear
+              </button>
+              <button 
+                type="submit" 
+                class="inline-flex items-center px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Post Reply
+              </button>
+            </div>
+          </div>
+        </form>
+        <div id="replyMessage" class="hidden mt-4 p-4 rounded-lg"></div>
+      </div>
     </div>
-    {% endif %}
+
+    <!-- Replies Section -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-2xl font-bold text-gray-900 flex items-center">
+          <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-6a2 2 0 012-2h8z"></path>
+          </svg>
+          Discussion
+        </h3>
+        <span class="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+          {{ replies.count }} {{ replies.count|pluralize:"reply,replies" }}
+        </span>
+      </div>
+      
+      {% if not replies %}
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <div class="text-gray-400 mb-4">
+          <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+          </svg>
+        </div>
+        <h4 class="text-xl font-medium text-gray-700 mb-2">No replies yet</h4>
+        <p class="text-gray-500">Be the first to share your thoughts on this discussion!</p>
+      </div>
+      {% else %}
+      <div class="space-y-4">
+        {% for reply in replies %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+          <div class="flex">
+            <!-- Left Sidebar - User Info -->
+            <div class="w-48 bg-gray-50 rounded-l-xl p-4 border-r border-gray-200 flex-shrink-0">
+              <!-- User Avatar -->
+              <div class="text-center mb-4">
+                <div class="w-12 h-12 bg-indigo-600 rounded-lg mx-auto mb-2 flex items-center justify-center">
+                  <span class="text-white font-bold">
+                    {{ reply.author.username|first|upper }}
+                  </span>
+                </div>
+                <h5 class="font-semibold text-gray-900 text-sm">{{ reply.author.username }}</h5>
+                <p class="text-xs text-gray-500 mb-3">Member</p>
+              </div>
+              
+              <!-- User Stats -->
+              <div class="space-y-2 text-xs">
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Joined:</span>
+                  <span class="text-gray-900">{{ reply.author.date_joined|date:"M Y" }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Posts:</span>
+                  <span class="text-gray-900">-</span>
+                </div>
+                <!-- <div class="flex justify-between">
+                  <span class="text-gray-600">Reputation:</span>
+                  <span class="text-gray-900">-</span>
+                </div> -->
+              </div>
+              
+              <!-- User Status -->
+              <!-- <div class="mt-4 pt-4 border-t border-gray-200">
+                <div class="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
+                  Online
+                </div>
+              </div> -->
+            </div>
+            
+            <!-- Main Reply Content -->
+            <div class="flex-1 p-6">
+              <!-- Reply Header -->
+              <div class="mb-4">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm text-gray-500">
+                      {{ reply.created_at|date:"M d, Y \a\t g:i A" }}
+                    </span>
+                    <span class="text-gray-300">•</span>
+                    <span class="text-sm text-gray-500">#{{ forloop.counter|add:1 }}</span>
+                    {% if reply.is_edited %}
+                    <span class="text-gray-300">•</span>
+                    <span class="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded">
+                      Edited
+                    </span>
+                    {% endif %}
+                  </div>
+                  <div class="flex gap-2">
+                    <button class="text-gray-400 hover:text-gray-600 text-sm">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+                      </svg>
+                    </button>
+                    <button class="text-gray-400 hover:text-gray-600 text-sm">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Reply Content -->
+              <div class="prose prose-gray max-w-none mb-4">
+                {{ reply.content|linebreaks }}
+              </div>
+
+              <!-- Reply Actions -->
+              <!-- <div class="pt-4 border-t border-gray-100">
+                <div class="flex items-center gap-4 text-sm">
+                  <button class="flex items-center gap-1 text-gray-600 hover:text-blue-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path>
+                    </svg>
+                    Like
+                  </button>
+
+                </div>
+              </div> -->
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+
+  </div>
 </div>
 
 <script>
 function clearReplyForm() {
     document.querySelector('textarea[name="content"]').value = '';
+    // Hide any existing messages
+    const messageDiv = document.getElementById('replyMessage');
+    if (messageDiv) {
+        messageDiv.classList.add('hidden');
+    }
 }
 
 function scrollToReply() {
-    document.querySelector('.reply-section').scrollIntoView({ behavior: 'smooth' });
-    document.querySelector('textarea[name="content"]').focus();
+    const replyForm = document.querySelector('#replyForm');
+    if (replyForm) {
+        replyForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => {
+            document.querySelector('textarea[name="content"]').focus();
+        }, 500);
+    }
 }
 
 // Handle reply form submission with AJAX
-document.getElementById('replyForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const messageDiv = document.getElementById('replyMessage');
-    
-    fetch(this.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-        },
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            messageDiv.style.display = 'block';
-            messageDiv.style.color = 'green';
-            messageDiv.textContent = data.message + ' - Refresh page to see your reply.';
-            clearReplyForm();
-        } else {
-            messageDiv.style.display = 'block';
-            messageDiv.style.color = 'red';
-            messageDiv.textContent = data.error || 'An error occurred.';
-        }
-    })
-    .catch(error => {
-        messageDiv.style.display = 'block';
-        messageDiv.style.color = 'red';
-        messageDiv.textContent = 'Network error occurred.';
+const replyForm = document.getElementById('replyForm');
+if (replyForm) {
+    replyForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const messageDiv = document.getElementById('replyMessage');
+        const submitButton = this.querySelector('button[type="submit"]');
+        const originalText = submitButton.textContent;
+        
+        // Show loading state
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Posting...';
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            messageDiv.classList.remove('hidden');
+            
+            if (data.success) {
+                messageDiv.className = 'mt-4 p-4 rounded-lg bg-green-50 border border-green-200 text-green-700';
+                messageDiv.innerHTML = `
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        ${data.message} - Refreshing page to show your reply...
+                    </div>
+                `;
+                clearReplyForm();
+                
+                // Auto-refresh after 1.5 seconds
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                messageDiv.className = 'mt-4 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700';
+                messageDiv.innerHTML = `
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        ${data.error || 'An error occurred while posting your reply.'}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            messageDiv.classList.remove('hidden');
+            messageDiv.className = 'mt-4 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700';
+            messageDiv.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Network error occurred. Please try again.
+                </div>
+            `;
+        })
+        .finally(() => {
+            // Reset button state
+            submitButton.disabled = false;
+            submitButton.textContent = originalText;
+        });
     });
-});
+}
+
 </script>
 
 {% endblock content %}

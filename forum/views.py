@@ -2,11 +2,13 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.utils import timezone
 from .models import ForumPost, ForumReply
 from .forms import ForumPostForm
 
+
 def show_forums(request):
-    """Main forum page showing all posts"""
+    
     filter_type = request.GET.get("filter", "all")
     category_filter = request.GET.get("category", None)
 
@@ -19,8 +21,8 @@ def show_forums(request):
     if category_filter:
         posts = posts.filter(sport_category=category_filter)
     
-    # Order by pinned first, then by creation date
-    posts = posts.order_by('-is_pinned', '-created_at')
+    # ordering by pinned first, then by last activity
+    posts = posts.order_by('-is_pinned', '-last_activity')
 
     context = {
         'posts': posts,
@@ -29,8 +31,9 @@ def show_forums(request):
     }
     return render(request, "forums.html", context)
 
+
 def create_forum_post(request):
-    """Create new forum post"""
+  
     form = ForumPostForm(request.POST or None)
 
     if form.is_valid() and request.method == 'POST':
@@ -45,8 +48,9 @@ def create_forum_post(request):
     }
     return render(request, "create_forum_post.html", context)
 
+
 def post_detail(request, id):
-    """Show individual forum post detail"""
+   
     post = get_object_or_404(ForumPost, pk=id)
     post.increment_views()
 
@@ -58,6 +62,7 @@ def post_detail(request, id):
         'replies': replies
     }
     return render(request, "forum_thread.html", context)
+
 
 @csrf_exempt
 @require_POST
@@ -76,6 +81,10 @@ def add_reply(request, post_id):
             author=request.user if request.user.is_authenticated else None,
             content=content
         )
+        
+        # Update the post's last activity time
+        post.last_activity = timezone.now()
+        post.save()
         
         return JsonResponse({
             'success': True,
