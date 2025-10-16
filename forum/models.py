@@ -1,6 +1,7 @@
 import uuid
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 class ForumPost(models.Model):
     
@@ -28,6 +29,8 @@ class ForumPost(models.Model):
     sport_category = models.CharField(max_length=20, choices=SPORT_CATEGORY_CHOICES, default='running')
     post_views = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    last_activity = models.DateTimeField(default=timezone.now)  # Track latest activity (post creation or reply)
     is_pinned = models.BooleanField(default=False)
     
     # External connections for future apps
