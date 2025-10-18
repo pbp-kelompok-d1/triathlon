@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<!-- Hidden CSRF token for JavaScript use -->
+<form style="display: none;">
+  {% csrf_token %}
+</form>
+
+
+<!-- display user information as current placeholder functionality for the main screen -->
+<div class="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+  <div class="w-full max-w-3xl p-8 space-y-6 bg-white rounded-lg shadow-md text-gray-900">
+    <h1 class="text-3xl font-bold text-center text-gray-900 mb-6">Welcome to the Triathlon App</h1>
+    {% if user.is_authenticated %}
+    <div class="bg-blue-50 rounded-lg p-6 mb-6">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">User Information</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Basic User Info -->
+        <div class="bg-white rounded-lg p-4 shadow-sm">
+          <h3 class="text-lg font-semibold text-gray-700 mb-3 border-b pb-2">Account Details</h3>
+          <div class="space-y-2">
+            <p class="text-gray-600">
+              <span class="font-medium">Username:</span> 
+              <span class="text-gray-900">{{ user.username }}</span>
+            </p>
+            <p class="text-gray-600">
+              <span class="font-medium">Email:</span> 
+              <span class="text-gray-900">{{ user.email|default:"Not provided" }}</span>
+            </p>
+            <p class="text-gray-600">
+              <span class="font-medium">Full Name:</span> 
+              <span class="text-gray-900">{{ user.first_name }} {{ user.last_name }}</span>
+            </p>
+            <p class="text-gray-600">
+              <span class="font-medium">Last Login:</span> 
+              <span class="text-gray-900">{{ last_login }}</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Profile Info -->
+        <div class="bg-white rounded-lg p-4 shadow-sm">
+          <h3 class="text-lg font-semibold text-gray-700 mb-3 border-b pb-2">Profile Details</h3>
+          {% if profile %}
+          <div class="space-y-2">
+            <p class="text-gray-600">
+              <span class="font-medium">Role:</span> 
+              <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold
+                {% if profile.role == 'ADMIN' %}bg-purple-100 text-purple-800
+                {% elif profile.role == 'SELLER' %}bg-green-100 text-green-800
+                {% elif profile.role == 'FACILITY_ADMIN' %}bg-blue-100 text-blue-800
+                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                {{ role }}
+              </span>
+            </p>
+            <p class="text-gray-600">
+              <span class="font-medium">Phone:</span> 
+              <span class="text-gray-900">{{ profile.phone_number|default:"Not provided" }}</span>
+            </p>
+            <p class="text-gray-600">
+              <span class="font-medium">Member Since:</span> 
+              <span class="text-gray-900">{{ profile.created_at|date:"F d, Y" }}</span>
+            </p>
+            
+            <!-- Role Permissions -->
+            <div class="mt-4 pt-3 border-t">
+              <p class="font-medium text-gray-700 mb-2">Permissions:</p>
+              <div class="flex flex-wrap gap-2">
+                {% if profile.can_manage_forum %}
+                <span class="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded">Forum Management</span>
+                {% endif %}
+                {% if profile.can_manage_shop %}
+                <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">Shop Management</span>
+                {% endif %}
+                {% if profile.can_manage_tickets %}
+                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded">Ticket Management</span>
+                {% endif %}
+                {% if profile.can_manage_facilities %}
+                <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">Facility Management</span>
+                {% endif %}
+                {% if profile.is_regular_user %}
+                <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">Basic User Access</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <p class="text-gray-500 italic">Profile not set up yet</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <div class="mt-6 flex justify-center">
+      <a href="{% url 'main:logout' %}" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium">
+        Logout
+      </a>
+    </div>
+    {% else %}
+    <p class="text-lg text-center text-gray-700">
+      You are not logged in. Please <a href="{% url 'main:login' %}" class="text-blue-600 hover:underline">login</a> or <a href="{% url 'main:register' %}" class="text-blue-600 hover:underline">register</a>.
+    </p>
+    {% endif %}
+  </div>
+
+{% endblock %}
