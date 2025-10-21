@@ -11,48 +11,56 @@
         {% endif %}
     </div>
 
-    <div class="actions">
-        <a href="{% url 'shop:add_product' %}">
-            <button class="btn-primary">+ Add New Product</button>
-        </a>
-        <a href="/">
-            <button class="btn-secondary">Back to Main</button>
-        </a>
+    <div class="actions mb-4">
+        <a href="{% url 'shop:add_product' %}" class="btn btn-primary">+ Add New Product</a>
+        <a href="{% url 'shop:view_cart' %}" class="btn btn-info">View Cart</a>
+        <a href="{% url 'shop:view_wishlist' %}" class="btn btn-secondary">View Wishlist</a>
     </div>
 
-    <div class="products-list">
-        {% if not products %}
-        <div class="no-products">
-            <p>No products available in the shop. Please check back later!</p>
+    <div class="row">
+        <div class="col-md-3">
+            <h3>Filter Products:</h3>
+            <div class="d-grid gap-2">
+                <a href="{% url 'shop:shop' %}" class="btn btn-outline-dark">All Products</a>
+                <a href="?category=running" class="btn btn-outline-dark">Running</a>
+                <a href="?category=cycling" class="btn btn-outline-dark">Cycling</a>
+                <a href="?category=swimming" class="btn btn-outline-dark">Swimming</a>
+            </div>
         </div>
-        {% else %}
-        {% for product in products %}
-        <div class="product-card">
-            <h2><a href="{% url 'shop:product_detail' product.id %}">{{ product.name }}</a></h2>
-            <p>Price: ${{ product.price }}</p>
-            <p>{{ product.description|truncatewords:20 }}</p>
+
+        <div class="col-md-9">
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+                {% if not products %}
+                <div class="col">
+                    <p>No products available in the shop. Please check back later!</p>
+                </div>
+                {% else %}
+                {% for product in products %}
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="{% url 'shop:product_detail' product.id %}">{{ product.name }}</a>
+                            </h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Rp {{ product.price }}</h6>
+                            <p class="card-text">{{ product.description|truncatewords:15 }}</p>
+                        </div>
+                        <div class="card-footer bg-transparent border-0 pb-3">
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'shop:add_to_cart' product.id %}" class="btn btn-success">
+                                    Add to Cart
+                                </a>
+                                <a href="{% url 'shop:toggle_wishlist' product.id %}" class="btn btn-outline-danger">
+                                    Add to Wishlist
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
         </div>
-        {% endfor %}
-        {% endif %}
-
     </div>
-
-    <div class="filters">
-        <h3>Filter Products:</h3>
-        <a href="?filter=all">
-            <button type="button" class="filter-btn">All Products</button>
-        </a>
-        <a href="?category=running">
-            <button type="button" class="filter-btn">Running</button>
-        </a>
-        <a href="?category=cycling">
-            <button type="button" class="filter-btn">Cycling</button>
-        </a>
-        <a href="?category=swimming">
-            <button type="button" class="filter-btn">Swimming</button>
-        </a>
-    </div>
-
-
-
+</div>
 {% endblock %}
