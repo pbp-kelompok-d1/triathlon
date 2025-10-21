@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Tambah Tempat Baru</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Simpan</button>
+</form>
+<a href="{% url 'place:place_list' %}">Kembali</a>
+{% endblock %}

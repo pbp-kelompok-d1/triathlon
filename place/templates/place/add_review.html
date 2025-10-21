@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Tambah Ulasan untuk {{ place.name }}</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Kirim Ulasan</button>
+</form>
+<a href="{% url 'place:place_detail' place.pk %}">Kembali</a>
+{% endblock %}

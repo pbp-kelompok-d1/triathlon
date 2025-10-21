@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>📍 Daftar Tempat Latihan</h1>
+
+<form method="get">
+    <input type="text" name="q" placeholder="Cari tempat..." value="{{ request.GET.q }}">
+    <button type="submit">Cari</button>
+</form>
+
+<a href="{% url 'place:add_place' %}">➕ Tambah Tempat</a>
+
+<ul>
+{% for place in places %}
+    <li>
+        <a href="{% url 'place:place_detail' place.pk %}">{{ place.name }}</a>  
+        <p>{{ place.location }}</p>
+        <p>Rating: ⭐ {{ place.average_rating }}</p>
+    </li>
+{% empty %}
+    <p>Belum ada tempat terdaftar.</p>
+{% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{{ place.name }}</h2>
+<p><strong>Lokasi:</strong> {{ place.location }}</p>
+<p>{{ place.description }}</p>
+<p><strong>Rating Rata-rata:</strong> ⭐ {{ place.average_rating }}</p>
+
+<hr>
+<h3>Ulasan</h3>
+<a href="{% url 'place:add_review' place.pk %}">📝 Tambah Ulasan</a>
+
+{% for review in reviews %}
+  <div>
+    <p><strong>{{ review.user.username }}</strong> - ⭐ {{ review.rating }}</p>
+    <p>{{ review.comment }}</p>
+    <p><small>{{ review.created_at }}</small></p>
+  </div>
+{% empty %}
+  <p>Belum ada ulasan untuk tempat ini.</p>
+{% endfor %}
+
+<a href="{% url 'place:place_list' %}">← Kembali</a>
+{% endblock %}
