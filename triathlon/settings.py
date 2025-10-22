@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'shop',
     'user_profile',
     'place',
+    'ticket',
 ]
 
 MIDDLEWARE = [
