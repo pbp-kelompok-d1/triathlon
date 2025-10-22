@@ -56,12 +56,14 @@
           <label for="location_id" class="block text-sm font-medium text-gray-700">Location ID</label>
           <input type="number" id="location_id" name="location_id" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black" placeholder="Enter location ID">
         </div>
+        {% if user.profile.role == 'ADMIN' %}
         <div class="mb-4">
           <div class="flex items-center">
             <input id="is_pinned" name="is_pinned" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded">
             <label for="is_pinned" class="ml-2 text-sm font-medium text-gray-700">Pin this post</label>
           </div>
         </div>
+        {% endif %}
       </form>
     </div>
     <!-- Modal footer -->
@@ -131,6 +133,9 @@ async function addForumPostEntry() {
   await fetch("{% url 'forum:add_post_ajax' %}", {
     method: "POST",
     body: new FormData(document.querySelector('#forumPostForm')),
+    headers: {
+      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+    },
   });
 
   document.getElementById("forumPostForm").reset();

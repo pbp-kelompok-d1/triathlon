@@ -1,0 +1,130 @@
+<!-- Forum Filters Sidebar -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
+  <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center">
+    <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+    </svg>
+    Filters
+  </h3>
+
+  <!-- Sport Category Filter -->
+  <div class="mb-6">
+    <h4 class="text-sm font-semibold text-gray-700 mb-3">Sport Category</h4>
+    <div class="space-y-2">
+      <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+        <input type="checkbox" name="sport_category" value="running" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+        <span class="ml-3 text-sm text-gray-700">🏃 Running</span>
+      </label>
+      <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+        <input type="checkbox" name="sport_category" value="cycling" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+        <span class="ml-3 text-sm text-gray-700">🚴 Cycling</span>
+      </label>
+      <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+        <input type="checkbox" name="sport_category" value="swimming" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+        <span class="ml-3 text-sm text-gray-700">🏊 Swimming</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="border-t border-gray-200 mb-6"></div>
+
+  <!-- Post Category Filter -->
+  <div class="mb-6">
+    <h4 class="text-sm font-semibold text-gray-700 mb-3">Post Type</h4>
+    <div class="space-y-2">
+      <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+        <input type="checkbox" name="post_category" value="general" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+        <span class="ml-3 text-sm text-gray-700">💬 General</span>
+      </label>
+      <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+        <input type="checkbox" name="post_category" value="product_review" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+        <span class="ml-3 text-sm text-gray-700">⭐ Product Review</span>
+      </label>
+      <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+        <input type="checkbox" name="post_category" value="location_review" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+        <span class="ml-3 text-sm text-gray-700">📍 Location Review</span>
+      </label>
+      <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+        <input type="checkbox" name="post_category" value="question" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+        <span class="ml-3 text-sm text-gray-700">❓ Question</span>
+      </label>
+      <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+        <input type="checkbox" name="post_category" value="announcement" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+        <span class="ml-3 text-sm text-gray-700">📢 Announcement</span>
+      </label>
+      <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+        <input type="checkbox" name="post_category" value="feedback" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+        <span class="ml-3 text-sm text-gray-700">💭 Feedback</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="border-t border-gray-200 mb-6"></div>
+
+  <!-- Sort By -->
+  <div class="mb-6">
+    <h4 class="text-sm font-semibold text-gray-700 mb-3">Sort By</h4>
+    <select id="sortBy" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+      <option value="recent">Most Recent</option>
+      <option value="views">Most Views</option>
+      <option value="replies">Most Replies</option>
+      <option value="oldest">Oldest First</option>
+    </select>
+  </div>
+
+  <div class="border-t border-gray-200 mb-6"></div>
+
+  <!-- Pinned Posts Filter -->
+  <div class="mb-6">
+    <h4 class="text-sm font-semibold text-gray-700 mb-3">Post Status</h4>
+    <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+      <input type="checkbox" id="showPinnedOnly" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+      <span class="ml-3 text-sm text-gray-700">📌 Pinned Only</span>
+    </label>
+  </div>
+
+  <div class="border-t border-gray-200 mb-6"></div>
+
+  <!-- Search Box -->
+  <div class="mb-6">
+    <h4 class="text-sm font-semibold text-gray-700 mb-3">Search</h4>
+    <div class="relative">
+      <input 
+        type="text" 
+        id="searchQuery" 
+        placeholder="Search posts..." 
+        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+      >
+      <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="space-y-2">
+    <button 
+      onclick="applyFilters()" 
+      class="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center justify-center"
+    >
+      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+      Apply Filters
+    </button>
+    <button 
+      onclick="resetFilters()" 
+      class="w-full bg-gray-100 text-gray-700 font-medium py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-sm flex items-center justify-center"
+    >
+      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+      </svg>
+      Reset All
+    </button>
+  </div>
+
+  <!-- Active Filters Count -->
+  <div id="activeFiltersCount" class="mt-4 text-center text-xs text-gray-500 hidden">
+    <span class="font-semibold text-blue-600"></span> active filters
+  </div>
+</div>
