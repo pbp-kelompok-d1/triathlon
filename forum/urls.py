@@ -12,4 +12,7 @@ urlpatterns = [
     # AJAX endpoints
     path('json/', views.show_json, name='show_json'),
     path('ajax/add/', views.add_post_ajax, name='add_post_ajax'),
+    path('<uuid:post_id>/edit/', views.edit_post_ajax, name='edit_post_ajax'),
+    path('<uuid:post_id>/delete/', views.delete_post, name='delete_post'),
+    path('reply/<uuid:reply_id>/delete/', views.delete_reply, name='delete_reply'),
 ]

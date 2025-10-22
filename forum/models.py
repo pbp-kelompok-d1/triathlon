@@ -31,6 +31,7 @@ class ForumPost(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     last_activity = models.DateTimeField(default=timezone.now)  # Track latest activity (post creation or reply)
+    last_edited = models.DateTimeField(null=True, blank=True)  # Track when post was last edited
     is_pinned = models.BooleanField(default=False)
     
     # External connections for future apps
