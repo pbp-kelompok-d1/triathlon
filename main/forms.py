@@ -34,6 +34,13 @@ class CustomUserCreationForm(UserCreationForm):
             'placeholder': 'Enter your phone number'
         })
     )
+    is_facility_admin = forms.BooleanField(
+        required=False,
+        label='Register as Facility Administrator',
+        widget=forms.CheckboxInput(attrs={
+            'class': 'h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded'
+        })
+    )
 
     class Meta:
         model = User
