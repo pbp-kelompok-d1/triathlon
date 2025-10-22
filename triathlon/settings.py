@@ -32,6 +32,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", 'muhammad-kaila-triathlon.pbp.cs.ui.ac.id']
 
+CSRF_TRUSTED_ORIGINS = ["https://muhammad-kaila-triathlon.pbp.cs.ui.ac.id"]
 
 # Application definition
 
@@ -70,6 +71,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'shop.context_processor.cart_item_count',
             ],
         },
     },
