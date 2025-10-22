@@ -8,6 +8,8 @@
     {% endblock meta %}
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{% static 'css/global.css' %}" />
+    <!-- Load toast.js in head so it's available for all pages -->
+    <script src="{% static 'js/toast.js' %}"></script>
   </head>
   <body class="bg-gray-50 text-gray-900">
     <!-- Navbar -->
@@ -18,7 +20,8 @@
       {% block content %} {% endblock content %}
     </div>
 
-    <!-- Toast and Modal functionality commented out - will be implemented later -->
+    <!-- Toast notification -->
+    {% include 'toast.html' %}
 
   </body>
 </html>
