@@ -2,11 +2,13 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .models import ForumPost, ForumReply
 from .forms import ForumPostForm
 
 
+@login_required(login_url='/login/')
 def show_forums(request):
     
     filter_type = request.GET.get("filter", "all")
@@ -31,7 +33,7 @@ def show_forums(request):
     }
     return render(request, "forums.html", context)
 
-
+@login_required(login_url='/login/')
 def create_forum_post(request):
   
     form = ForumPostForm(request.POST or None)
@@ -48,7 +50,7 @@ def create_forum_post(request):
     }
     return render(request, "create_forum_post.html", context)
 
-
+@login_required(login_url='/login/')
 def post_detail(request, id):
    
     post = get_object_or_404(ForumPost, pk=id)
@@ -66,6 +68,7 @@ def post_detail(request, id):
 
 @csrf_exempt
 @require_POST
+@login_required(login_url='/login/')
 def add_reply(request, post_id):
     """Add reply to forum post"""
     try:

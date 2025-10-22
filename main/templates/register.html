@@ -1,0 +1,78 @@
+{% extends 'base.html' %} {% block meta %}
+<title>Register</title>
+{% endblock meta %} {% block content %}
+<div class="flex flex-col items-center justify-center min-h-screen bg-red-800">
+  <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md text-gray-900">
+    <h1 class="text-2xl font-bold text-center text-red-800">Register</h1>
+
+    <form id="registerForm" method="POST" class="space-y-6">
+      {% csrf_token %} {{ form.as_p }}
+      <div>
+        <button
+          type="submit"
+          id="registerButton"
+          class="w-full px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+        >
+          Register
+        </button>
+      </div>
+    </form>
+
+    {% if messages %}
+    <div class="p-4 mt-6 bg-yellow-100 rounded-md">
+      <ul class="text-sm text-yellow-700 list-disc list-inside">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("registerForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    registerUser();
+  });
+});
+
+async function registerUser() {
+  const registerButton = document.getElementById('registerButton');
+  const originalText = registerButton.textContent;
+  
+  // Show loading state
+  registerButton.disabled = true;
+  registerButton.textContent = 'Registering...';
+  
+  try {
+    const response = await fetch("{% url 'main:register' %}", {
+      method: "POST",
+      body: new FormData(document.querySelector('#registerForm')),
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      showToast('Registration successful!', 'You can now login with your account', 'success');
+      setTimeout(() => {
+        window.location.href = "{% url 'main:login' %}";
+      }, 1500);
+    } else {
+      const errorData = await response.text();
+      showToast('Registration failed', 'Please check your form and try again', 'error');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    showToast('Registration error', 'Something went wrong', 'error');
+  } finally {
+    // Reset button state
+    registerButton.disabled = false;
+    registerButton.textContent = originalText;
+  }
+}
+</script>
+
+{% endblock content %}
