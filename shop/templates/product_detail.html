@@ -3,7 +3,7 @@
 <div class="container">
     <h1>{{ product.name }}</h1>
     <div class="product-detail">
-        <img src="{{ product.thumbnail.url }}" alt="{{ product.name }}" class="product-image">
+        <img src="{{ product.thumbnail }}" alt="{{ product.name }}" class="product-image">
         <div class="product-info">
             <p><strong>Price:</strong> ${{ product.price }}</p>
             <p><strong>Description:</strong> {{ product.description|safe }}</p>
@@ -25,6 +25,7 @@
         <button type="submit" class="btn btn-success">Masukkan ke Keranjang</button>
     </form>
     <a href="{% url 'shop:toggle_wishlist' product.id %}" class="btn btn-outline-danger">Tambah ke Wishlist</a>
+    <a href="{% url 'shop:shop' %}" class="btn btn-outline-danger">Kembali ke halaman utama</a>
 </div>
 </div>
 {% endblock %}

@@ -1,0 +1,182 @@
+<!-- Edit Modal -->
+<div id="editModal" class="hidden fixed inset-0 z-50 w-full flex items-center justify-center bg-gray-800 bg-opacity-50">
+  <div id="editModalContent" class="bg-white rounded-lg shadow-lg w-5/6 sm:w-3/5 md:w-1/2 lg:w-2/5 xl:w-1/3 max-h-screen overflow-y-auto">
+    <!-- Modal header -->
+    <div class="flex items-center justify-between p-4 border-b border-gray-200">
+      <div>
+        <h3 class="text-xl font-semibold text-gray-900">
+          Edit Forum Post
+        </h3>
+        <p class="text-sm text-gray-600 mt-1">Update your post details</p>
+      </div>
+      <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center" onclick="hideEditModal()">
+        <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+        </svg>
+        <span class="sr-only">Close modal</span>
+      </button>
+    </div>
+    <!-- Modal body -->
+  <div class="px-6 py-4 space-y-6 form-style">
+  <form id="editForumPostForm">
+        <input type="hidden" id="edit_post_id" name="post_id">
+        <div class="mb-4">
+          <label for="edit_title" class="block text-sm font-medium text-gray-700">Title</label>
+          <input type="text" id="edit_title" name="title" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black" placeholder="Enter post title" required>
+        </div>
+        <div class="mb-4">
+          <label for="edit_content" class="block text-sm font-medium text-gray-700">Content</label>
+          <textarea id="edit_content" name="content" rows="5" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black" placeholder="Enter post content" required></textarea>
+        </div>
+        <div class="mb-4">
+          <label for="edit_category" class="block text-sm font-medium text-gray-700">Category</label>
+          <select id="edit_category" name="category" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black" required>
+            <option value="">Select a category</option>
+            <option value="general">General Discussion</option>
+            <option value="product_review">Product Review</option>
+            <option value="location_review">Location Review</option>
+            <option value="question">Question</option>
+            <option value="announcement">Announcement</option>
+            <option value="feedback">Feedback</option>
+          </select>
+        </div>
+        <div class="mb-4">
+          <label for="edit_sport_category" class="block text-sm font-medium text-gray-700">Sport Category</label>
+          <select id="edit_sport_category" name="sport_category" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black" required>
+            <option value="">Select a sport</option>
+            <option value="running">Running</option>
+            <option value="cycling">Cycling</option>
+            <option value="swimming">Swimming</option>
+          </select>
+        </div>
+        <div class="mb-4 hidden" id="edit_product_id_field">
+          <label for="edit_product_id" class="block text-sm font-medium text-gray-700">Product ID</label>
+          <input type="number" id="edit_product_id" name="product_id" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black" placeholder="Enter product ID">
+        </div>
+        <div class="mb-4 hidden" id="edit_location_id_field">
+          <label for="edit_location_id" class="block text-sm font-medium text-gray-700">Location ID</label>
+          <input type="number" id="edit_location_id" name="location_id" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black" placeholder="Enter location ID">
+        </div>
+        {% if user.profile.role == 'ADMIN' %}
+        <div class="mb-4">
+          <div class="flex items-center">
+            <input id="edit_is_pinned" name="is_pinned" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded">
+            <label for="edit_is_pinned" class="ml-2 text-sm font-medium text-gray-700">Pin this post</label>
+          </div>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+    <!-- Modal footer -->
+    <div class="flex flex-col sm:flex-row gap-4 p-6 border-t border-gray-200 rounded-b">
+      <button type="button" id="editCancelButton" class="order-2 sm:order-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-100 transition-colors text-center" onclick="hideEditModal()">Cancel</button>
+      <button type="submit" id="submitEditForumPost" form="editForumPostForm" class="order-1 sm:order-2 flex-1 bg-blue-600 text-white px-6 py-3 rounded-md font-bold hover:bg-blue-700 transition-colors">Update Post</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showEditModal(postData) {
+      const modal = document.getElementById('editModal');
+      const modalContent = document.getElementById('editModalContent');
+
+      // Populate form with existing data
+      document.getElementById('edit_post_id').value = postData.id;
+      document.getElementById('edit_title').value = postData.title;
+      document.getElementById('edit_content').value = postData.content;
+      document.getElementById('edit_category').value = postData.category;
+      document.getElementById('edit_sport_category').value = postData.sport_category;
+      document.getElementById('edit_product_id').value = postData.product_id || '';
+      document.getElementById('edit_location_id').value = postData.location_id || '';
+      document.getElementById('edit_is_pinned').checked = postData.is_pinned;
+
+      // Show/hide product/location fields based on category
+      const productIdField = document.getElementById("edit_product_id_field");
+      const locationIdField = document.getElementById("edit_location_id_field");
+      const productIdInput = document.getElementById("edit_product_id");
+      const locationIdInput = document.getElementById("edit_location_id");
+      
+      productIdField.classList.add("hidden");
+      locationIdField.classList.add("hidden");
+      productIdInput.removeAttribute("required");
+      locationIdInput.removeAttribute("required");
+      
+      if (postData.category === "product_review") {
+        productIdField.classList.remove("hidden");
+        productIdInput.setAttribute("required", "required");
+      } else if (postData.category === "location_review") {
+        locationIdField.classList.remove("hidden");
+        locationIdInput.setAttribute("required", "required");
+      }
+
+      modal.classList.remove('hidden'); 
+      setTimeout(() => {
+        modalContent.classList.remove('opacity-0', 'scale-95');
+        modalContent.classList.add('opacity-100', 'scale-100');
+      }, 50); 
+  }
+
+  function hideEditModal() {
+      const modal = document.getElementById('editModal');
+      const modalContent = document.getElementById('editModalContent');
+
+      modalContent.classList.remove('opacity-100', 'scale-100');
+      modalContent.classList.add('opacity-0', 'scale-95');
+
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 150); 
+  }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    const editForm = document.getElementById("editForumPostForm");
+    if (editForm) {
+      editForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+        updateForumPostEntry();
+      });
+
+      // Show/hide product/location ID fields based on category selection
+      document.getElementById("edit_category").addEventListener("change", function() {
+        const category = this.value;
+        const productIdField = document.getElementById("edit_product_id_field");
+        const locationIdField = document.getElementById("edit_location_id_field");
+        const productIdInput = document.getElementById("edit_product_id");
+        const locationIdInput = document.getElementById("edit_location_id");
+        
+        // Hide all fields first
+        productIdField.classList.add("hidden");
+        locationIdField.classList.add("hidden");
+        productIdInput.removeAttribute("required");
+        locationIdInput.removeAttribute("required");
+        
+        // Show relevant field based on category
+        if (category === "product_review") {
+          productIdField.classList.remove("hidden");
+          productIdInput.setAttribute("required", "required");
+        } else if (category === "location_review") {
+          locationIdField.classList.remove("hidden");
+          locationIdInput.setAttribute("required", "required");
+        }
+      });
+    }
+  });
+
+async function updateForumPostEntry() {
+  const postId = document.getElementById('edit_post_id').value;
+  
+  await fetch(`/forum/${postId}/edit/`, {
+    method: "POST",
+    body: new FormData(document.querySelector('#editForumPostForm')),
+    headers: {
+      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+    },
+  });
+
+  document.getElementById("editForumPostForm").reset();
+  hideEditModal();
+  showToast('Forum post updated successfully!', '', 'success');
+  document.dispatchEvent(new CustomEvent('forumPostUpdated'));
+  return false;
+}
+</script>

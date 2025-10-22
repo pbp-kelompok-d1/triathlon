@@ -1,23 +1,127 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<h2>{{ place.name }}</h2>
-<p><strong>Lokasi:</strong> {{ place.location }}</p>
-<p>{{ place.description }}</p>
-<p><strong>Rating Rata-rata:</strong> ⭐ {{ place.average_rating }}</p>
+<div class="max-w-5xl mx-auto px-6 py-10">
 
-<hr>
-<h3>Ulasan</h3>
-<a href="{% url 'place:add_review' place.pk %}">📝 Tambah Ulasan</a>
+  <!-- INFORMASI TEMPAT -->
+  <div class="bg-white shadow rounded-2xl overflow-hidden mb-8">
+    <img src="{{ place.image.url }}" alt="{{ place.name }}" class="w-full h-80 object-cover">
+    <div class="p-6">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">{{ place.name }}</h1>
+          <p class="text-gray-500 text-sm">{{ place.city }}, {{ place.province }}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-2xl font-semibold text-green-600">Rp {{ place.price|floatformat:0 }}</p>
+        </div>
+      </div>
 
-{% for review in reviews %}
-  <div>
-    <p><strong>{{ review.user.username }}</strong> - ⭐ {{ review.rating }}</p>
-    <p>{{ review.comment }}</p>
-    <p><small>{{ review.created_at }}</small></p>
+      <p class="text-gray-700 leading-relaxed mb-6">{{ place.description }}</p>
+
+      <div class="flex items-center gap-3">
+        <a href="{% url 'ticketing_page' place.id %}" 
+           class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg transition">
+          Pesan Tiket
+        </a>
+          <!-- {% if is_facility_admin %}
+          <a href="{% url 'edit_place' place.id %}" 
+            class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition">
+            Edit Tempat
+          </a>
+          {% endif %} -->
+      </div>
+    </div>
   </div>
-{% empty %}
-  <p>Belum ada ulasan untuk tempat ini.</p>
-{% endfor %}
 
-<a href="{% url 'place:place_list' %}">← Kembali</a>
+  <!-- BAGIAN REVIEW -->
+  <div class="bg-white shadow rounded-2xl p-6">
+    <h2 class="text-xl font-semibold text-gray-800 mb-4">Ulasan Pengunjung</h2>
+
+    <!-- Form tambah review -->
+    {% if user.is_authenticated %}
+    <form id="review-form" class="mb-6">
+      {% csrf_token %}
+      <label class="block mb-2 text-sm font-medium text-gray-700">Rating</label>
+      <select id="review-rating" class="border rounded-lg p-2 mb-3 w-28">
+        <option value="5">⭐ 5</option>
+        <option value="4">⭐ 4</option>
+        <option value="3">⭐ 3</option>
+        <option value="2">⭐ 2</option>
+        <option value="1">⭐ 1</option>
+      </select>
+
+      <textarea id="review-comment" rows="3" placeholder="Tulis ulasanmu..." 
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+
+      <button type="submit" 
+              class="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
+        Kirim Ulasan
+      </button>
+    </form>
+    {% else %}
+    <p class="text-gray-500 mb-6">Login untuk menulis ulasan.</p>
+    {% endif %}
+
+    <!-- Daftar review -->
+    <div id="reviews-container" class="space-y-4">
+      {% for review in reviews %}
+      <div class="border border-gray-200 rounded-lg p-4">
+        <div class="flex justify-between items-center">
+          <p class="font-semibold text-gray-800">{{ review.user.username }}</p>
+          <p class="text-yellow-500 text-sm">
+            {% for i in "12345"|slice:":review.rating"|make_list %}⭐{% endfor %}
+          </p>
+        </div>
+        <p class="text-gray-700 mt-1">{{ review.comment }}</p>
+        <p class="text-sm text-gray-500 mt-1">{{ review.created_at|date:"d M Y" }}</p>
+      </div>
+      {% empty %}
+      <p class="text-gray-500">Belum ada ulasan untuk tempat ini.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- AJAX Script -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('review-form');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const rating = document.getElementById('review-rating').value;
+    const comment = document.getElementById('review-comment').value;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    const response = await fetch("{% url 'add_review' place.id %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken,
+      },
+      body: JSON.stringify({ rating, comment }),
+    });
+
+    if (response.ok) {
+      const newReview = await response.json();
+      const container = document.getElementById('reviews-container');
+      const div = document.createElement('div');
+      div.className = "border border-gray-200 rounded-lg p-4";
+      div.innerHTML = `
+        <div class="flex justify-between items-center">
+          <p class="font-semibold text-gray-800">${newReview.user}</p>
+          <p class="text-yellow-500 text-sm">${'⭐'.repeat(newReview.rating)}</p>
+        </div>
+        <p class="text-gray-700 mt-1">${newReview.comment}</p>
+        <p class="text-sm text-gray-500 mt-1">${newReview.created_at}</p>
+      `;
+      container.prepend(div);
+      form.reset();
+    }
+  });
+});
+</script>
 {% endblock %}

@@ -26,7 +26,12 @@ class ProductForm(forms.ModelForm):
             }),
             'category': forms.Select(attrs={
                 'class': 'form-control'
+            }),
+            'thumbnail': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter product thumbnail URL...'
             })
+
         }
         
     def clean_name(self):
