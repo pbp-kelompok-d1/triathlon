@@ -20,7 +20,7 @@
                     <div class="card-body">
                         <h5 class="card-title">{{ product.name }}</h5>
                         <h6 class="card-subtitle mb-2 fw-bold">Rp {{ product.price }}</h6>
-                        <a href="{{ product.get_absolute_url }}" class="btn btn-primary">Lihat Detail</a>
+                        <a href="{% url 'shop:product_detail' product.id %}" class="btn btn-primary">Lihat Detail</a>
                         <a href="{% url 'shop:toggle_wishlist' product.id %}" class="btn btn-outline-danger ms-2">Hapus</a>
                     </div>
                 </div>
