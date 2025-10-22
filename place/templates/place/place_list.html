@@ -1,23 +1,33 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% include "navbar.html" %}
+{% load static %}
 {% block content %}
-<h1>📍 Daftar Tempat Latihan</h1>
 
-<form method="get">
-    <input type="text" name="q" placeholder="Cari tempat..." value="{{ request.GET.q }}">
-    <button type="submit">Cari</button>
-</form>
+<div class="max-w-7xl mx-auto py-10">
+  <h1 class="text-3xl font-bold mb-6 text-center">Daftar Tempat Triathlon</h1>
 
-<a href="{% url 'place:add_place' %}">➕ Tambah Tempat</a>
+  {% if is_facility_admin %}
+  <div class="mb-6 text-right">
+    <a href="{% url 'add_place' %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+      + Tambah Tempat
+    </a>
+  </div>
+  {% endif %}
 
-<ul>
-{% for place in places %}
-    <li>
-        <a href="{% url 'place:place_detail' place.pk %}">{{ place.name }}</a>  
-        <p>{{ place.location }}</p>
-        <p>Rating: ⭐ {{ place.average_rating }}</p>
-    </li>
-{% empty %}
-    <p>Belum ada tempat terdaftar.</p>
-{% endfor %}
-</ul>
+  <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+    {% for place in places %}
+    <div class="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden">
+      <img src="{{ place.image.url }}" class="w-full h-48 object-cover" alt="{{ place.name }}">
+      <div class="p-4">
+        <h2 class="text-xl font-semibold">{{ place.name }}</h2>
+        <p class="text-gray-500 text-sm">{{ place.city }}, {{ place.province }}</p>
+        <p class="mt-2 text-gray-700 text-sm">{{ place.description|truncatechars:100 }}</p>
+      </div>
+    </div>
+    {% empty %}
+    <p class="text-center text-gray-500">Belum ada tempat yang terdaftar.</p>
+    {% endfor %}
+  </div>
+</div>
+
 {% endblock %}

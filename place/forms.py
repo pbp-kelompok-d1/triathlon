@@ -1,10 +1,11 @@
 from django import forms
-from .models import Place, Review
+from .models import Place
+from .models import Review
 
 class PlaceForm(forms.ModelForm):
     class Meta:
         model = Place
-        fields = ['name', 'location', 'description']
+        fields = ["name", "city", "province", "description", "image"]
 
 class ReviewForm(forms.ModelForm):
     class Meta:
