@@ -5,43 +5,33 @@ from user_profile.models import UserProfile
 
 
 class CustomUserCreationForm(UserCreationForm):
-    email = forms.EmailField(
-        required=True,
-        widget=forms.EmailInput(attrs={
-            'class': 'block w-full px-3 py-2 mt-1 text-red-800 bg-red-100 border border-red-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm',
-            'placeholder': 'email@example.com'
-        })
-    )
-    first_name = forms.CharField(
-        max_length=30,
-        required=True,
-        widget=forms.TextInput(attrs={
-            'class': 'block w-full px-3 py-2 mt-1 text-red-800 bg-red-100 border border-red-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm',
-            'placeholder': 'First name'
-        })
-    )
-    last_name = forms.CharField(
-        max_length=30,
-        required=True,
-        widget=forms.TextInput(attrs={
-            'class': 'block w-full px-3 py-2 mt-1 text-red-800 bg-red-100 border border-red-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm',
-            'placeholder': 'Last name'
-        })
-    )
-    phone_number = forms.CharField(
-        max_length=15,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'block w-full px-3 py-2 mt-1 text-red-800 bg-red-100 border border-red-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm',
-            'placeholder': '+1234567890'
-        })
-    )
+    # Order: username (from Meta), role, email, phone_number, password1, password2
+    
     role = forms.ChoiceField(
         choices=UserProfile.ROLE_CHOICES,
         required=True,
         initial='USER',
         widget=forms.Select(attrs={
-            'class': 'block w-full px-3 py-2 mt-1 text-red-800 bg-red-100 border border-red-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm'
+            'class': 'block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
+            'id': 'id_role'
+        })
+    )
+    
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
+            'id': 'id_email',
+            'placeholder': 'Enter your email'
+        })
+    )
+    
+    phone_number = forms.IntegerField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
+            'id': 'id_phone_number',
+            'placeholder': 'Enter your phone number'
         })
     )
     is_facility_admin = forms.BooleanField(
@@ -54,30 +44,34 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2', 'phone_number', 'role', 'is_facility_admin')
+        fields = ('username', 'role', 'email', 'phone_number', 'password1', 'password2')
 
     def __init__(self, *args, **kwargs):
         super(CustomUserCreationForm, self).__init__(*args, **kwargs)
         
         # Add custom classes to username and password fields
         self.fields['username'].widget.attrs.update({
-            'class': 'block w-full px-3 py-2 mt-1 text-red-800 bg-red-100 border border-red-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm',
-            'placeholder': 'Username'
+            'class': 'block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
+            'id': 'id_username',
+            'placeholder': 'Choose a username',
+            'required': True
         })
         self.fields['password1'].widget.attrs.update({
-            'class': 'block w-full px-3 py-2 mt-1 text-red-800 bg-red-100 border border-red-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm',
-            'placeholder': 'Password'
+            'class': 'block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
+            'id': 'id_password1',
+            'placeholder': 'Enter your password',
+            'required': True
         })
         self.fields['password2'].widget.attrs.update({
-            'class': 'block w-full px-3 py-2 mt-1 text-red-800 bg-red-100 border border-red-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm',
-            'placeholder': 'Confirm password'
+            'class': 'block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
+            'id': 'id_password2',
+            'placeholder': 'Confirm your password',
+            'required': True
         })
 
     def save(self, commit=True):
         user = super(CustomUserCreationForm, self).save(commit=False)
         user.email = self.cleaned_data['email']
-        user.first_name = self.cleaned_data['first_name']
-        user.last_name = self.cleaned_data['last_name']
         
         if commit:
             user.save()

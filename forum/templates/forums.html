@@ -1,6 +1,13 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
+{% include 'create_forum_post_modal.html' %}
+{% include 'forum_post_card.html' %}
+
+<!-- Hidden CSRF token for JavaScript use -->
+<form style="display: none;">
+  {% csrf_token %}
+</form>
 
 <!-- Hero Section -->
 <div class="bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-700 text-white">
@@ -12,62 +19,68 @@
       <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto leading-relaxed">
         Connect with fellow athletes, share experiences, and discuss everything triathlon
       </p>
-      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-        <a href="{% url 'forum:create_post' %}" class="bg-white text-blue-900 font-bold py-3 px-8 rounded-lg text-lg hover:bg-gray-100 transition-colors shadow-lg">
-          Create New Post
-        </a>
-        {% if user.is_authenticated %}
-        <div class="text-blue-100">
-          Welcome back, <span class="font-semibold">{{ user.username }}</span>
-        </div>
-        {% endif %}
-      </div>
     </div>
   </div>
 </div>
 
 <!-- Main Content -->
 <div class="bg-gray-50 min-h-screen">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <div class="mx-auto px-4 sm:px-6 lg:px-8 py-12">
     
-    <!-- Filter Section -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-        
-        <!-- Post Type Filters -->
-        <div class="flex flex-col sm:flex-row gap-3">
-          <span class="text-gray-700 font-medium self-center">Filter Posts:</span>
-          <div class="flex gap-2">
-            <a href="?filter=all" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm">
-              All Posts
-            </a>
-            <a href="?filter=my" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-medium text-sm">
-              My Posts
-            </a>
+    <div class="flex gap-8 justify-center">
+      <!-- Left Sidebar - Filters -->
+      <div class="hidden lg:block w-80 flex-shrink-0">
+        {% include 'forum_filters.html' %}
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="flex-1" style="max-width: 1400px;">
+        <!-- Top Action Bar -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            
+            <!-- Post Type Filters -->
+            <div class="flex flex-col sm:flex-row gap-3">
+              <span class="text-gray-700 font-medium self-center">View:</span>
+              <div class="flex gap-2">
+                <button id="filter-all" onclick="handleShowAllPostsClick()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm">
+                  All Posts
+                </button>
+                <button id="filter-my" onclick="handleShowMyPostsClick()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-medium text-sm">
+                  My Posts
+                </button>
+              </div>
+            </div>
+
+            <!-- Add Post and Refresh Buttons -->
+            <div class="flex gap-3">
+              <button onclick="showModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-block transition">+ Add Post</button>
+              <button onclick="refreshPosts()" id="refreshButton" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center transition">
+                <svg id="refreshIcon" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                <span id="refreshText">Refresh</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Sport Category Filters -->
-        <div class="flex flex-col sm:flex-row gap-3">
-          <span class="text-gray-700 font-medium self-center">Sport Category:</span>
-          <div class="flex gap-2">
-            <a href="?category=running" class="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-medium text-sm">
-              🏃‍♂️ Running
-            </a>
-            <a href="?category=cycling" class="px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors font-medium text-sm">
-              🚴‍♂️ Cycling
-            </a>
-            <a href="?category=swimming" class="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium text-sm">
-              🏊‍♂️ Swimming
-            </a>
-          </div>
-        </div>
+        <!-- AJAX containers -->
+        <div id="posts">
+
+    <div id="loading" class="bg-white rounded-lg border border-gray-200 p-12 text-center text-gray-900 hidden">
+      <div class="flex flex-col items-center justify-center">
+        <svg class="animate-spin h-12 w-12 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="text-gray-600">Loading forum posts...</p>
       </div>
     </div>
-
-    <!-- Posts Section -->
-    {% if not posts %}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+    <div id="error" class="hidden text-center text-red-600"></div>
+    <div id="grid" class="hidden space-y-6"></div>
+    <div id="empty" class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center text-gray-900 hidden">
+    <div id="empty" class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center text-gray-900 hidden">
       <div class="max-w-md mx-auto">
         <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,94 +89,515 @@
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-3">No discussions yet</h3>
         <p class="text-gray-600 mb-6">Be the first to start a conversation in our triathlon community!</p>
-        <a href="{% url 'forum:create_post' %}" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+        <button onclick="showModal()" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
           Start First Discussion
-        </a>
+        </button>
       </div>
     </div>
-    {% else %}
-
-    <!-- Posts Grid -->
-    <div class="space-y-6">
-      {% for post in posts %}
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200">
-        
-        <!-- Post Header -->
-        <div class="p-6 border-b border-gray-100">
-          <div class="flex items-start justify-between">
-            <div class="flex-1">
-              {% if post.is_pinned %}
-              <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mb-3">
-                📌 Pinned Post
-              </div>
-              {% endif %}
-              
-              <h2 class="text-xl font-bold text-gray-900 mb-3 hover:text-blue-600 transition-colors">
-                <a href="{% url 'forum:post_detail' post.id %}" class="no-underline">
-                  {{ post.title }}
-                </a>
-              </h2>
-              
-              <!-- Category Badges -->
-              <div class="flex flex-wrap gap-2 mb-3">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  {{ post.get_category_display }}
-                </span>
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                  {{ post.get_sport_category_display }}
-                </span>
-              </div>
-            </div>
-            
-            <!-- View Count -->
-            <div class="text-right">
-              <div class="text-sm text-gray-500">
-                {{ post.post_views }} views
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Post Content -->
-        <div class="p-6 pt-0">
-          <p class="text-gray-600 leading-relaxed mb-6 line-clamp-3">
-            {{ post.content|truncatewords:40 }}
-          </p>
-          
-          <!-- Post Footer -->
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4 text-sm text-gray-500">
-              <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span class="text-white font-medium text-xs">
-                    {% if post.author %}{{ post.author.username|first|upper }}{% else %}A{% endif %}
-                  </span>
-                </div>
-                <span>
-                  {% if post.author %}{{ post.author.username }}{% else %}Anonymous{% endif %}
-                </span>
-              </div>
-              <span>•</span>
-              <time>{{ post.created_at|date:"M d, Y" }}</time>
-            </div>
-            
-            <a href="{% url 'forum:post_detail' post.id %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm">
-              Read & Reply
-              <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-              </svg>
-            </a>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
     </div>
-    {% endif %}
-    
+      </div>
+      <!-- End Main Content Area -->
+    </div>
+    <!-- End Flex Container -->
   </div>
 </div>
 
-{% endblock %}
+<script>
+// Configuration
+const POST_API_ENDPOINT = "{% url 'forum:show_json' %}";
+const CURRENT_USER_ID = "{{ user.id|default_if_none:'' }}";
+const USER_ROLE = "{{ user.profile.role|default_if_none:'' }}";
 
-<!-- Sintaks Django {{ npm }}, {{ name }} dan {{ class }}, disebut template variables, 
-digunakan untuk menampilkan nilai dari variabel yang telah didefinisikan dalam context. -->
+// DOM Elements
+const loadingSpinner = document.getElementById('loading');
+const errorMessage = document.getElementById('error');
+const emptyStateDisplay = document.getElementById('empty');
+const postGridContainer = document.getElementById('grid');
+const showAllPostsButton = document.getElementById('filter-all');
+const showMyPostsButton = document.getElementById('filter-my');
+
+// State Variables
+let activeFilter = 'all';
+let allPostData = [];
+
+// Update filter button appearance
+function updateFilterButtonsAppearance() {
+  if (!showAllPostsButton || !showMyPostsButton) return;
+  if (activeFilter === 'all') {
+    showAllPostsButton.className = 'px-4 py-2 bg-blue-600 text-white rounded-lg transition-colors font-medium text-sm hover:bg-blue-700';
+    showMyPostsButton.className = 'px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-medium text-sm';
+  } else {
+    showMyPostsButton.className = 'px-4 py-2 bg-blue-600 text-white rounded-lg transition-colors font-medium text-sm hover:bg-blue-700';
+    showAllPostsButton.className = 'px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-medium text-sm';
+  }
+}
+
+// Show/hide page sections
+function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
+  loadingSpinner.classList.toggle('hidden', !showLoading);
+  errorMessage.classList.toggle('hidden', !showError);
+  emptyStateDisplay.classList.toggle('hidden', !showEmpty);
+  postGridContainer.classList.toggle('hidden', !showGrid);
+  if (showGrid) {
+    postGridContainer.className = 'space-y-6';
+  }
+}
+
+// Create post card element from template
+function buildPostCardElement(postItem) {
+  // Get template and clone it
+  const template = document.getElementById('forumPostCardTemplate');
+  const clone = template.content.cloneNode(true);
+  
+  // Get the card container
+  const card = clone.querySelector('div');
+  
+  // Set detail link
+  const detailLink = `/forum/${postItem.id}/`;
+  
+  // Show/hide pinned badge
+  const pinnedBadge = clone.querySelector('.pinned-badge');
+  if (postItem.is_pinned) {
+    pinnedBadge.classList.remove('hidden');
+  }
+  
+  // Set post title and link
+  const postLinks = clone.querySelectorAll('.post-link');
+  postLinks.forEach(link => {
+    link.href = detailLink;
+    if (link.tagName === 'A' && !link.classList.contains('post-link-button')) {
+      link.textContent = postItem.title;
+    }
+  });
+  
+  // Set categories
+  clone.querySelector('.post-category').textContent = postItem.category_display;
+  clone.querySelector('.sport-category').textContent = postItem.sport_category_display;
+  
+  // Set views
+  clone.querySelector('.post-views').textContent = `${postItem.post_views} views`;
+  
+  // Set content
+  clone.querySelector('.post-content').textContent = postItem.content;
+  
+  // Set author info
+  clone.querySelector('.author-initial').textContent = postItem.author_initial;
+  clone.querySelector('.author-name').textContent = postItem.author;
+  clone.querySelector('.post-date').textContent = postItem.created_at;
+  
+  // Set author role with appropriate styling
+  const roleElement = clone.querySelector('.author-role');
+  const roleDisplayMap = {
+    'USER': { text: 'User', color: 'bg-gray-100 text-gray-700' },
+    'ADMIN': { text: 'Admin', color: 'bg-red-100 text-red-700' },
+    'SELLER': { text: 'Seller', color: 'bg-green-100 text-green-700' },
+    'FACILITY_ADMIN': { text: 'Facility Admin', color: 'bg-blue-100 text-blue-700' }
+  };
+  const roleInfo = roleDisplayMap[postItem.author_role] || roleDisplayMap['USER'];
+  roleElement.textContent = roleInfo.text;
+  roleElement.className = `author-role text-xs px-2 py-0.5 rounded-full ${roleInfo.color}`;
+  
+  // Set post link button
+  clone.querySelector('.post-link-button').href = detailLink;
+  
+  // Check permissions
+  const isAuthor = CURRENT_USER_ID && Number(CURRENT_USER_ID) === Number(postItem.author_id);
+  const canDelete = isAuthor || USER_ROLE === 'ADMIN';
+  
+  // Show/configure edit button
+  const editButton = clone.querySelector('.edit-button');
+  if (isAuthor) {
+    editButton.classList.remove('hidden');
+    editButton.onclick = () => openEditModalFromList(postItem.id);
+  }
+  
+  // Show/configure delete button
+  const deleteButton = clone.querySelector('.delete-button');
+  if (canDelete) {
+    deleteButton.classList.remove('hidden');
+    deleteButton.onclick = () => showDeleteConfirmation(postItem.id);
+  }
+  
+  return card;
+}
+
+// Render all post cards
+function renderAllPostCards(postItems) {
+  postGridContainer.innerHTML = '';
+  postItems.forEach(postItem => {
+    const cardElement = buildPostCardElement(postItem);
+    postGridContainer.appendChild(cardElement);
+  });
+}
+
+// Filter and display posts
+function filterAndDisplayPosts() {
+  updateFilterButtonsAppearance();
+  let filteredPosts = activeFilter === 'all'
+    ? allPostData
+    : allPostData.filter(post => Number(post.author_id) === Number(CURRENT_USER_ID));
+  if (filteredPosts.length === 0) {
+    displayPageSection({ showEmpty: true });
+  } else {
+    renderAllPostCards(filteredPosts);
+    displayPageSection({ showGrid: true });
+  }
+}
+
+// Fetch post data from server
+async function fetchPostsFromServer() {
+  try {
+    displayPageSection({ showLoading: true });
+    const response = await fetch(POST_API_ENDPOINT, {
+      headers: { 'Accept': 'application/json' },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const postData = await response.json();
+    allPostData = postData || [];
+    filterAndDisplayPosts();
+  } catch (error) {
+    console.error('Error loading posts:', error);
+    displayPageSection({ showError: true });
+  }
+}
+
+// Event handlers
+function handleShowAllPostsClick() {
+  activeFilter = 'all';
+  filterAndDisplayPosts();
+}
+
+function handleShowMyPostsClick() {
+  activeFilter = 'my';
+  filterAndDisplayPosts();
+}
+
+// Initialize page
+function initializeForumPage() {
+  if (showAllPostsButton && showMyPostsButton) {
+    showAllPostsButton.addEventListener('click', handleShowAllPostsClick);
+    showMyPostsButton.addEventListener('click', handleShowMyPostsClick);
+  }
+  fetchPostsFromServer();
+}
+
+// Start application
+initializeForumPage();
+
+// Refresh posts function
+async function refreshPosts() {
+    const refreshButton = document.getElementById('refreshButton');
+    const refreshIcon = document.getElementById('refreshIcon');
+    const refreshText = document.getElementById('refreshText');
+    
+    // Show loading state
+    refreshButton.disabled = true;
+    refreshButton.classList.add('opacity-75');
+    refreshIcon.innerHTML = `
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+    `;
+    refreshIcon.classList.add('animate-spin');
+    refreshText.textContent = 'Refreshing...';
+    
+    try {
+        await fetchPostsFromServer();
+        showToast('Forum posts refreshed successfully!', '', 'success');
+    } catch (error) {
+        console.error('Error refreshing posts:', error);
+        showToast('Failed to refresh posts', '', 'error');
+    } finally {
+        // Reset button state
+        setTimeout(() => {
+            refreshButton.disabled = false;
+            refreshButton.classList.remove('opacity-75');
+            refreshIcon.innerHTML = `
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            `;
+            refreshIcon.classList.remove('animate-spin');
+            refreshText.textContent = 'Refresh';
+        }, 500);
+    }
+}
+
+// Add event listener to detect new post
+document.addEventListener('forumPostAdded', function() {
+    // Refresh data without page reload
+    fetchPostsFromServer();
+});
+
+
+// ==================================== DELETE POST ====================================
+function showDeleteConfirmation(postId) {
+    // Create a simple modal for confirmation
+    const deleteConfirmation = document.createElement('div');
+    deleteConfirmation.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
+    deleteConfirmation.id = 'delete-confirmation-modal';
+    
+    deleteConfirmation.innerHTML = `
+        <div class="bg-white rounded-lg p-6 max-w-sm mx-4">
+            <h3 class="text-lg font-bold text-gray-900 mb-2">Delete Forum Post</h3>
+            <p class="text-gray-600 mb-4">Are you sure you want to delete this post? This action cannot be undone.</p>
+            <div class="flex gap-2 justify-end">
+                <button onclick="hideDeleteConfirmation()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium">
+                    Cancel
+                </button>
+                <button onclick="confirmDelete('${postId}')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium">
+                    Delete
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(deleteConfirmation);
+    
+    // Add click outside to close
+    deleteConfirmation.addEventListener('click', (e) => {
+        if (e.target === deleteConfirmation) {
+            hideDeleteConfirmation();
+        }
+    });
+}
+
+// Hide confirmation modal
+function hideDeleteConfirmation() {
+    const deleteConfirmation = document.getElementById('delete-confirmation-modal');
+    if (deleteConfirmation) {
+        deleteConfirmation.remove();
+    }
+}
+
+// Confirm and execute deletion
+async function confirmDelete(postId) {
+    hideDeleteConfirmation(); // Hide the confirmation modal
+    
+    try {
+        const response = await fetch(`/forum/${postId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        });
+        
+        if (response.ok) {
+            showToast('Forum post deleted successfully', '', 'success');
+            fetchPostsFromServer();
+        } else {
+            showToast('Error deleting post', '', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error deleting post', '', 'error');
+    }
+}
+
+// Open edit modal from list view - fetch full post data first
+async function openEditModalFromList(postId) {
+    try {
+        const response = await fetch('/forum/json/');
+        const posts = await response.json();
+        const post = posts.find(p => p.id === postId);
+        
+        if (post) {
+            const postData = {
+                id: post.id,
+                title: post.title,
+                content: post.full_content,  // Use full_content for editing
+                category: post.category,
+                sport_category: post.sport_category,
+                product_id: post.product_id || null,
+                location_id: post.location_id || null,
+                is_pinned: post.is_pinned
+            };
+            showEditModal(postData);
+        }
+    } catch (error) {
+        console.error('Error fetching post:', error);
+        showToast('Error loading post data', '', 'error');
+    }
+}
+
+// Listen for post update events to refresh list
+document.addEventListener('forumPostUpdated', function() {
+    fetchPostsFromServer();
+});
+
+// ==================== ADVANCED FILTER FUNCTIONS ====================
+
+// Apply filters from sidebar
+function applyFilters() {
+    // Get selected sport categories
+    const sportCategories = Array.from(document.querySelectorAll('input[name="sport_category"]:checked'))
+        .map(cb => cb.value);
+    
+    // Get selected post categories
+    const postCategories = Array.from(document.querySelectorAll('input[name="post_category"]:checked'))
+        .map(cb => cb.value);
+    
+    // Get sort option
+    const sortBy = document.getElementById('sortBy').value;
+    
+    // Get pinned only filter
+    const showPinnedOnly = document.getElementById('showPinnedOnly').checked;
+    
+    // Get search query
+    const searchQuery = document.getElementById('searchQuery').value.toLowerCase().trim();
+    
+    // Filter posts
+    let filteredPosts = allPostData.filter(post => {
+        // Apply active filter (all/my posts)
+        if (activeFilter === 'my' && Number(post.author_id) !== Number(CURRENT_USER_ID)) {
+            return false;
+        }
+        
+        // Apply sport category filter
+        if (sportCategories.length > 0 && !sportCategories.includes(post.sport_category)) {
+            return false;
+        }
+        
+        // Apply post category filter
+        if (postCategories.length > 0 && !postCategories.includes(post.category)) {
+            return false;
+        }
+        
+        // Apply pinned filter
+        if (showPinnedOnly && !post.is_pinned) {
+            return false;
+        }
+        
+        // Apply search query
+        if (searchQuery && !post.title.toLowerCase().includes(searchQuery) && 
+            !post.content.toLowerCase().includes(searchQuery)) {
+            return false;
+        }
+        
+        return true;
+    });
+    
+    // Apply sorting
+    filteredPosts = sortPosts(filteredPosts, sortBy);
+    
+    // Display results
+    if (filteredPosts.length === 0) {
+        displayPageSection({ showEmpty: true });
+        emptyStateDisplay.querySelector('h3').textContent = 'No posts match your filters';
+        emptyStateDisplay.querySelector('p').textContent = 'Try adjusting your filters or search terms.';
+    } else {
+        renderAllPostCards(filteredPosts);
+        displayPageSection({ showGrid: true });
+    }
+    
+    // Update active filters count
+    updateActiveFiltersCount();
+    
+    // Show success toast
+    showToast(`Found ${filteredPosts.length} post${filteredPosts.length !== 1 ? 's' : ''}`, '', 'success');
+}
+
+// Sort posts based on criteria
+function sortPosts(posts, sortBy) {
+    const sortedPosts = [...posts];
+    
+    switch(sortBy) {
+        case 'recent':
+            // Already sorted by last_activity (pinned first) from backend
+            return sortedPosts;
+        case 'views':
+            return sortedPosts.sort((a, b) => {
+                // Keep pinned posts at top
+                if (a.is_pinned !== b.is_pinned) return b.is_pinned - a.is_pinned;
+                return b.post_views - a.post_views;
+            });
+        case 'replies':
+            return sortedPosts.sort((a, b) => {
+                // Keep pinned posts at top
+                if (a.is_pinned !== b.is_pinned) return b.is_pinned - a.is_pinned;
+                return (b.reply_count || 0) - (a.reply_count || 0);
+            });
+        case 'oldest':
+            return sortedPosts.sort((a, b) => {
+                // Keep pinned posts at top
+                if (a.is_pinned !== b.is_pinned) return b.is_pinned - a.is_pinned;
+                return new Date(a.created_at) - new Date(b.created_at);
+            });
+        default:
+            return sortedPosts;
+    }
+}
+
+// Reset all filters
+function resetFilters() {
+    // Reset sport category checkboxes
+    document.querySelectorAll('input[name="sport_category"]').forEach(cb => cb.checked = true);
+    
+    // Reset post category checkboxes
+    document.querySelectorAll('input[name="post_category"]').forEach(cb => cb.checked = true);
+    
+    // Reset sort
+    document.getElementById('sortBy').value = 'recent';
+    
+    // Reset pinned only
+    document.getElementById('showPinnedOnly').checked = false;
+    
+    // Reset search
+    document.getElementById('searchQuery').value = '';
+    
+    // Apply filters (which will show all posts)
+    filterAndDisplayPosts();
+    
+    // Update active filters count
+    updateActiveFiltersCount();
+    
+    showToast('Filters reset', '', 'success');
+}
+
+// Update active filters count
+function updateActiveFiltersCount() {
+    const sportChecked = document.querySelectorAll('input[name="sport_category"]:checked').length;
+    const postChecked = document.querySelectorAll('input[name="post_category"]:checked').length;
+    const sportTotal = document.querySelectorAll('input[name="sport_category"]').length;
+    const postTotal = document.querySelectorAll('input[name="post_category"]').length;
+    const isPinnedOnly = document.getElementById('showPinnedOnly').checked;
+    const hasSearch = document.getElementById('searchQuery').value.trim().length > 0;
+    const sortBy = document.getElementById('sortBy').value;
+    
+    let activeCount = 0;
+    if (sportChecked < sportTotal) activeCount++;
+    if (postChecked < postTotal) activeCount++;
+    if (isPinnedOnly) activeCount++;
+    if (hasSearch) activeCount++;
+    if (sortBy !== 'recent') activeCount++;
+    
+    const countElement = document.getElementById('activeFiltersCount');
+    if (activeCount > 0) {
+        countElement.classList.remove('hidden');
+        countElement.querySelector('span').textContent = activeCount;
+    } else {
+        countElement.classList.add('hidden');
+    }
+}
+
+// Add enter key support for search
+document.getElementById('searchQuery')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        applyFilters();
+    }
+});
+
+// Add real-time filter listeners
+document.querySelectorAll('input[name="sport_category"], input[name="post_category"]').forEach(cb => {
+    cb.addEventListener('change', updateActiveFiltersCount);
+});
+
+document.getElementById('showPinnedOnly')?.addEventListener('change', updateActiveFiltersCount);
+document.getElementById('sortBy')?.addEventListener('change', updateActiveFiltersCount);
+document.getElementById('searchQuery')?.addEventListener('input', updateActiveFiltersCount);
+
+</script>
+
+<!-- Include Edit Modal -->
+{% include 'edit_forum_post_modal.html' %}
+
+{% endblock %}
