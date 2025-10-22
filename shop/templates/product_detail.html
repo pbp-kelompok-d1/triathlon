@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <h1>{{ product.name }}</h1>
+    <div class="product-detail">
+        <img src="{{ product.thumbnail.url }}" alt="{{ product.name }}" class="product-image">
+        <div class="product-info">
+            <p><strong>Price:</strong> ${{ product.price }}</p>
+            <p><strong>Description:</strong> {{ product.description|safe }}</p>
+            <p><strong>Stock:</strong> {{ product.stock }}</p>
+            <p><strong>Category:</strong> {{ product.category }}</p>
+            <p><strong>Seller:</strong> {{ product.seller }}</p>
+        </div>
+    </div>
+    <div class="product-actions">
+        {% if product.seller == user %}
+        <a href="{% url 'shop:edit_product' product.id %}">Edit Product</a>
+        <a href="{% url 'shop:delete_product' product.id %}">Delete Product</a>
+        {% endif %}
+    </div>
+
+    <div class="mt-4">
+    <form action="{% url 'shop:add_to_cart' product.id %}" method="post" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success">Masukkan ke Keranjang</button>
+    </form>
+    <a href="{% url 'shop:toggle_wishlist' product.id %}" class="btn btn-outline-danger">Tambah ke Wishlist</a>
+</div>
+</div>
+{% endblock %}

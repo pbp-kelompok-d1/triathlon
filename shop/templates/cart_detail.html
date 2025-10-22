@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Keranjang Belanja Anda</h1>
+
+    {% if not cart_items %}
+        <div class="alert alert-info" role="alert">
+            Keranjang Anda kosong. Yuk, mulai belanja!
+        </div>
+        <a href="{% url 'shop:shop' %}" class="btn btn-primary">Lihat Produk</a>
+    {% else %}
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Produk</th>
+                    <th scope="col">Harga</th>
+                    <th scope="col">Jumlah</th>
+                    <th scope="col">Subtotal</th>
+                    <th scope="col">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td>Rp {{ item.product.price }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>Rp {{ item.subtotal }}</td>
+                    <td>
+                        <a href="{% url 'shop:remove_from_cart' item.product.id %}" class="btn btn-sm btn-danger">Hapus</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="text-end mt-4">
+            <h3>Total: Rp {{ total_price }}</h3>
+            <a href="{% url 'shop:checkout' %}" class="btn btn-lg btn-success mt-2">Lanjutkan ke Pembelian</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
