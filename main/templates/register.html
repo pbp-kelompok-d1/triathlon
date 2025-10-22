@@ -27,15 +27,27 @@
       </ul>
     </div>
     {% endif %}
+
+    <p class="text-sm text-center text-gray-600">
+      Already have an account?
+      <a
+        href="{% url 'main:login' %}"
+        class="font-medium text-green-600 hover:text-green-700"
+        >Login here</a
+      >
+    </p>
   </div>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-  document.getElementById("registerForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-    registerUser();
-  });
+  const registerForm = document.getElementById("registerForm");
+  if (registerForm) {
+    registerForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      registerUser();
+    });
+  }
 });
 
 async function registerUser() {
@@ -47,26 +59,37 @@ async function registerUser() {
   registerButton.textContent = 'Registering...';
   
   try {
+    const formData = new FormData(document.querySelector('#registerForm'));
+    
     const response = await fetch("{% url 'main:register' %}", {
       method: "POST",
-      body: new FormData(document.querySelector('#registerForm')),
+      body: formData,
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
       }
     });
 
     if (response.ok) {
-      showToast('Registration successful!', 'You can now login with your account', 'success');
+      const data = await response.json();
+      if (typeof showToast === 'function') {
+        showToast('Registration successful!', 'You can now login with your account', 'success');
+      }
       setTimeout(() => {
         window.location.href = "{% url 'main:login' %}";
       }, 1500);
     } else {
       const errorData = await response.text();
-      showToast('Registration failed', 'Please check your form and try again', 'error');
+      console.error('Registration error:', errorData);
+      if (typeof showToast === 'function') {
+        showToast('Registration failed', 'Please check your form and try again', 'error');
+      }
     }
   } catch (error) {
     console.error('Error:', error);
-    showToast('Registration error', 'Something went wrong', 'error');
+    if (typeof showToast === 'function') {
+      showToast('Registration error', 'Something went wrong', 'error');
+    }
   } finally {
     // Reset button state
     registerButton.disabled = false;

@@ -57,11 +57,11 @@
     </div>
     {% endif %}
 
-    <p class="text-sm text-center text-white">
+    <p class="text-sm text-center text-gray-600">
       Don't have an account yet?
       <a
         href="{% url 'main:register' %}"
-        class="font-medium text-yellow-500 hover:text-yellow-400"
+        class="font-medium text-green-600 hover:text-green-700"
         >Register Now</a
       >
     </p>
@@ -70,10 +70,13 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-  document.getElementById("loginForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-    loginUser();
-  });
+  const loginForm = document.getElementById("loginForm");
+  if (loginForm) {
+    loginForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      loginUser();
+    });
+  }
 });
 
 async function loginUser() {
@@ -85,26 +88,37 @@ async function loginUser() {
   loginButton.textContent = 'Logging in...';
   
   try {
+    const formData = new FormData(document.querySelector('#loginForm'));
+    
     const response = await fetch("{% url 'main:login' %}", {
       method: "POST",
-      body: new FormData(document.querySelector('#loginForm')),
+      body: formData,
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
       }
     });
 
     if (response.ok) {
-      showToast('Login successful!', '', 'success');
+      const data = await response.json();
+      if (typeof showToast === 'function') {
+        showToast('Login successful!', 'Redirecting...', 'success');
+      }
       setTimeout(() => {
         window.location.href = "{% url 'main:show_main' %}";
       }, 1000);
     } else {
       const errorData = await response.text();
-      showToast('Login failed', 'Please check your username and password', 'error');
+      console.error('Login error:', errorData);
+      if (typeof showToast === 'function') {
+        showToast('Login failed', 'Please check your username and password', 'error');
+      }
     }
   } catch (error) {
     console.error('Error:', error);
-    showToast('Login error', 'Something went wrong', 'error');
+    if (typeof showToast === 'function') {
+      showToast('Login error', 'Something went wrong', 'error');
+    }
   } finally {
     // Reset button state
     loginButton.disabled = false;
@@ -114,6 +128,3 @@ async function loginUser() {
 </script>
 
 {% endblock content %}
-
-
-<!-- fix this is just for absensi kehadiran because it is till broken -->
