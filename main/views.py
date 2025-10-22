@@ -1,12 +1,14 @@
-from django.shortcuts import render, redirect
-from django.http import HttpResponseRedirect
-from django.urls import reverse
-from django.contrib.auth import login, logout
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 import datetime
-from django.http import JsonResponse
-
+from django.http import HttpResponseRedirect, JsonResponse
+from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.shortcuts import render, redirect, get_object_or_404
+from .forms import CustomUserCreationForm
 
 # Create your views here.
 def show_main(request):
@@ -18,13 +20,11 @@ def show_main(request):
     return render(request, 'main.html', context)
 
 
-# REGISTER, LOGIN, AUTHENTICATION
-
 def register(request):
-    form = UserCreationForm()
+    form = CustomUserCreationForm()
 
     if request.method == "POST":
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, 'Your account has been successfully created!')
@@ -37,7 +37,8 @@ def register(request):
         else:
             # Return JSON error response for AJAX requests
             if request.headers.get('Accept') == 'application/json':
-                return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+                errors_dict = {field: [str(error) for error in errors] for field, errors in form.errors.items()}
+                return JsonResponse({'success': False, 'errors': errors_dict}, status=400)
             
     context = {'form':form}
     return render(request, 'register.html', context)
