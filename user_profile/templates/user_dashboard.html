@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-10">
+  <div class="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow">
+    <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">User Dashboard</h1>
+
+    <!-- FILTER -->
+    <form method="get" class="flex justify-end mb-6">
+      <select name="category" class="px-3 py-2 border rounded-lg text-gray-700 focus:ring focus:ring-blue-300">
+        <option value="">All Categories</option>
+        <option value="swimming" {% if filter_category == "swimming" %}selected{% endif %}>Swimming</option>
+        <option value="running" {% if filter_category == "running" %}selected{% endif %}>Running</option>
+        <option value="cycling" {% if filter_category == "cycling" %}selected{% endif %}>Cycling</option>
+      </select>
+      <button type="submit" class="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Filter</button>
+    </form>
+
+    <!-- POSTS -->
+    <div class="mb-10">
+      <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2 mb-4">Your Forum Posts</h2>
+      {% if posts %}
+        <ul class="space-y-3">
+          {% for post in posts %}
+          <li class="bg-gray-50 p-4 rounded-lg shadow-sm">
+            <h3 class="font-semibold text-lg text-gray-800">{{ post.title }}</h3>
+            <p class="text-gray-600">{{ post.content|truncatewords:25 }}</p>
+            <p class="text-sm text-gray-500 mt-2">Category: {{ post.category }}</p>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-gray-500 italic">You haven’t created any posts yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- REPLIES -->
+    <div class="mb-10">
+      <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2 mb-4">Your Forum Replies</h2>
+      {% if replies %}
+        <ul class="space-y-3">
+          {% for reply in replies %}
+          <li class="bg-gray-50 p-4 rounded-lg shadow-sm">
+            <p class="text-gray-700">{{ reply.content|truncatewords:25 }}</p>
+            <p class="text-sm text-gray-500 mt-2">On post: {{ reply.post.title }}</p>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-gray-500 italic">No replies yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- WISHLIST -->
+    <div>
+      <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2 mb-4">Your Wishlist</h2>
+      {% if wishlist %}
+        <ul class="grid md:grid-cols-2 gap-4">
+          {% for item in wishlist %}
+          <li class="bg-gray-50 p-4 rounded-lg shadow-sm">
+            <h3 class="font-semibold text-lg text-gray-800">{{ item.product.name }}</h3>
+            <p class="text-sm text-gray-600">Category: {{ item.product.category }}</p>
+            <p class="text-sm text-gray-500 mt-1">Price: ${{ item.product.price }}</p>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-gray-500 italic">Your wishlist is empty.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

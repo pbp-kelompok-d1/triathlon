@@ -1,0 +1,80 @@
+<!-- Forum Post Card Template -->
+<!-- This template is used by JavaScript to dynamically create post cards -->
+<template id="forumPostCardTemplate">
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200">
+    <div class="p-6 border-b border-gray-100">
+      <div class="flex items-start justify-between">
+        <div class="flex-1">
+          <!-- Pinned Badge (conditional) -->
+          <div class="pinned-badge hidden inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mb-3">
+            📌 Pinned Post
+          </div>
+          
+          <!-- Post Title -->
+          <h2 class="text-xl font-bold text-gray-900 mb-3 hover:text-blue-600 transition-colors">
+            <a href="#" class="post-link no-underline"></a>
+          </h2>
+          
+          <!-- Category Badges -->
+          <div class="flex flex-wrap gap-2 mb-3">
+            <span class="post-category inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"></span>
+            <span class="sport-category inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"></span>
+          </div>
+        </div>
+        
+        <!-- View Count -->
+        <div class="text-right">
+          <div class="post-views text-sm text-gray-500"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="p-6 pt-0">
+      <!-- Post Content Preview -->
+      <p class="post-content text-gray-600 leading-relaxed mb-6 line-clamp-3"></p>
+      
+      <!-- Post Footer -->
+      <div class="flex items-center justify-between">
+        <!-- Author Info -->
+        <div class="flex items-center gap-4 text-sm text-gray-500">
+          <div class="flex items-center gap-2">
+            <div class="author-avatar w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+              <span class="author-initial text-white font-medium text-xs"></span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="author-name"></span>
+              <span class="author-role text-xs px-2 py-0.5 rounded-full"></span>
+            </div>
+          </div>
+          <span>•</span>
+          <time class="post-date"></time>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons flex items-center gap-2">
+          <!-- Read & Reply Button -->
+          <a href="#" class="post-link-button inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm">
+            Read & Reply
+            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </a>
+          
+          <!-- Edit Button (conditional) -->
+          <button class="edit-button hidden inline-flex items-center px-3 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm ml-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+            </svg>
+          </button>
+          
+          <!-- Delete Button (conditional) -->
+          <button class="delete-button hidden inline-flex items-center px-3 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors text-sm ml-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

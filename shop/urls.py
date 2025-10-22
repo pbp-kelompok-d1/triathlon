@@ -13,4 +13,6 @@ urlpatterns = [
     path('wishlist/', views.view_wishlist, name='view_wishlist'),
     path('wishlist/toggle/<uuid:product_id>/', views.toggle_wishlist, name='toggle_wishlist'),
     path('checkout/', views.checkout, name='checkout'),
+
+    
 ]
