@@ -15,10 +15,10 @@ def role_required(roles):
         def _wrapped_view(request, *args, **kwargs):
             if not hasattr(request.user, 'profile'):
                 messages.error(request, "Akun belum memiliki profil.")
-                return redirect('home')
+                return redirect('main:show_main')
             if request.user.profile.role not in roles:
                 messages.error(request, "Anda tidak memiliki izin untuk mengakses halaman ini.")
-                return redirect('home')
+                return redirect('main:show_main')
             return view_func(request, *args, **kwargs)
         return _wrapped_view
     return decorator
@@ -45,7 +45,7 @@ def profile_view(request):
         return redirect('/admin/')
     else:
         messages.warning(request, "Role tidak dikenali.")
-        return redirect('home')
+        return redirect('main:show_main')
 
 
 # ========== EDIT PROFILE VIEW ==========
