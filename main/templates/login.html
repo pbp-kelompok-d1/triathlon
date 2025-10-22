@@ -168,11 +168,13 @@ function getCookie(name) {
 async function loginUser() {
   const loginButton = document.getElementById('loginButton');
   const originalText = loginButton.textContent;
-  
+  const formElement = document.getElementById('loginForm');
+  const formData = new FormData(formElement);
+
   // Show loading state
   loginButton.disabled = true;
   loginButton.textContent = 'Signing in...';
-  
+
   try {
     const response = await fetch("{% url 'main:login' %}", {
       method: "POST",

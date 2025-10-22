@@ -213,24 +213,27 @@ function getCookie(name) {
 async function registerUser() {
   const registerButton = document.getElementById('registerButton');
   const originalText = registerButton.textContent;
-  
+  const formElement = document.getElementById('registerForm');
+  const formData = new FormData(formElement);
+
   // Clear previous error messages
   document.querySelectorAll('.text-red-600').forEach(el => {
     if (el.classList.contains('mt-1')) {
       el.remove();
     }
   });
-  
+
   // Show loading state
   registerButton.disabled = true;
   registerButton.textContent = 'Registering...';
-  
+
   try {
     const response = await fetch("{% url 'main:register' %}", {
       method: "POST",
       body: formData,
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
       }
     });
 
