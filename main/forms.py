@@ -44,10 +44,17 @@ class CustomUserCreationForm(UserCreationForm):
             'class': 'block w-full px-3 py-2 mt-1 text-red-800 bg-red-100 border border-red-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm'
         })
     )
+    is_facility_admin = forms.BooleanField(
+        required=False,
+        label='Register as Facility Administrator',
+        widget=forms.CheckboxInput(attrs={
+            'class': 'h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded'
+        })
+    )
 
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2', 'phone_number', 'role')
+        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2', 'phone_number', 'role', 'is_facility_admin')
 
     def __init__(self, *args, **kwargs):
         super(CustomUserCreationForm, self).__init__(*args, **kwargs)
