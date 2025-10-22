@@ -185,6 +185,18 @@ function buildPostCardElement(postItem) {
   clone.querySelector('.author-name').textContent = postItem.author;
   clone.querySelector('.post-date').textContent = postItem.created_at;
   
+  // Set author role with appropriate styling
+  const roleElement = clone.querySelector('.author-role');
+  const roleDisplayMap = {
+    'USER': { text: 'User', color: 'bg-gray-100 text-gray-700' },
+    'ADMIN': { text: 'Admin', color: 'bg-red-100 text-red-700' },
+    'SELLER': { text: 'Seller', color: 'bg-green-100 text-green-700' },
+    'FACILITY_ADMIN': { text: 'Facility Admin', color: 'bg-blue-100 text-blue-700' }
+  };
+  const roleInfo = roleDisplayMap[postItem.author_role] || roleDisplayMap['USER'];
+  roleElement.textContent = roleInfo.text;
+  roleElement.className = `author-role text-xs px-2 py-0.5 rounded-full ${roleInfo.color}`;
+  
   // Set post link button
   clone.querySelector('.post-link-button').href = detailLink;
   

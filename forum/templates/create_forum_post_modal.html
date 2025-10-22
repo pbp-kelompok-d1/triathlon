@@ -133,6 +133,9 @@ async function addForumPostEntry() {
   await fetch("{% url 'forum:add_post_ajax' %}", {
     method: "POST",
     body: new FormData(document.querySelector('#forumPostForm')),
+    headers: {
+      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+    },
   });
 
   document.getElementById("forumPostForm").reset();
