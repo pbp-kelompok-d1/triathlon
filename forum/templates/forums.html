@@ -119,6 +119,12 @@ const showMyPostsButton = document.getElementById('filter-my');
 // State Variables
 let activeFilter = 'all';
 let allPostData = [];
+// Baseline (defaults) captured at initialization to compute active filters correctly
+let baselineSportChecked = 0;
+let baselinePostChecked = 0;
+let baselineSortBy = 'recent';
+let baselinePinnedOnly = false;
+let baselineSearchQuery = '';
 
 // Update filter button appearance
 function updateFilterButtonsAppearance() {
@@ -176,6 +182,8 @@ function buildPostCardElement(postItem) {
   
   // Set views
   clone.querySelector('.post-views').textContent = `${postItem.post_views} views`;
+  // Set likes
+  clone.querySelector('.post-likes-count').textContent = `${postItem.like_count || 0} likes`;
   
   // Set content
   clone.querySelector('.post-content').textContent = postItem.content;
@@ -280,6 +288,12 @@ function initializeForumPage() {
     showAllPostsButton.addEventListener('click', handleShowAllPostsClick);
     showMyPostsButton.addEventListener('click', handleShowMyPostsClick);
   }
+  // default filter states to measure user changes later
+  baselineSportChecked = document.querySelectorAll('input[name="sport_category"]:checked').length;
+  baselinePostChecked = document.querySelectorAll('input[name="post_category"]:checked').length;
+  baselineSortBy = document.getElementById('sortBy') ? document.getElementById('sortBy').value : 'recent';
+  baselinePinnedOnly = document.getElementById('showPinnedOnly') ? document.getElementById('showPinnedOnly').checked : false;
+  baselineSearchQuery = document.getElementById('searchQuery') ? document.getElementById('searchQuery').value.trim() : '';
   fetchPostsFromServer();
 }
 
@@ -510,12 +524,13 @@ function sortPosts(posts, sortBy) {
                 if (a.is_pinned !== b.is_pinned) return b.is_pinned - a.is_pinned;
                 return b.post_views - a.post_views;
             });
-        case 'replies':
+        case 'likes':
             return sortedPosts.sort((a, b) => {
                 // Keep pinned posts at top
                 if (a.is_pinned !== b.is_pinned) return b.is_pinned - a.is_pinned;
-                return (b.reply_count || 0) - (a.reply_count || 0);
+                return (b.like_count || 0) - (a.like_count || 0);
             });
+
         case 'oldest':
             return sortedPosts.sort((a, b) => {
                 // Keep pinned posts at top
@@ -530,10 +545,10 @@ function sortPosts(posts, sortBy) {
 // Reset all filters
 function resetFilters() {
     // Reset sport category checkboxes
-    document.querySelectorAll('input[name="sport_category"]').forEach(cb => cb.checked = true);
+    document.querySelectorAll('input[name="sport_category"]').forEach(cb => cb.checked = false);
     
     // Reset post category checkboxes
-    document.querySelectorAll('input[name="post_category"]').forEach(cb => cb.checked = true);
+    document.querySelectorAll('input[name="post_category"]').forEach(cb => cb.checked = false);
     
     // Reset sort
     document.getElementById('sortBy').value = 'recent';
@@ -555,20 +570,20 @@ function resetFilters() {
 
 // Update active filters count
 function updateActiveFiltersCount() {
-    const sportChecked = document.querySelectorAll('input[name="sport_category"]:checked').length;
-    const postChecked = document.querySelectorAll('input[name="post_category"]:checked').length;
-    const sportTotal = document.querySelectorAll('input[name="sport_category"]').length;
-    const postTotal = document.querySelectorAll('input[name="post_category"]').length;
-    const isPinnedOnly = document.getElementById('showPinnedOnly').checked;
-    const hasSearch = document.getElementById('searchQuery').value.trim().length > 0;
-    const sortBy = document.getElementById('sortBy').value;
-    
-    let activeCount = 0;
-    if (sportChecked < sportTotal) activeCount++;
-    if (postChecked < postTotal) activeCount++;
-    if (isPinnedOnly) activeCount++;
-    if (hasSearch) activeCount++;
-    if (sortBy !== 'recent') activeCount++;
+  // Compare current state with baseline to count only user changes
+  const sportChecked = document.querySelectorAll('input[name="sport_category"]:checked').length;
+  const postChecked = document.querySelectorAll('input[name="post_category"]:checked').length;
+  const isPinnedOnly = document.getElementById('showPinnedOnly') ? document.getElementById('showPinnedOnly').checked : false;
+  const currentSearch = document.getElementById('searchQuery') ? document.getElementById('searchQuery').value.trim() : '';
+  const sortBy = document.getElementById('sortBy') ? document.getElementById('sortBy').value : baselineSortBy;
+
+  let activeCount = 0;
+  // If baseline had all sport checkboxes checked, then unchecking any reduces count; otherwise checking any increases count
+  if (sportChecked !== baselineSportChecked) activeCount++;
+  if (postChecked !== baselinePostChecked) activeCount++;
+  if (isPinnedOnly !== baselinePinnedOnly) activeCount++;
+  if (currentSearch !== baselineSearchQuery) activeCount++;
+  if (sortBy !== baselineSortBy) activeCount++;
     
     const countElement = document.getElementById('activeFiltersCount');
     if (activeCount > 0) {
