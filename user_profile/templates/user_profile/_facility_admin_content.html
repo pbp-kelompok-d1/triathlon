@@ -1,0 +1,68 @@
+{% comment %}
+File: _facility_admin_content.html
+Konten parsial HANYA UNTUK FACILITY ADMIN
+{% endcomment %}
+
+{% if view == 'all' or view == 'facilities' %}
+<div>
+  <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Managed Facilities</h2>
+  {% if places %} 
+    <ul class="grid sm:grid-cols-2 gap-4">
+      {% for place in places %} <li class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-indigo-500 transition-all duration-300 ease-in-out">
+        <a href="#" class="block"> <h3 class="text-lg font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">{{ place.name }}</h3>
+          <p class="text-gray-600 text-sm mt-1">Category: {{ place.category }}</p>
+          <p class="text-gray-800 text-sm mt-2">{{ place.description|truncatewords:25 }}</p>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="bg-white rounded-xl shadow-sm border border-dashed border-gray-300 p-12 text-center">
+      <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-5">
+        <svg class="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+      </div>
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">No Facilities Found</h3>
+      <p class="text-gray-500 mb-6">You are not managing any facilities yet.</p>
+    </div>
+  {% endif %}
+</div>
+{% endif %}
+
+
+{% if view == 'all' or view == 'tickets' %}
+<div>
+  <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">User Ticket Orders</h2>
+  {% if tickets %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <table class="w-full text-left">
+        <thead class="border-b bg-gray-50">
+          <tr>
+            <th class="p-4 text-sm font-medium text-gray-600">User</th>
+            <th class="p-4 text-sm font-medium text-gray-600">Facility</th>
+            <th class="p-4 text-sm font-medium text-gray-600">Date</th>
+            <th class="p-4 text-sm font-medium text-gray-600">Quantity</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for ticket in tickets %}
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="p-4 text-sm text-gray-800">{{ ticket.user.username }}</td>
+            <td class="p-4 text-sm text-gray-800">{{ ticket.facility.name }}</td>
+            <td class="p-4 text-sm text-gray-800">{{ ticket.date|date:"M d, Y" }}</td>
+            <td class="p-4 text-sm text-gray-800">{{ ticket.quantity }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="bg-white rounded-xl shadow-sm border border-dashed border-gray-300 p-12 text-center">
+      <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-5">
+        <svg class="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5h14a2 2 0 012 2v3a2 2 0 000 4v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3a2 2 0 000-4V7a2 2 0 012-2h14z"></path></svg>
+      </div>
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">No Ticket Orders</h3>
+      <p class="text-gray-500 mb-6">No users have ordered tickets for your facilities yet.</p>
+    </div>
+  {% endif %}
+</div>
+{% endif %}

@@ -3,7 +3,7 @@
   <div class="container mx-auto flex items-center justify-between px-6 py-4">
     <!-- Left Side - Logo -->
     <div class="flex items-center">
-      <img src="{% static 'navbar_logo.png' %}" alt="Triathlon Logo" class="h-10 mr-3" />
+      <img src="{% static 'img/logo_triathlon.png' %}" alt="Triathlon Logo" class="h-10 mr-4" />
       <h1 class="text-2xl font-bold text-white tracking-wide">
         Triathlon
       </h1>
@@ -28,7 +28,7 @@
           </a>
         </li>
         <li>
-          <a href="#" class="px-4 py-2 rounded-md text-white hover:bg-blue-700 hover:text-blue-100 transition-all duration-200 font-medium">
+          <a href="{% url 'shop:shop' %}" class="px-4 py-2 rounded-md text-white hover:bg-blue-700 hover:text-blue-100 transition-all duration-200 font-medium">
             Shop
           </a>
         </li>
@@ -38,8 +38,15 @@
           </a>
         </li>
         <li>
-          <a href="#" class="px-4 py-2 rounded-md text-white hover:bg-blue-700 hover:text-blue-100 transition-all duration-200 font-medium">
+          <a href="{% url 'ticket:ticket_list' %}" class="px-4 py-2 rounded-md text-white hover:bg-blue-700 hover:text-blue-100 transition-all duration-200 font-medium">
             Tickets
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'user_profile:profile' %}">
+              <img src="{% static 'img/navbar_profile.png' %}" alt="Profile Photo" 
+                  class="w-8 h-8 rounded-full object-cover border-0 border-white
+                          transition-transform duration-200 ease-in-out hover:scale-110">
           </a>
         </li>
       </ul>
@@ -85,13 +92,21 @@
 
   <!-- Mobile Menu -->
   <div id="mobile-menu" class="md:hidden bg-blue-900 border-t border-blue-700 hidden">
+    <div class="pt-2 border-t border-blue-700">
+        <a href="{% url 'user_profile:profile' %}" 
+           class="flex items-center gap-3 px-4 py-2 text-white hover:bg-blue-800 rounded-md transition-duration-200">
+            <img src="{% static 'img/navbar_profile.png' %}" alt="Profile Photo" 
+                 class="w-6 h-6 rounded-full object-cover">
+            <span>My Profile</span>
+        </a>
+        </div>
     <div class="px-6 py-4 space-y-2">
       <a href="/" class="block px-4 py-2 text-white hover:bg-blue-800 rounded-md transition-duration-200">Home</a>
       <a href="#" class="block px-4 py-2 text-white hover:bg-blue-800 rounded-md transition-duration-200">Activity</a>
       <a href="{% url 'forum:forums' %}" class="block px-4 py-2 text-white hover:bg-blue-800 rounded-md transition-duration-200">Forum</a>
-      <a href="#" class="block px-4 py-2 text-white hover:bg-blue-800 rounded-md transition-duration-200">Shop</a>
-      <a href="#" class="block px-4 py-2 text-white hover:bg-blue-800 rounded-md transition-duration-200">Locations</a>
-      <a href="#" class="block px-4 py-2 text-white hover:bg-blue-800 rounded-md transition-duration-200">Tickets</a>
+      <a href="{% url 'shop:shop' %}" class="block px-4 py-2 text-white hover:bg-blue-800 rounded-md transition-duration-200">Shop</a>
+      <a href="{% url 'place:place_list' %}" class="block px-4 py-2 text-white hover:bg-blue-800 rounded-md transition-duration-200">Place</a>
+      <a href="{% url 'ticket:ticket_list' %}" class="block px-4 py-2 text-white hover:bg-blue-800 rounded-md transition-duration-200">Tickets</a>
     </div>
   </div>
 </nav>
