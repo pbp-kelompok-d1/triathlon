@@ -16,7 +16,6 @@
     <div id="notification-area" class="fixed top-5 right-5 z-50 space-y-2"></div>
 
     <div class="flex gap-3 mb-6">
-        <!-- UBAH: Tombol Add Product sekarang membuka modal -->
         <button type="button" id="openModalBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition">
             + Add New Product
         </button>
@@ -82,7 +81,7 @@
 
                     <div class="mb-4">
                         <label for="product_thumbnail" class="block text-sm font-medium text-gray-700 mb-2">Thumbnail URL:</label>
-                        <input type="url" id="product_thumbnail" name="thumbnail" step="0.01" min="0" required
+                        <input type="url" id="product_thumbnail" name="thumbnail" required
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <div class="form-error text-red-600 text-sm mt-1" id="modal_error_thumbnail"></div>
                     </div>
@@ -99,36 +98,174 @@
             </div>
         </div>
     </div>
-    <!-- END MODAL -->
+    <!-- END MODAL ADD PRODUCT -->
+
+    <!-- MODAL EDIT PRODUCT -->
+    <div id="editProductModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+                <h5 class="text-xl font-semibold" id="editModalTitle">Edit Product</h5>
+                <button type="button" id="closeEditModalBtn" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">
+                    &times;
+                </button>
+            </div>
+            
+            <div class="p-6">
+                <div id="edit-modal-form-messages" class="mb-4"></div>
+                
+                <form id="edit-product-modal-form">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label for="edit_product_name" class="block text-sm font-medium text-gray-700 mb-2">Product Name:</label>
+                        <input type="text" id="edit_product_name" name="name" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_name"></div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="edit_product_description" class="block text-sm font-medium text-gray-700 mb-2">Description:</label>
+                        <textarea id="edit_product_description" name="description" rows="4" required
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                        <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_description"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="edit_product_category" class="block text-sm font-medium text-gray-700 mb-2">Category:</label>
+                        <select id="edit_product_category" name="category" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select a category</option>
+                            <option value="running">Running</option>
+                            <option value="cycling">Cycling</option>
+                            <option value="swimming">Swimming</option>
+                        </select>
+                        <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_category"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="edit_product_price" class="block text-sm font-medium text-gray-700 mb-2">Price (Rp):</label>
+                        <input type="number" id="edit_product_price" name="price" step="0.01" min="0" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_price"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="edit_product_stock" class="block text-sm font-medium text-gray-700 mb-2">Stock Quantity:</label>
+                        <input type="number" id="edit_product_stock" name="stock" min="0" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_stock"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="edit_product_thumbnail" class="block text-sm font-medium text-gray-700 mb-2">Thumbnail URL:</label>
+                        <input type="url" id="edit_product_thumbnail" name="thumbnail" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_thumbnail"></div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="border-t px-6 py-4 flex justify-end gap-3">
+                <button type="button" id="cancelEditModalBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition">
+                    Cancel
+                </button>
+                <button type="button" id="submit-edit-product-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition">
+                    Update Product
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- END MODAL EDIT PRODUCT -->
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="md:col-span-1">
             <h3 class="text-xl font-semibold mb-4">Filter Products:</h3>
             <div class="flex flex-col gap-2" id="filter-container">
-                <a href="#" class="border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white px-4 py-2 rounded-md transition filter-btn" data-category="">All Products</a>
-                <a href="#" class="border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white px-4 py-2 rounded-md transition filter-btn" data-category="running">Running</a>
-                <a href="#" class="border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white px-4 py-2 rounded-md transition filter-btn" data-category="cycling">Cycling</a>
-                <a href="#" class="border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white px-4 py-2 rounded-md transition filter-btn" data-category="swimming">Swimming</a>
+                <button class="bg-gray-800 text-white px-4 py-2 rounded-md transition filter-btn" data-category="">All Products</button>
+                <button class="border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white px-4 py-2 rounded-md transition filter-btn" data-category="running">Running</button>
+                <button class="border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white px-4 py-2 rounded-md transition filter-btn" data-category="cycling">Cycling</button>
+                <button class="border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white px-4 py-2 rounded-md transition filter-btn" data-category="swimming">Swimming</button>
             </div>
         </div>
 
         <div class="md:col-span-3">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="product-list-container">
-                
                 {% if not products %}
                 <div class="col-span-full">
                     <p>No products available in the shop. Please check back later!</p>
                 </div>
                 {% else %}
                 {% for product in products %}
-                <div class="bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full">
+                <div class="product-card bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full relative group" data-product-id="{{ product.id }}" data-category="{{ product.category }}">
+                    <div class="relative h-48 overflow-hidden">
+                        {% if product.thumbnail %}
+                            <img src="{{ product.thumbnail }}" alt="{{ product.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        {% else %}
+                            <div class="w-full h-full bg-gray-200 flex items-center justify-center">
+                                <span class="text-gray-500">No Image</span>
+                            </div>
+                        {% endif %}
+                        
+                        {% if user == product.seller or user_is_admin %}
+                        <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-2">
+                            <!-- Edit Button -->
+                            <button type="button" 
+                                    data-product-id="{{ product.id }}"
+                                    data-product-name="{{ product.name|escapejs }}"
+                                    data-seller-name="{{ product.seller.username|escapejs }}"
+                                    data-is-staff="{% if user_is_admin %}true{% else %}false{% endif %}"
+                                    data-is-owner="{% if user == product.seller %}true{% else %}false{% endif %}"
+                                    class="edit-product-btn bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full shadow-lg transition-colors duration-200 z-10">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                            </button>
+                            
+                            <!-- Delete Button -->
+                            <button type="button" 
+                                    data-product-id="{{ product.id }}"
+                                    data-product-name="{{ product.name|escapejs }}"
+                                    data-seller-name="{{ product.seller.username|escapejs }}"
+                                    data-thumbnail="{{ product.thumbnail|default:'' }}"
+                                    data-is-staff="{% if user_is_admin %}true{% else %}false{% endif %}"
+                                    data-is-owner="{% if user == product.seller %}true{% else %}false{% endif %}"
+                                    class="delete-product-btn bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-colors duration-200 z-10">
+                                {% if user_is_admin and user != product.seller %}
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                {% endif %}
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+
                     <div class="p-4 flex-1">
                         <h5 class="text-lg font-semibold mb-2">
                             <a href="{% url 'shop:product_detail' product.id %}" class="text-blue-600 hover:text-blue-800">{{ product.name }}</a>
                         </h5>
-                        <h6 class="text-gray-600 mb-2">Rp {{ product.price }}</h6>
-                        <p class="text-gray-700 text-sm">{{ product.description|truncatewords:15 }}</p>
+                        <h6 class="text-gray-600 mb-2 font-bold">Rp {{ product.price }}</h6>
+                        <p class="text-gray-700 text-sm mb-2">{{ product.description|truncatewords:15 }}</p>
+                        <div class="flex justify-between items-center text-sm text-gray-500">
+                            <span>Stock: {{ product.stock }}</span>
+                            <span>Category: {{ product.category|title }}</span>
+                        </div>
+                        
+                        {% if user == product.seller %}
+                            <div class="mt-2">
+                                <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Your Product</span>
+                            </div>
+                        {% elif user.is_staff %}
+                            <div class="mt-2">
+                                <span class="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Admin View</span>
+                            </div>
+                        {% endif %}
                     </div>
+
                     <div class="p-4 pt-0 space-y-2">
                         <a href="{% url 'shop:add_to_cart' product.id %}" 
                            class="block w-full bg-green-600 hover:bg-green-700 text-white text-center px-4 py-2 rounded-md transition ajax-action-btn"
@@ -149,65 +286,161 @@
     </div>
 </div>
 
-{% block scripts %}
+<!-- MODAL KONFIRMASI DELETE -->
+<div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900" id="modalTitle">
+                Konfirmasi Hapus Produk
+            </h3>
+            <button type="button" onclick="closeDeleteModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="mb-6">
+            <div class="flex items-center space-x-4 mb-4">
+                <img id="modalProductImage" src="" alt="" class="w-16 h-16 object-cover rounded-lg border" style="display: none;">
+                <div>
+                    <h4 id="modalProductName" class="font-semibold text-gray-800"></h4>
+                    <p id="modalProductSeller" class="text-sm text-gray-600"></p>
+                </div>
+            </div>
+            
+            <div id="adminWarning" class="hidden bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
+                <div class="flex">
+                    <svg class="w-5 h-5 text-yellow-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                    <div>
+                        <h5 class="font-medium text-yellow-800">Aksi Admin</h5>
+                        <p class="text-sm text-yellow-700">Anda akan menghapus produk milik pengguna lain.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-red-50 border border-red-200 rounded-md p-3">
+                <div class="flex">
+                    <svg class="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                    <div>
+                        <h5 class="font-medium text-red-800">Peringatan!</h5>
+                        <p class="text-sm text-red-700">Tindakan ini tidak dapat dibatalkan. Produk akan dihapus secara permanen.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex items-center justify-end space-x-3">
+            <button type="button" onclick="closeDeleteModal()" 
+                    class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors duration-200">
+                Batal
+            </button>
+            <button type="button" id="confirmDeleteBtn" onclick="confirmDelete()"
+                    class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200">
+                Hapus Produk
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    
-    // Ambil elemen-elemen penting
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     const productContainer = document.getElementById('product-list-container');
-    const filterContainer = document.getElementById('filter-container');
     const notificationArea = document.getElementById('notification-area');
-
-    // Modal elements
+    
+    // Add Product Modal
     const modal = document.getElementById('addProductModal');
     const openModalBtn = document.getElementById('openModalBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const cancelModalBtn = document.getElementById('cancelModalBtn');
+    
+    // Edit Product Modal
+    const editModal = document.getElementById('editProductModal');
+    const closeEditModalBtn = document.getElementById('closeEditModalBtn');
+    const cancelEditModalBtn = document.getElementById('cancelEditModalBtn');
 
-    // --- Fungsi untuk menampilkan notifikasi ---
-    function showNotification(message, type = 'success') {
+    // Delete Modal Variables
+    let currentProductId = null;
+    let isAdminAction = false;
+    
+    // Edit Modal Variables
+    let currentEditProductId = null;
+    let isEditAdminAction = false;
+
+    function showNotification(message, type) {
         const bgColor = (type === 'success') ? 'bg-green-500' : 'bg-red-500';
         const notification = document.createElement('div');
-        notification.className = `${bgColor} text-white px-6 py-3 rounded-md shadow-lg flex items-center justify-between max-w-md`;
-        notification.innerHTML = `
-            <span>${message}</span>
-            <button class="ml-4 text-white hover:text-gray-200 font-bold text-xl" onclick="this.parentElement.remove()">&times;</button>
-        `;
+        notification.className = bgColor + ' text-white px-6 py-3 rounded-md shadow-lg flex items-center justify-between max-w-md';
+        notification.innerHTML = '<span>' + message + '</span><button class="ml-4 text-white hover:text-gray-200 font-bold text-xl" onclick="this.parentElement.remove()">&times;</button>';
         notificationArea.appendChild(notification);
-        setTimeout(() => {
+        setTimeout(function() {
             notification.remove();
-        }, 3000);
-    }
-    
-    // --- Fungsi untuk membangun HTML card produk dari data JSON ---
-    function buildProductCard(product) {
-        return `
-        <div class="bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full">
-            <div class="p-4 flex-1">
-                <h5 class="text-lg font-semibold mb-2">
-                    <a href="${product.detail_url}" class="text-blue-600 hover:text-blue-800">${product.name}</a>
-                </h5>
-                <h6 class="text-gray-600 mb-2">Rp ${product.price}</h6>
-                <p class="text-gray-700 text-sm">${product.description}</p>
-            </div>
-            <div class="p-4 pt-0 space-y-2">
-                <a href="${product.cart_url}" 
-                   class="block w-full bg-green-600 hover:bg-green-700 text-white text-center px-4 py-2 rounded-md transition ajax-action-btn"
-                   data-action="add-to-cart">
-                    Add to Cart
-                </a>
-                <a href="${product.wishlist_url}" 
-                   class="block w-full border border-red-600 text-red-600 hover:bg-red-600 hover:text-white text-center px-4 py-2 rounded-md transition ajax-action-btn"
-                   data-action="toggle-wishlist">
-                    Add to Wishlist
-                </a>
-            </div>
-        </div>
-        `;
+        }, 4000);
     }
 
-    // --- MODAL CONTROLS ---
+    // --- FILTER BY CATEGORY (CLIENT-SIDE) ---
+    const filterButtons = document.querySelectorAll('.filter-btn');
+
+    function clearFilterActive() {
+        filterButtons.forEach(function(btn) {
+            btn.classList.remove('bg-gray-800', 'text-white');
+            btn.classList.add('border', 'border-gray-800', 'text-gray-800');
+        });
+    }
+
+    function setActiveFilterBtn(activeBtn) {
+        clearFilterActive();
+        activeBtn.classList.add('bg-gray-800', 'text-white');
+        activeBtn.classList.remove('border', 'border-gray-800', 'text-gray-800');
+    }
+
+    filterButtons.forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const category = btn.getAttribute('data-category') || '';
+            setActiveFilterBtn(btn);
+
+            // Filter produk cards
+            const productCards = document.querySelectorAll('.product-card');
+            productCards.forEach(function(card) {
+                const cardCategory = (card.getAttribute('data-category') || '').toLowerCase();
+                
+                if (!category || category === '' || cardCategory === category.toLowerCase()) {
+                    card.classList.remove('hidden');
+                    card.style.display = 'block';
+                } else {
+                    card.classList.add('hidden');
+                    card.style.display = 'none';
+                }
+            });
+
+            // Update URL parameter tanpa reload
+            const url = new URL(window.location);
+            if (category) {
+                url.searchParams.set('category', category);
+            } else {
+                url.searchParams.delete('category');
+            }
+            window.history.pushState({}, '', url);
+        });
+    });
+
+    // Restore filter dari URL saat page load
+    const params = new URLSearchParams(window.location.search);
+    const initCategory = params.get('category') || '';
+    if (initCategory) {
+        const btn = Array.from(filterButtons).find(function(b) {
+            return b.getAttribute('data-category') === initCategory;
+        });
+        if (btn) btn.click();
+    }
+
+    // Add Product Modal Functions
     function openModal() {
         modal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
@@ -216,40 +449,64 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeModal() {
         modal.classList.add('hidden');
         document.body.style.overflow = 'auto';
-        // Reset form
-        addProductModalForm.reset();
-        modalFormMessages.innerHTML = '';
-        document.querySelectorAll('.form-error').forEach(holder => holder.innerHTML = '');
+        document.getElementById('add-product-modal-form').reset();
+        document.getElementById('modal-form-messages').innerHTML = '';
+        document.querySelectorAll('.form-error').forEach(function(holder) {
+            holder.innerHTML = '';
+        });
     }
 
+    // Edit Product Modal Functions
+    function openEditModal() {
+        editModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditModal() {
+        editModal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        document.getElementById('edit-product-modal-form').reset();
+        document.getElementById('edit-modal-form-messages').innerHTML = '';
+        document.querySelectorAll('.form-error').forEach(function(holder) {
+            holder.innerHTML = '';
+        });
+        currentEditProductId = null;
+    }
+
+    // Event Listeners
     openModalBtn.addEventListener('click', openModal);
     closeModalBtn.addEventListener('click', closeModal);
     cancelModalBtn.addEventListener('click', closeModal);
+    closeEditModalBtn.addEventListener('click', closeEditModal);
+    cancelEditModalBtn.addEventListener('click', closeEditModal);
 
-    // Close modal when clicking outside
     modal.addEventListener('click', function(e) {
         if (e.target === modal) {
             closeModal();
         }
     });
 
-    // --- MODAL ADD PRODUCT LOGIC ---
-    const addProductModalForm = document.getElementById('add-product-modal-form');
+    editModal.addEventListener('click', function(e) {
+        if (e.target === editModal) {
+            closeEditModal();
+        }
+    });
+
+    // Add Product Form Submission
     const submitProductBtn = document.getElementById('submit-product-btn');
+    const addProductModalForm = document.getElementById('add-product-modal-form');
     const modalFormMessages = document.getElementById('modal-form-messages');
 
     if (submitProductBtn && addProductModalForm) {
         submitProductBtn.addEventListener('click', function() {
-            // Bersihkan pesan error lama
             modalFormMessages.innerHTML = '';
-            document.querySelectorAll('.form-error').forEach(holder => holder.innerHTML = '');
+            document.querySelectorAll('.form-error').forEach(function(holder) {
+                holder.innerHTML = '';
+            });
 
-            // Siapkan data form
             const formData = new FormData(addProductModalForm);
-            const url = "{% url 'shop:add_product' %}";
 
-            // Kirim data menggunakan Fetch API
-            fetch(url, {
+            fetch("{% url 'shop:add_product' %}", {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -257,104 +514,127 @@ document.addEventListener('DOMContentLoaded', function() {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => {
+            .then(function(response) {
                 if (!response.ok) {
-                    return response.json().then(data => {
+                    return response.json().then(function(data) {
                         throw data;
                     });
                 }
                 return response.json();
             })
-            .then(data => {
+            .then(function(data) {
                 if (data.status === 'success') {
-                    // Tutup modal
                     closeModal();
-                    
-                    // Tampilkan notifikasi sukses
                     showNotification(data.message, 'success');
-                    
-                    // Reload produk list
-                    setTimeout(() => {
+                    setTimeout(function() {
                         window.location.reload();
                     }, 1500);
                 }
             })
-            .catch(errorData => {
+            .catch(function(errorData) {
                 if (errorData.status === 'error' && errorData.errors) {
-                    modalFormMessages.innerHTML = `
-                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                            Harap perbaiki kesalahan di bawah ini.
-                        </div>
-                    `;
+                    modalFormMessages.innerHTML = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Harap perbaiki kesalahan di bawah ini.</div>';
                     
                     for (const fieldName in errorData.errors) {
-                        const errorField = document.getElementById(`modal_error_${fieldName}`);
+                        const errorField = document.getElementById('modal_error_' + fieldName);
                         if (errorField) {
                             errorField.innerHTML = errorData.errors[fieldName][0].message || errorData.errors[fieldName][0];
                         }
                     }
                 } else {
-                    modalFormMessages.innerHTML = `
-                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                            Terjadi kesalahan tak terduga. Coba lagi.
-                        </div>
-                    `;
-                    console.error('Fetch error:', errorData);
+                    modalFormMessages.innerHTML = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Terjadi kesalahan tak terduga. Coba lagi.</div>';
                 }
             });
         });
     }
 
-    // --- 1. Event Listener untuk FILTER PRODUK ---
-    if (filterContainer) {
-        filterContainer.addEventListener('click', function(event) {
-            const target = event.target.closest('.filter-btn');
-            if (!target) return;
+    // Edit Product Form Submission
+    const submitEditProductBtn = document.getElementById('submit-edit-product-btn');
+    const editProductModalForm = document.getElementById('edit-product-modal-form');
+    const editModalFormMessages = document.getElementById('edit-modal-form-messages');
 
-            event.preventDefault();
-            
-            const category = target.dataset.category;
-            console.log('Category clicked:', category); // Debug log
-            
-            const url = new URL('{% url "shop:shop" %}', window.location.origin);
-            if (category) {
-                url.searchParams.set('category', category);
-            }
-            
-            console.log('Fetching URL:', url.toString()); // Debug log
+    if (submitEditProductBtn && editProductModalForm) {
+        submitEditProductBtn.addEventListener('click', function() {
+            if (!currentEditProductId) return;
 
-            fetch(url, {
-                method: 'GET',
+            editModalFormMessages.innerHTML = '';
+            document.querySelectorAll('.form-error').forEach(function(holder) {
+                holder.innerHTML = '';
+            });
+
+            const formData = new FormData(editProductModalForm);
+
+            fetch('/shop/' + currentEditProductId + '/edit/', {
+                method: 'POST',
+                body: formData,
                 headers: {
+                    'X-CSRFToken': csrfToken,
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Received products:', data.products.length); // Debug log
-                productContainer.innerHTML = '';
-                
-                if (data.products && data.products.length > 0) {
-                    data.products.forEach(product => {
-                        const cardHtml = buildProductCard(product);
-                        productContainer.innerHTML += cardHtml;
+            .then(function(response) {
+                if (!response.ok) {
+                    return response.json().then(function(data) {
+                        throw data;
                     });
-                } else {
-                    productContainer.innerHTML = '<div class="col-span-full"><p>No products found for this filter.</p></div>';
                 }
-                
-                window.history.pushState({category: category}, '', url);
+                return response.json();
             })
-            .catch(error => {
-                console.error('Error fetching products:', error);
-                showNotification('Gagal memuat produk. Coba lagi.', 'error');
+            .then(function(data) {
+                if (data.status === 'success') {
+                    closeEditModal();
+                    showNotification(data.message, 'success');
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1500);
+                }
+            })
+            .catch(function(errorData) {
+                if (errorData.status === 'error' && errorData.errors) {
+                    editModalFormMessages.innerHTML = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Harap perbaiki kesalahan di bawah ini.</div>';
+                    
+                    for (const fieldName in errorData.errors) {
+                        const errorField = document.getElementById('edit_modal_error_' + fieldName);
+                        if (errorField) {
+                            errorField.innerHTML = errorData.errors[fieldName][0].message || errorData.errors[fieldName][0];
+                        }
+                    }
+                } else {
+                    editModalFormMessages.innerHTML = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Terjadi kesalahan tak terduga. Coba lagi.</div>';
+                }
             });
         });
     }
 
-    // --- 2. Event Listener untuk TOMBOL AKSI (Add to Cart / Wishlist) ---
+    // Product Actions (Edit, Delete, Cart, Wishlist)
     if (productContainer) {
         productContainer.addEventListener('click', function(event) {
+            // Check for edit button
+            const editBtn = event.target.closest('.edit-product-btn');
+            if (editBtn) {
+                const productId = editBtn.getAttribute('data-product-id');
+                const productName = editBtn.getAttribute('data-product-name');
+                const sellerName = editBtn.getAttribute('data-seller-name');
+                const isStaff = editBtn.getAttribute('data-is-admin') === 'true';
+                const isOwner = editBtn.getAttribute('data-is-owner') === 'true';
+                openEditProductModal(productId, productName, sellerName, isStaff, isOwner);
+                return;
+            }
+
+            // Check for delete button
+            const deleteBtn = event.target.closest('.delete-product-btn');
+            if (deleteBtn) {
+                const productId = deleteBtn.getAttribute('data-product-id');
+                const productName = deleteBtn.getAttribute('data-product-name');
+                const sellerName = deleteBtn.getAttribute('data-seller-name');
+                const thumbnail = deleteBtn.getAttribute('data-thumbnail');
+                const isStaff = deleteBtn.getAttribute('data-is-admin') === 'true';
+                const isOwner = deleteBtn.getAttribute('data-is-owner') === 'true';
+                openDeleteModal(productId, productName, sellerName, thumbnail, isStaff, isOwner);
+                return;
+            }
+
+            // Check for AJAX action buttons
             const target = event.target.closest('.ajax-action-btn');
             if (!target) return;
 
@@ -368,22 +648,178 @@ document.addEventListener('DOMContentLoaded', function() {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.json())
-            .then(data => {
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
                 if (data.status === 'success') {
                     showNotification(data.message, 'success');
                 } else {
                     showNotification(data.message, 'error');
                 }
             })
-            .catch(error => {
-                console.error('Error performing action:', error);
+            .catch(function(error) {
                 showNotification('Terjadi kesalahan. Coba lagi.', 'error');
             });
         });
     }
 
+    // Edit Product Modal Functions
+    function openEditProductModal(productId, productName, sellerName, userIsStaff, userIsOwner) {
+        currentEditProductId = productId;
+        isEditAdminAction = userIsStaff && !userIsOwner;
+        
+        // Set modal title
+        const editModalTitle = document.getElementById('editModalTitle');
+        if (isEditAdminAction) {
+            editModalTitle.textContent = '[ADMIN] Edit Product: ' + productName;
+        } else {
+            editModalTitle.textContent = 'Edit Product: ' + productName;
+        }
+
+        // Fetch product data and populate form
+        fetch('/shop/' + productId + '/edit/', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.status === 'success') {
+                const product = data.product;
+                
+                // Populate form fields
+                document.getElementById('edit_product_name').value = product.name;
+                document.getElementById('edit_product_description').value = product.description;
+                document.getElementById('edit_product_category').value = product.category;
+                document.getElementById('edit_product_price').value = product.price;
+                document.getElementById('edit_product_stock').value = product.stock;
+                document.getElementById('edit_product_thumbnail').value = product.thumbnail;
+                
+                openEditModal();
+            } else {
+                showNotification('Gagal memuat data produk', 'error');
+            }
+        })
+        .catch(function(error) {
+            showNotification('Terjadi kesalahan saat memuat data produk', 'error');
+        });
+    }
+
+    // Delete Modal Functions
+    window.openDeleteModal = function(productId, productName, sellerName, thumbnailUrl, userIsStaff, userIsOwner) {
+        currentProductId = productId;
+        isAdminAction = userIsStaff && !userIsOwner;
+        
+        document.getElementById('modalProductName').textContent = productName;
+        document.getElementById('modalProductSeller').textContent = 'Penjual: ' + sellerName;
+        
+        const modalImage = document.getElementById('modalProductImage');
+        if (thumbnailUrl) {
+            modalImage.src = thumbnailUrl;
+            modalImage.style.display = 'block';
+        } else {
+            modalImage.style.display = 'none';
+        }
+        
+        const adminWarning = document.getElementById('adminWarning');
+        const modalTitle = document.getElementById('modalTitle');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        
+        if (isAdminAction) {
+            adminWarning.classList.remove('hidden');
+            modalTitle.textContent = '[ADMIN] Konfirmasi Hapus Produk';
+            confirmBtn.textContent = 'Hapus Produk (Admin)';
+        } else {
+            adminWarning.classList.add('hidden');
+            modalTitle.textContent = 'Konfirmasi Hapus Produk';
+            confirmBtn.textContent = 'Hapus Produk';
+        }
+        
+        document.getElementById('deleteModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.closeDeleteModal = function() {
+        document.getElementById('deleteModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        currentProductId = null;
+        
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = isAdminAction ? 'Hapus Produk (Admin)' : 'Hapus Produk';
+    };
+
+    window.confirmDelete = function() {
+        if (!currentProductId) return;
+        
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = 'Menghapus...';
+        
+        fetch('/shop/' + currentProductId + '/delete/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.status === 'success') {
+                closeDeleteModal();
+                showNotification(data.message, 'success');
+                
+                const productCard = document.querySelector('[data-product-id="' + currentProductId + '"]');
+                if (productCard) {
+                    productCard.style.opacity = '0';
+                    productCard.style.transform = 'scale(0.95)';
+                    setTimeout(function() {
+                        productCard.remove();
+                    }, 300);
+                } else {
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1000);
+                }
+            } else {
+                showNotification(data.message || 'Terjadi kesalahan saat menghapus produk', 'error');
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = isAdminAction ? 'Hapus Produk (Admin)' : 'Hapus Produk';
+            }
+        })
+        .catch(function(error) {
+            showNotification('Terjadi kesalahan saat menghapus produk', 'error');
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = isAdminAction ? 'Hapus Produk (Admin)' : 'Hapus Produk';
+        });
+    };
+
+    // Close modals when clicking outside or pressing Escape
+    document.getElementById('deleteModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeDeleteModal();
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (!document.getElementById('deleteModal').classList.contains('hidden')) {
+                closeDeleteModal();
+            }
+            if (!document.getElementById('editProductModal').classList.contains('hidden')) {
+                closeEditModal();
+            }
+            if (!document.getElementById('addProductModal').classList.contains('hidden')) {
+                closeModal();
+            }
+        }
+    });
 });
 </script>
-{% endblock %}
 {% endblock %}

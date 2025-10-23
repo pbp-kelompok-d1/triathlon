@@ -1,5 +1,6 @@
+import os
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
 from .forms import ProductForm
 from .models import Product, Cart, CartItem, Wishlist, Order, OrderItem
@@ -8,78 +9,117 @@ from django.urls import reverse
 from django.template.defaultfilters import truncatewords
 from django.http import HttpResponseBadRequest
 import pandas as pd
+from django.conf import settings
+from django.db import transaction
+from django.db.models import F
 
+
+def is_admin(user):
+    # Admin: superuser/staff, atau role profile 'ADMIN', atau anggota group 'admin'
+    if not user or not user.is_authenticated:
+        return False
+    if getattr(user, 'is_superuser', False) or getattr(user, 'is_staff', False):
+        return True
+    try:
+        if hasattr(user, 'profile') and user.profile.role == 'ADMIN':
+            return True
+    except Exception:
+        pass
+    return user.groups.filter(name__iexact='admin').exists()
 
 def load_datasets(request):
+    # Gunakan path absolut berdasarkan BASE_DIR
+    csv_path = os.path.join(settings.BASE_DIR, 'shop', 'specialized.csv')
+    
+    # Cek apakah file ada
+    if not os.path.exists(csv_path):
+        return JsonResponse({
+            'status': 'error', 
+            'message': f'File CSV tidak ditemukan di: {csv_path}'
+        })
+    
     # Load datasets
-    products_df = pd.read_csv('https://drive.google.com/file/d/1fsPmjhnXxkk7pY1h7QoNWMNr9TN-h0I_/view?usp=drive_link')
+    products_df = pd.read_csv(csv_path)
+    
     for data in products_df.itertuples():
         Product.objects.get_or_create(
             name=data.name,
             price=data.price,
-            stock=data.stock,
+            stock=100,
             description=data.description,
-            category=data.category,
-            thumbnail=data.thumbnail
+            category='cycling',
+            thumbnail='default_thumbnail/cycling.jpg'
         )
-    # You can load more datasets as needed
-
+    
     # Convert DataFrame to list of dictionaries
     products_data = products_df.to_dict(orient='records')
+    
+    return JsonResponse({
+        'status': 'success',
+        'products': products_data,
+        'message': f'Berhasil memuat {len(products_data)} produk'
+    })
 
-    return JsonResponse({'products': products_data})
-
-#@login_required
+@login_required
 def add_product(request):
     """Add new product to the shop"""
-    form = ProductForm(request.POST or None)
-
     if request.method == 'POST':
-        form = ProductForm(request.POST or None)
-
+        form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
             product_entry = form.save(commit=False)
             if request.user.is_authenticated:
                 product_entry.seller = request.user
             product_entry.save()
             
-            # Kirim respons sukses sebagai JSON
             return JsonResponse({
                 'status': 'success',
                 'message': 'Produk berhasil ditambahkan!'
             })
         else:
-            # Kirim error validasi form sebagai JSON
-            # status=400 (Bad Request) penting agar 'catch' di fetch JS terpicu
             return JsonResponse({
                 'status': 'error',
                 'errors': form.errors
             }, status=400)
             
-    # Jika method == 'GET', tampilkan halaman form seperti biasa
     form = ProductForm()
-    context = {
-
-        'form': form
-    }
+    context = {'form': form}
     return render(request, "add_product.html", context)
 
 def show_product(request):
+    # Admin delete via POST ke halaman yang sama
+    if request.method == 'POST' and request.user.is_authenticated and is_admin(request.user):
+        action = request.POST.get('action')
+        if action == 'admin_delete':
+            pid = request.POST.get('product_id')
+            product = get_object_or_404(Product, pk=pid)
+            name = product.name
+
+            # hapus file thumbnail jika ada
+            try:
+                if getattr(product, 'thumbnail', None) and hasattr(product.thumbnail, 'path') and os.path.isfile(product.thumbnail.path):
+                    product.thumbnail.delete(save=False)
+            except Exception:
+                pass
+
+            product.delete()  # FK cascade akan membersihkan CartItem/Wishlist terkait
+
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'success', 'product_id': int(pid), 'message': f'Produk "{name}" dihapus'})
+            
+            messages.success(request, f'Produk "{name}" dihapus')
+            return redirect('shop:shop')
+
     filter_type = request.GET.get("filter", "all")
     category_filter = request.GET.get("category", None)
 
     products = Product.objects.all()
-
-    # Apply filters
     if filter_type == "my" and request.user.is_authenticated:
         products = products.filter(seller=request.user)
-
     if category_filter:
         products = products.filter(category=category_filter)
 
     products = products.order_by('-id')
 
-    # AJAX
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         product_list_json = []
         for product in products:
@@ -99,218 +139,362 @@ def show_product(request):
     context = {
         'products': products,
         'user': request.user,
+        'user_is_admin': is_admin(request.user),
         'last_login': request.COOKIES.get('last_login', 'Never')
     }
     return render(request, "shop.html", context)
 
 def product_detail(request, id):
-    """Show individual product detail"""
-
+    """Show individual product detail (AJAX-enabled)"""
     product = get_object_or_404(Product, pk=id)
 
-    context = {
-        'product': product
-    }
-    return render(request, "product_detail.html", context)
+    # Jika request AJAX, kembalikan JSON
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        data = {
+            'id': product.id,
+            'name': product.name,
+            'price': float(product.price),
+            'description': product.description,  # kirim apa adanya, di-escape di sisi klien bila perlu
+            'stock': product.stock,
+            'category': product.category,
+            'seller': (product.seller.username if getattr(product, 'seller', None) else None),
+            'thumbnail': (
+                product.thumbnail.url if getattr(product.thumbnail, 'url', None)
+                else (str(product.thumbnail) if getattr(product, 'thumbnail', None) else '')
+            ),
+            'cart_url': reverse('shop:add_to_cart', args=[product.id]),
+            'wishlist_url': reverse('shop:toggle_wishlist', args=[product.id]),
+            'can_edit': (request.user.is_authenticated and (request.user == getattr(product, 'seller', None) or request.user.is_staff)),
+            'edit_url': reverse('shop:edit_product', args=[product.id]),
+            'delete_url': reverse('shop:delete_product', args=[product.id]),
+        }
+        return JsonResponse({'status': 'success', 'product': data})
+
+    # Render HTML biasa: cukup kirim product_id agar JS bisa fetch detail via AJAX
+    return render(request, "product_detail.html", {'product_id': product.id})
+# ...existing code...
 
 @login_required
 def delete_product(request, id):
-    if request.method == 'DELETE':
-        try:
-            product = get_object_or_404(Product, pk=id)
-            if request.user == product.seller:
-                product.delete()
-                return JsonResponse({'status': 'success', 'message': 'Product deleted successfully.'})
-            else:
-                return JsonResponse({'status': 'error', 'message': 'You do not have permission to delete this product.'}, status=403)
-        except Product.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'Product not found.'}, status=404)
+    """Delete product from the shop"""
+    product = get_object_or_404(Product, pk=id)
+    
+    if not (is_admin(request.user) or request.user == product.seller):
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Anda tidak memiliki izin untuk menghapus produk ini.'
+        }, status=403)
+    
+    if request.method == 'POST':
+        if product.thumbnail:
+            try:
+                if os.path.isfile(product.thumbnail.path):
+                    os.remove(product.thumbnail.path)
+            except:
+                pass
+        
+        product_name = product.name
+        product_seller = product.seller.username
+        product.delete()
+        
+        if request.user.is_staff and request.user != product.seller:
+            return JsonResponse({
+                'status': 'success',
+                'message': f'[ADMIN] Produk "{product_name}" milik {product_seller} berhasil dihapus.'
+            })
+        else:
+            return JsonResponse({
+                'status': 'success',
+                'message': f'Produk "{product_name}" berhasil dihapus.'
+            })
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
         
 @login_required
 def edit_product(request, id):
     """Edit product in the shop"""
     product = get_object_or_404(Product, pk=id)
 
-    if request.user == product.seller:
-        if request.method == 'POST':
-            form = ProductForm(request.POST or None, instance=product)
-            if form.is_valid():
-                form.save()
-                return redirect('shop:shop')
+    if not (request.user.is_staff or request.user == product.seller):
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Anda tidak memiliki izin untuk mengedit produk ini.'
+        }, status=403)
+
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES, instance=product)
+        if form.is_valid():
+            updated_product = form.save()
+            
+            if request.user.is_staff and request.user != product.seller:
+                return JsonResponse({
+                    'status': 'success',
+                    'message': f'[ADMIN] Produk "{updated_product.name}" milik {product.seller.username} berhasil diupdate.'
+                })
+            else:
+                return JsonResponse({
+                    'status': 'success',
+                    'message': f'Produk "{updated_product.name}" berhasil diupdate.'
+                })
         else:
-            form = ProductForm(instance=product)
-        context = {
-            'form': form,
-            'product': product
-        }
-        return render(request, "edit_product.html", context)
-    else:
-        return JsonResponse({'message': 'You are not authorized to edit this product.'}, status=403)
+            return JsonResponse({
+                'status': 'error',
+                'errors': form.errors
+            }, status=400)
     
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'success',
+            'product': {
+                'id': product.id,
+                'name': product.name,
+                'description': product.description,
+                'category': product.category,
+                'price': str(product.price),
+                'stock': product.stock,
+                'thumbnail': product.thumbnail,
+                'seller': product.seller.username
+            }
+        })
+    
+    form = ProductForm(instance=product)
+    context = {'form': form, 'product': product}
+    return render(request, "edit_product.html", context)
+    
+@login_required
+def view_cart(request):
+    """View cart items"""
+    try:
+        cart = Cart.objects.get(user=request.user)
+    except Cart.DoesNotExist:
+        cart = Cart.objects.create(user=request.user)
+    
+    cart_items = CartItem.objects.filter(cart=cart).select_related('product')
+    
+    total = sum(item.product.price * item.quantity for item in cart_items)
+    
+    items_data = []
+    for item in cart_items:
+        items_data.append({
+            'id': item.id,
+            'product': item.product,
+            'quantity': item.quantity,
+            'subtotal': item.product.price * item.quantity
+        })
+    
+    context = {
+        'cart': cart,
+        'cart_items': items_data,
+        'total': total
+    }
+    
+    return render(request, 'cart_detail.html', context)
 
 @login_required
 def add_to_cart(request, product_id):
-    # Dapatkan atau buat keranjang untuk user
-    cart = Cart.objects.get_or_create(user=request.user)
-    ## Dapatkan atau buat item keranjang
-    #cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-    #
-    ## Jika item sudah ada, tambah jumlahnya
-    #if not created:
-    #    cart_item.quantity += 1
-    #    cart_item.save()
-    #    
-    #return redirect('shop:product_list')
-
-    if request.method == 'POST':
-        product = get_object_or_404(Product, id=product_id)
-        product_id_str = str(product_id)
-        
-        current_quantity = cart.get(product_id_str, 0)
-        if product.stock < current_quantity + 1:
+    """Add product to cart via AJAX"""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+    
+    product = get_object_or_404(Product, pk=product_id)
+    
+    try:
+        cart = Cart.objects.get(user=request.user)
+    except Cart.DoesNotExist:
+        cart = Cart.objects.create(user=request.user)
+    
+    cart_item, created = CartItem.objects.get_or_create(
+        cart=cart,
+        product=product,
+        defaults={'quantity': 1}
+    )
+    
+    if not created:
+        if cart_item.quantity < product.stock:
+            cart_item.quantity += 1
+            cart_item.save()
+            message = f'{product.name} quantity updated in cart'
+        else:
             return JsonResponse({
                 'status': 'error',
-                'message': f"Stok produk '{product.name}' tidak mencukupi."
-            }, status=400) # status 400 Bad Request
-
-        cart[product_id_str] = current_quantity + 1
-        request.session['cart'] = cart
-        
-        return JsonResponse({
-            'status': 'success',
-            'message': f"Produk '{product.name}' ditambahkan ke keranjang."
-        })
+                'message': f'Cannot add more. Only {product.stock} items in stock'
+            })
+    else:
+        message = f'{product.name} added to cart'
     
-    return HttpResponseBadRequest("Invalid request method")
+    return JsonResponse({'status': 'success', 'message': message})
 
 @login_required
-def view_cart(request):
-    cart= Cart.objects.get_or_create(user=request.user)
-    product_ids = cart.keys()
-    products = Product.objects.filter(id__in=product_ids)
-    
-    cart_items_data = []
-    total_price = 0
-    
-    for product in products:
-        quantity = cart[str(product.id)]
-        subtotal = product.price * quantity
-        total_price += subtotal
-        cart_items_data.append({
-            'product': product,
-            'quantity': quantity,
-            'subtotal': subtotal,
-        })
-        
-    context = {
-        'cart_items': cart_items_data,
-        'total_price': total_price,
-    }
-    return render(request, "cart_detail.html", context)
-
-#@login_required
 def remove_from_cart(request, product_id):
-    #cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
-    #cart_item.delete()
-    #return redirect('shop:view_cart')
-    cart = request.session.get('cart', {})
-    product_id_str = str(product_id)
+    """Remove product from cart"""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
     
-    if product_id_str in cart:
-        del cart[product_id_str]
-        request.session['cart'] = cart
-        messages.success(request, "Produk telah dihapus dari keranjang.")
+    try:
+        cart = Cart.objects.get(user=request.user)
+        cart_item = CartItem.objects.get(cart=cart, product_id=product_id)
         
-    return redirect('shop:view_cart')
+        product_name = cart_item.product.name
+        cart_item.delete()
+        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'status': 'success',
+                'message': f'{product_name} removed from cart'
+            })
+        
+        messages.success(request, f'{product_name} removed from cart')
+        return redirect('shop:view_cart')
+        
+    except (Cart.DoesNotExist, CartItem.DoesNotExist):
+        return JsonResponse({'status': 'error', 'message': 'Item not found'}, status=404)
 
-#@login_required
-def toggle_wishlist(request, product_id):
-    #product = get_object_or_404(Product, id=product_id)
-    #wishlist, created = Wishlist.objects.get_or_create(user=request.user)
-#
-    #if product in wishlist.products.all():
-    #    wishlist.products.remove(product)
-    #else:
-    #    wishlist.products.add(product)
-    #    
-    #return redirect(request.META.get('HTTP_REFERER', 'shop:product_list'))
-    if request.method == 'POST':
-        wishlist = request.session.get('wishlist', [])
-        product_id_str = str(product_id)
+@login_required
+def update_cart_quantity(request, item_id):
+    """Update cart item quantity via AJAX"""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+    
+    try:
+        cart_item = CartItem.objects.get(id=item_id, cart__user=request.user)
+        quantity = int(request.POST.get('quantity', 1))
         
-        if product_id_str in wishlist: # Hapus dari wishlist
-            wishlist.remove(product_id_str)
-            message = "Produk dihapus dari wishlist."
-        else: # Tambah ke wishlist
-            wishlist.append(product_id_str)
-            message = "Produk ditambahkan ke wishlist."
-            
-        request.session['wishlist'] = wishlist
+        if quantity < 1:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Quantity must be at least 1'
+            })
+        
+        if quantity > cart_item.product.stock:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Only {cart_item.product.stock} items available'
+            })
+        
+        cart_item.quantity = quantity
+        cart_item.save()
+        
+        subtotal = cart_item.product.price * quantity
+        cart_items = CartItem.objects.filter(cart=cart_item.cart)
+        total = sum(item.product.price * item.quantity for item in cart_items)
         
         return JsonResponse({
             'status': 'success',
-            'message': message
+            'message': 'Cart updated',
+            'subtotal': float(subtotal),
+            'total': float(total)
+        })
+    
+    except (CartItem.DoesNotExist, ValueError, TypeError):
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid request'
+        }, status=400)
+
+@login_required
+def toggle_wishlist(request, product_id):
+    """Tambah/hapus product dari wishlist (ManyToMany)"""
+    product = get_object_or_404(Product, pk=product_id)
+    wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
+
+    if wishlist.products.filter(pk=product.pk).exists():
+        wishlist.products.remove(product)
+        in_wishlist = False
+        msg = f'{product.name} removed from wishlist'
+    else:
+        wishlist.products.add(product)
+        in_wishlist = True
+        msg = f'{product.name} added to wishlist'
+
+    return JsonResponse({
+        'status': 'success',
+        'message': msg,
+        'in_wishlist': in_wishlist,
+        'count': wishlist.products.count(),
+    })
+
+@login_required
+def view_wishlist(request):
+    """Tampilkan wishlist user (M2M)"""
+    wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
+    # Hindari select_related('product') — gunakan prefetch_related('products')
+    products_qs = wishlist.products.all()
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        products_data = [
+            {
+                'id': str(p.id),  # UUID ke string
+                'name': p.name,
+                'price': str(p.price),
+                'thumbnail': p.thumbnail or '',
+                'detail_url': reverse('shop:product_detail', args=[p.id]),
+            }
+            for p in products_qs
+        ]
+        return JsonResponse({
+            'status': 'success',
+            'count': len(products_data),
+            'products': products_data
         })
 
-    return HttpResponseBadRequest("Invalid request method")
-
-#@login_required
-def view_wishlist(request):
-    #wishlist, created = Wishlist.objects.get_or_create(user=request.user)
-    #return render(request, 'shop/wishlist_detail.html', {'wishlist': wishlist})
-    wishlist_ids = request.session.get('wishlist', [])
-    products = Product.objects.filter(id__in=wishlist_ids)
-    
     context = {
-        'products': products
+        'wishlist': wishlist,
+        'products': products_qs,  # iterasi di template
     }
-    return render(request, "wishlist_detail.html", context)
+    return render(request, 'wishlist_detail.html', context)
 
-#@login_required
+@login_required
+@transaction.atomic
 def checkout(request):
-    #cart = get_object_or_404(Cart, user=request.user)
-    #if not cart.items.exists():
-    #    return redirect('shop:view_cart')
-#
-    ## Buat Order baru
-    #order = Order.objects.create(user=request.user, total_price=cart.get_total_price, is_paid=True) # Anggap langsung lunas
-#
-    ## Pindahkan item dari keranjang ke OrderItem
-    #for item in cart.items.all():
-    #    OrderItem.objects.create(
-    #        order=order,
-    #        product=item.product,
-    #        quantity=item.quantity,
-    #        price=item.product.price
-    #    )
-    #    # Kurangi stok produk
-    #    item.product.stock -= item.quantity
-    #    item.product.save()
-#
-    ## Kosongkan keranjang
-    #cart.items.all().delete()
-    #
-    #return render(request, 'shop/order_confirmation.html', {'order': order})
-    if 'cart' in request.session:
-        # Di aplikasi nyata, di sini Anda akan memproses pembayaran 
-        # dan mungkin meminta email/alamat pengiriman
-        
-        # Simulasi pengurangan stok
-        cart = request.session.get('cart', {})
-        product_ids = cart.keys()
-        products = Product.objects.filter(id__in=product_ids)
-        for product in products:
-            quantity_purchased = cart[str(product.id)]
-            if product.stock >= quantity_purchased:
-                product.stock -= quantity_purchased
-                product.save()
-        
-        # Kosongkan keranjang setelah checkout
-        del request.session['cart']
-    
-    # Render halaman konfirmasi
-    return render(request, 'order_confirmation.html')
+    # Cart user
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+    cart_items = list(CartItem.objects.filter(cart=cart).select_related('product'))
+    if not cart_items:
+        messages.error(request, 'Keranjang kosong')
+        return redirect('shop:view_cart')
 
+    # Ringkasan dan total untuk GET
+    total = sum(ci.product.price * ci.quantity for ci in cart_items)
 
-        
- 
+    if request.method == 'POST':
+        # Buat map {product_id: total_quantity} seperti contoh session
+        qty_map = {}
+        for ci in cart_items:
+            qty_map[ci.product_id] = qty_map.get(ci.product_id, 0) + ci.quantity
+
+        # Kunci produk yang terlibat agar stok konsisten
+        products = list(Product.objects.select_for_update().filter(id__in=qty_map.keys()))
+
+        # Validasi stok
+        kurang = []
+        for p in products:
+            if qty_map[p.id] > p.stock:
+                kurang.append(f'{p.name}')
+        if kurang:
+            messages.error(request, 'Stok tidak cukup: ' + ', '.join(kurang))
+            return redirect('shop:view_cart')
+
+        # Kurangi stok (aman dengan F)
+        for p in products:
+            Product.objects.filter(id=p.id).update(stock=F('stock') - qty_map[p.id])
+
+        # Kosongkan cart user
+        CartItem.objects.filter(cart=cart).delete()
+
+        total_items = sum(qty_map.values())
+        messages.success(request, 'Pembelian berhasil! {total_items} item dengan total harga Rp {total}.')
+        return redirect('shop:view_cart')
+
+    # GET: tampilkan halaman konfirmasi
+    items_data = [
+        {
+            'id': ci.id,
+            'product': ci.product,
+            'quantity': ci.quantity,
+            'subtotal': ci.product.price * ci.quantity
+        } for ci in cart_items
+    ]
+    return render(request, 'order_confirmation.html', {
+        'cart_items': items_data,
+        'total': total
+    })
