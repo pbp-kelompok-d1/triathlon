@@ -6,12 +6,58 @@ Konten parsial HANYA UNTUK FACILITY ADMIN
 {% if view == 'all' or view == 'facilities' %}
 <div>
   <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">Managed Facilities</h2>
-  {% if places %} 
-    <ul class="grid sm:grid-cols-2 gap-4">
-      {% for place in places %} <li class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-indigo-500 transition-all duration-300 ease-in-out">
-        <a href="#" class="block"> <h3 class="text-lg font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">{{ place.name }}</h3>
-          <p class="text-gray-600 text-sm mt-1">Category: {{ place.category }}</p>
-          <p class="text-gray-800 text-sm mt-2">{{ place.description|truncatewords:25 }}</p>
+  {% if facilities %} 
+    <ul class="space-y-4">
+      {% for place in facilities %}
+      <li class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-indigo-500 transition-all duration-300 ease-in-out overflow-hidden">
+        <a href="{% url 'place:place_detail' place.id %}" class="flex flex-col sm:flex-row">
+          {% if place.image %}
+            <div class="sm:w-64 sm:h-48 h-40 flex-shrink-0">
+              <img src="{{ place.image.url }}" alt="{{ place.name }}" class="w-full h-full object-cover">
+            </div>
+          {% endif %}
+          
+          <div class="flex-1 p-5 flex flex-col justify-between">
+            <div>
+              <h3 class="text-xl font-semibold text-indigo-600 hover:text-indigo-800 transition-colors mb-2">
+                {{ place.name }}
+              </h3>
+              
+              <div class="flex flex-wrap gap-3 mb-3">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                  </svg>
+                  {{ place.genre|default:"General" }}
+                </span>
+                
+                {% if place.city or place.province %}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  </svg>
+                  {{ place.city|default:"" }}{% if place.city and place.province %}, {% endif %}{{ place.province|default:"" }}
+                </span>
+                {% endif %}
+              </div>
+              
+              <p class="text-gray-600 text-sm line-clamp-2 mb-3">
+                {{ place.description|truncatewords:30|default:"No description available." }}
+              </p>
+            </div>
+            
+            <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+              <div>
+                <p class="text-2xl font-bold text-indigo-700">Rp {{ place.price|floatformat:0 }}</p>
+                <p class="text-xs text-gray-500 mt-1">per ticket</p>
+              </div>
+              <div class="text-right">
+                <p class="text-xs text-gray-500">Created</p>
+                <p class="text-sm text-gray-700 font-medium">{{ place.created_at|date:"M d, Y" }}</p>
+              </div>
+            </div>
+          </div>
         </a>
       </li>
       {% endfor %}
@@ -19,10 +65,16 @@ Konten parsial HANYA UNTUK FACILITY ADMIN
   {% else %}
     <div class="bg-white rounded-xl shadow-sm border border-dashed border-gray-300 p-12 text-center">
       <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-5">
-        <svg class="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        <svg class="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
       </div>
       <h3 class="text-xl font-semibold text-gray-900 mb-2">No Facilities Found</h3>
       <p class="text-gray-500 mb-6">You are not managing any facilities yet.</p>
+      <a href="{% url 'place:add_place' %}" class="inline-block bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition duration-200 font-medium shadow-sm">
+        Add a Facility
+      </a>
     </div>
   {% endif %}
 </div>
@@ -39,22 +91,107 @@ Konten parsial HANYA UNTUK FACILITY ADMIN
           <tr>
             <th class="p-4 text-sm font-medium text-gray-600">User</th>
             <th class="p-4 text-sm font-medium text-gray-600">Facility</th>
-            <th class="p-4 text-sm font-medium text-gray-600">Date</th>
+            <th class="p-4 text-sm font-medium text-gray-600">Booking Date</th>
+            <th class="p-4 text-sm font-medium text-gray-600">Visit Date</th>
             <th class="p-4 text-sm font-medium text-gray-600">Quantity</th>
+            <th class="p-4 text-sm font-medium text-gray-600">Total Price</th>
+            <th class="p-4 text-sm font-medium text-gray-600">Status</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
           {% for ticket in tickets %}
           <tr class="hover:bg-gray-50 transition-colors">
-            <td class="p-4 text-sm text-gray-800">{{ ticket.user.username }}</td>
-            <td class="p-4 text-sm text-gray-800">{{ ticket.facility.name }}</td>
-            <td class="p-4 text-sm text-gray-800">{{ ticket.date|date:"M d, Y" }}</td>
-            <td class="p-4 text-sm text-gray-800">{{ ticket.quantity }}</td>
+            <td class="p-4 text-sm text-gray-800">
+              <div class="flex items-center">
+                <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-2">
+                  <span class="text-indigo-600 font-semibold text-xs">{{ ticket.user.username|slice:":2"|upper }}</span>
+                </div>
+                {{ ticket.user.username }}
+              </div>
+            </td>
+            <td class="p-4 text-sm text-gray-800 font-medium">{{ ticket.place_name }}</td>
+            <td class="p-4 text-sm text-gray-600">{{ ticket.booking_date|date:"M d, Y H:i" }}</td>
+            <td class="p-4 text-sm text-gray-800">{{ ticket.visit_date|date:"M d, Y" }}</td>
+            <td class="p-4 text-sm text-gray-800 text-center">
+              <span class="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-700 rounded-full font-semibold">
+                {{ ticket.quantity }}
+              </span>
+            </td>
+            <td class="p-4 text-sm text-gray-800 font-semibold">Rp {{ ticket.total_price|floatformat:0 }}</td>
+            <td class="p-4 text-sm">
+              {% if ticket.is_upcoming %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                  </svg>
+                  Upcoming
+                </span>
+              {% else %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                  <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                  </svg>
+                  Completed
+                </span>
+              {% endif %}
+            </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+    
+    {% comment %} Summary Statistics {% endcomment %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+      <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-blue-600 font-medium">Total Orders</p>
+            <p class="text-2xl font-bold text-blue-900 mt-1">{{ tickets|length }}</p>
+          </div>
+          <div class="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center">
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5h14a2 2 0 012 2v3a2 2 0 000 4v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3a2 2 0 000-4V7a2 2 0 012-2h14z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-green-600 font-medium">Total Tickets</p>
+            <p class="text-2xl font-bold text-green-900 mt-1">
+              {% widthratio tickets|length 1 1 %}
+              {% comment %} You can calculate sum of quantities if needed {% endcomment %}
+            </p>
+          </div>
+          <div class="w-12 h-12 bg-green-200 rounded-full flex items-center justify-center">
+            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-purple-600 font-medium">Total Revenue</p>
+            <p class="text-2xl font-bold text-purple-900 mt-1">
+              Rp {% widthratio tickets|length 1 1 %}K
+              {% comment %} Calculate sum of total_price in view for accurate display {% endcomment %}
+            </p>
+          </div>
+          <div class="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center">
+            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+    
   {% else %}
     <div class="bg-white rounded-xl shadow-sm border border-dashed border-gray-300 p-12 text-center">
       <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-5">

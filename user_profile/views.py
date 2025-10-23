@@ -12,7 +12,7 @@ from django.contrib.auth.password_validation import validate_password
 from .models import UserProfile
 from forum.models import ForumPost, ForumReply
 from shop.models import Product, Wishlist
-from place.models import Place as Facility 
+from place.models import Place
 from ticket.models import Ticket          
 
 # ==========================================================
@@ -144,19 +144,35 @@ def get_dashboard_content(request):
         
     elif role == 'FACILITY_ADMIN':
         # 1. Ambil data FACILITY_ADMIN
-        # (Menggunakan nama model dari template-mu: Facility dan Ticket)
-        facilities = Facility.objects.filter(admin=user) # Asumsi field 'admin'
-        tickets = Ticket.objects.filter(facility__admin=user) # Asumsi relasi 'facility__admin'
+        facilities = Place.objects.filter(admin=user)
+        admin_place_ids = facilities.values_list('id', flat=True)
+        tickets = Ticket.objects.filter(place_id__in=admin_place_ids)
 
-        # 2. Terapkan filter
+        # 2. Terapkan filter category
         if category_filter:
-            facilities = facilities.filter(category__icontains=category_filter)
-            tickets = tickets.filter(facility__category__icontains=category_filter)
+            # Map category URL ke genre model
+            category_map = {
+                'swimming': 'Swimming Pool',
+                'running': 'Running Track',
+                'cycling': 'Bicycle Tracking'
+            }
+            
+            genre_filter = category_map.get(category_filter)
+            
+            if genre_filter:
+                # Filter facilities berdasarkan genre
+                facilities = facilities.filter(genre=genre_filter)
+                
+                # Update admin_place_ids setelah filter
+                admin_place_ids = facilities.values_list('id', flat=True)
+                
+                # Filter tickets berdasarkan place_id yang sudah difilter
+                tickets = tickets.filter(place_id__in=admin_place_ids)
 
         # 3. Update context & render parsial FACILITY_ADMIN
         context.update({ 
-            'facilities': facilities, # Nama ini harus 'facilities' sesuai template
-            'tickets': tickets        # Nama ini harus 'tickets' sesuai template
+            'facilities': facilities,
+            'tickets': tickets
         })
         return render(request, 'user_profile/_facility_admin_content.html', context)
 

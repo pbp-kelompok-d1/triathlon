@@ -18,7 +18,7 @@
               <h1 class="text-3xl font-bold text-gray-900">Facility Admin Dashboard</h1>
               <p class="text-gray-500 text-sm mt-1">Manage your facilities and tickets.</p>
             {% else %}
-              <h1 class="text-3xl font-bold text-gray-900">{{ user.first_name }} {{ user.last_name }}'s Dashboard</h1>
+              <h1 class="text-3xl font-bold text-gray-900">User Dashboard</h1>
               <p class="text-gray-500 text-sm mt-1">Manage your activity and profile here.</p>
             {% endif %}
           </div>
@@ -112,7 +112,7 @@
             {% elif role == 'FACILITY_ADMIN' %}
             <span class="text-xs px-3 py-1 rounded-full font-medium bg-indigo-100 text-indigo-700">Facility Admin</span>
             {% else %}
-            <span class="text-xs px-3 py-1 rounded-full font-medium bg-gray-100 text-gray-700">User</span>
+            <span class="text-xs px-3 py-1 rounded-full font-medium bg-blue-100 text-blue-700">User</span>
             {% endif %}
         {% endwith %}
         </div>
