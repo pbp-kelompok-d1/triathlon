@@ -141,46 +141,61 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 });
 
+function showToast(title, message, type) {
+  // Simple alert fallback
+  if (type === 'success') {
+    console.log('Success:', title, message);
+  } else {
+    alert(title + (message ? ': ' + message : ''));
+  }
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
 async function loginUser() {
   const loginButton = document.getElementById('loginButton');
   const originalText = loginButton.textContent;
-  
+  const formElement = document.getElementById('loginForm');
+  const formData = new FormData(formElement);
+
   // Show loading state
   loginButton.disabled = true;
   loginButton.textContent = 'Signing in...';
-  
+
   try {
-    const formData = new FormData(document.querySelector('#loginForm'));
-    
     const response = await fetch("{% url 'main:login' %}", {
       method: "POST",
       body: formData,
       headers: {
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
+        'Accept': 'application/json'
       }
     });
 
     if (response.ok) {
-      const data = await response.json();
-      if (typeof showToast === 'function') {
-        showToast('Login successful!', 'Redirecting...', 'success');
-      }
+      showToast('Login successful!', '', 'success');
       setTimeout(() => {
         window.location.href = "{% url 'main:show_main' %}";
       }, 1000);
     } else {
       const errorData = await response.text();
-      console.error('Login error:', errorData);
-      if (typeof showToast === 'function') {
-        showToast('Login failed', 'Please check your username and password', 'error');
-      }
+      showToast('Login failed', 'Please check your username and password', 'error');
     }
   } catch (error) {
     console.error('Error:', error);
-    if (typeof showToast === 'function') {
-      showToast('Login error', 'Something went wrong', 'error');
-    }
+    showToast('Login error', 'Something went wrong', 'error');
   } finally {
     // Reset button state
     loginButton.disabled = false;
@@ -190,3 +205,5 @@ async function loginUser() {
 </script>
 
 {% endblock content %}
+
+<!-- MASIH RUSAK -->

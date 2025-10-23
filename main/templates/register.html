@@ -186,53 +186,69 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 });
 
+function showToast(title, message, type) {
+  // Simple alert fallback
+  if (type === 'success') {
+    console.log('Success:', title, message);
+  } else {
+    alert(title + (message ? ': ' + message : ''));
+  }
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
 async function registerUser() {
   const registerButton = document.getElementById('registerButton');
   const originalText = registerButton.textContent;
-  
+  const formElement = document.getElementById('registerForm');
+  const formData = new FormData(formElement);
+
   // Clear previous error messages
   document.querySelectorAll('.text-red-600').forEach(el => {
     if (el.classList.contains('mt-1')) {
       el.remove();
     }
   });
-  
+
   // Show loading state
   registerButton.disabled = true;
   registerButton.textContent = 'Registering...';
-  
+
   try {
-    const formData = new FormData(document.querySelector('#registerForm'));
-    
     const response = await fetch("{% url 'main:register' %}", {
       method: "POST",
       body: formData,
       headers: {
         'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
+        'X-CSRFToken': getCookie('csrftoken')
       }
     });
 
     if (response.ok) {
-      const data = await response.json();
-      if (typeof showToast === 'function') {
-        showToast('Registration successful!', 'You can now login with your account', 'success');
-      }
+      showToast('Registration successful!', 'You can now login with your account', 'success');
       setTimeout(() => {
         window.location.href = "{% url 'main:login' %}";
       }, 1500);
     } else {
       const errorData = await response.text();
-      console.error('Registration error:', errorData);
-      if (typeof showToast === 'function') {
-        showToast('Registration failed', 'Please check your form and try again', 'error');
-      }
+      showToast('Registration failed', 'Please check your form and try again', 'error');
     }
   } catch (error) {
     console.error('Error:', error);
-    if (typeof showToast === 'function') {
-      showToast('Registration error', 'Something went wrong', 'error');
-    }
+    showToast('Registration error', 'Something went wrong', 'error');
   } finally {
     // Reset button state
     registerButton.disabled = false;
