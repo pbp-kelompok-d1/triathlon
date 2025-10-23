@@ -27,9 +27,115 @@ def is_admin(user):
         pass
     return user.groups.filter(name__iexact='admin').exists()
 
-def load_datasets(request):
+def delete_all_products(request):
+    Product.objects.all().delete()
+    return JsonResponse({'status': 'success', 'message': 'Semua produk telah dihapus'})
+
+def delete_products_without_seller(request):
+    """Delete all products without seller"""
+    # Hitung jumlah produk tanpa seller
+    products_without_seller = Product.objects.filter(seller__isnull=True)
+    count = products_without_seller.count()
+    
+    if count == 0:
+        return JsonResponse({
+            'status': 'info',
+            'message': 'Tidak ada produk tanpa seller yang perlu dihapus.'
+        })
+    
+    # Hapus thumbnail files terlebih dahulu jika ada
+    for product in products_without_seller:
+        if product.thumbnail:
+            try:
+                if hasattr(product.thumbnail, 'path') and os.path.isfile(product.thumbnail.path):
+                    product.thumbnail.delete(save=False)
+            except Exception:
+                pass
+    
+    # Hapus semua produk tanpa seller
+    products_without_seller.delete()
+    
+    return JsonResponse({
+        'status': 'success',
+        'message': f'Berhasil menghapus {count} produk tanpa seller.',
+        'count': count
+    })
+
+def load_dataset_cycling(request):
     # Gunakan path absolut berdasarkan BASE_DIR
     csv_path = os.path.join(settings.BASE_DIR, 'shop', 'specialized.csv')
+    
+    # Cek apakah file ada
+    if not os.path.exists(csv_path):
+        return JsonResponse({
+            'status': 'error', 
+            'message': f'File CSV tidak ditemukan di: {csv_path}'
+        })
+    
+    # Load datasets
+    products_df = pd.read_csv(csv_path, nrows=100)
+    
+    for data in products_df.itertuples():
+        Product.objects.get_or_create(
+            name=data.name,
+            price=data.price * 1000,
+            stock=100,
+            description=data.p_subCategory3,
+            category='cycling',
+            thumbnail='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQH5yhRNqPTF6in-1CodH3p5Nn40H8pT6r72Q&s',
+            seller= request.user if request.user.is_authenticated else None
+        )
+    
+    # Convert DataFrame to list of dictionaries
+    products_data = products_df.to_dict(orient='records')
+    
+    return JsonResponse({
+        'status': 'success',
+        'products': products_data,
+        'message': f'Berhasil memuat {len(products_data)} produk'
+    })
+
+
+
+def load_dataset_running(request):
+    # Gunakan path absolut berdasarkan BASE_DIR
+    csv_path = os.path.join(settings.BASE_DIR, 'shop', 'running.csv')
+    
+    # Cek apakah file ada
+    if not os.path.exists(csv_path):
+        return JsonResponse({
+            'status': 'error', 
+            'message': f'File CSV tidak ditemukan di: {csv_path}'
+        })
+    
+    # Load datasets
+    products_df = pd.read_csv(csv_path, nrows=100)
+
+    running_products = products_df[products_df['name'].str.contains('Running', case=False, na=False)]
+    
+    for data in running_products.itertuples():
+        Product.objects.get_or_create(
+            name=data.name,
+            price=data.actual_price * 1000,
+            stock=150,
+            description=data.main_category,
+            category='running',
+            thumbnail=data.image,
+            seller= request.user if request.user.is_authenticated else None
+        )
+    
+    # Convert DataFrame to list of dictionaries
+    products_data = running_products.to_dict(orient='records')
+    
+    return JsonResponse({
+        'status': 'success',
+        'products': products_data,
+        'message': f'Berhasil memuat {len(products_data)} produk'
+    })
+
+def load_dataset_swimming(request):
+    # Gunakan path absolut berdasarkan BASE_DIR
+    csv_path = os.path.join(settings.BASE_DIR, 'shop', 'swimming_ril.csv')
     
     # Cek apakah file ada
     if not os.path.exists(csv_path):
@@ -44,11 +150,12 @@ def load_datasets(request):
     for data in products_df.itertuples():
         Product.objects.get_or_create(
             name=data.name,
-            price=data.price,
-            stock=100,
-            description=data.description,
-            category='cycling',
-            thumbnail='default_thumbnail/cycling.jpg'
+            price=data.price * 100,
+            stock=120,
+            description=data.product,
+            category='swimming',
+            thumbnail='https://www.orca.com/uploads/products/rrss/ra31ttsb-01-orca-killa-comfort-swimming-goggles-smoke-black_800x800.jpg',
+            seller= request.user if request.user.is_authenticated else None
         )
     
     # Convert DataFrame to list of dictionaries
