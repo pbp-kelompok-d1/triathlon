@@ -124,8 +124,24 @@
                 {% endif %}
               </span>
             </div>
+            {% if request.user == place.admin %}
+            <div class="flex gap-3">
+              <a href="{% url 'place:edit_place' place.pk %}" class="text-sm font-medium text-yellow-600 hover:text-yellow-800 transition">
+                Edit
+              </a>
+              <form action="{% url 'place:delete_place' place.pk %}" method="POST" 
+                    onsubmit="return confirm('Apakah Anda yakin ingin menghapus tempat ini?');">
+                {% csrf_token %}
+                <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-800 transition">
+                  Hapus
+                </button>
+              </form>
+            </div>
+          {% else %}
             <a href="{% url 'place:place_detail' place.id %}" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition">
               View Details &rarr;
+            </a>
+          {% endif %}
             </a>
           </div>
         </div>
