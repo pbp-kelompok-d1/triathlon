@@ -187,7 +187,7 @@ async function loginUser() {
     if (response.ok) {
       showToast('Login successful!', '', 'success');
       setTimeout(() => {
-        window.location.href = "{% url 'main:show_main' %}";
+        window.location.href = "{% url 'main:show_home' %}";
       }, 1000);
     } else {
       const errorData = await response.text();

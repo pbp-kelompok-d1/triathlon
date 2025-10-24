@@ -13,7 +13,9 @@ urlpatterns = [
     path('<int:pk>/', views.place_detail, name='place_detail'),
     path('<int:place_id>/', views.place_detail, name='place_detail'),
     path('add_review/<int:pk>/', views.add_review, name='add_review'),
-    path('<int:place_id>/edit/', views.edit_place, name='edit_place'),
+    path('<int:pk>/edit/', views.edit_place, name='edit_place'),
+    path('<int:pk>/delete/', views.delete_place, name='delete_place'),
+    path('<int:pk>/delete-image/', views.delete_image, name='delete_image'),
 
 ]
 if settings.DEBUG:

@@ -73,8 +73,7 @@ def load_dataset_cycling(request):
         })
     
     # Load datasets
-    products_df = pd.read_csv(csv_path, nrows=100)
-    
+    products_df = pd.read_csv('https://drive.google.com/file/d/1fsPmjhnXxkk7p   Y1h7QoNWMNr9TN-h0I_/view?usp=drive_link')
     for data in products_df.itertuples():
         Product.objects.get_or_create(
             name=data.name,

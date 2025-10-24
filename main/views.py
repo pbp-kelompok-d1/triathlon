@@ -11,7 +11,16 @@ from .forms import CustomUserCreationForm
 from django.contrib.auth.models import Group
 import datetime
 
-# Create your views here.
+
+
+@login_required(login_url='/login/')
+def show_home(request):
+    context = {
+        'user': request.user,
+        'last_login': request.COOKIES.get('last_login', 'Never')
+    }
+    return render(request, 'home.html', context)
+
 def show_main(request):
     # show user info if logged in
     context = {
@@ -60,7 +69,7 @@ def login_user(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            response = HttpResponseRedirect(reverse("main:show_main"))
+            response = HttpResponseRedirect(reverse("main:show_home"))
             response.set_cookie('last_login', str(datetime.datetime.now()))
             return response
         else:
