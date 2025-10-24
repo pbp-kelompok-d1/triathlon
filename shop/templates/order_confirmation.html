@@ -1,39 +1,235 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order Confirmation - Triathlon Store{% endblock %}
+
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-  <div class="max-w-3xl mx-auto">
-    <h1 class="text-2xl font-bold mb-6">Konfirmasi Pesanan</h1>
-
-    <div class="bg-white rounded shadow">
-      <div class="p-4 border-b">
-        <h2 class="font-semibold">Ringkasan</h2>
-      </div>
-      <div class="divide-y">
-        {% for item in cart_items %}
-        <div class="p-4 flex justify-between">
-          <div>
-            <div class="font-medium">{{ item.product.name }}</div>
-            <div class="text-sm text-gray-600">Qty: {{ item.quantity }}</div>
-          </div>
-          <div class="font-semibold">Rp {{ item.subtotal|floatformat:0 }}</div>
+<div class="min-h-screen bg-white py-8">
+    <div class="container mx-auto px-4">
+        <!-- Header with Breadcrumb -->
+        <div class="mb-8">
+            <nav class="flex mb-4" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                    <li class="inline-flex items-center">
+                        <a href="{% url 'shop:shop' %}" class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors">
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+                            </svg>
+                            <span class="text-sm font-medium">Shop</span>
+                        </a>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            <a href="{% url 'shop:view_cart' %}" class="text-blue-600 hover:text-blue-800 transition-colors">
+                                <span class="text-sm font-medium">Cart</span>
+                            </a>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="text-sm font-medium text-gray-500">Order Confirmation</span>
+                        </div>
+                    </li>
+                </ol>
+            </nav>
+            <h1 class="text-4xl font-bold text-gray-900 flex items-center">
+                <svg class="w-10 h-10 mr-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Order Confirmation
+            </h1>
+            <p class="text-gray-600 text-lg mt-2">Review your order details before completing your purchase</p>
         </div>
-        {% endfor %}
-      </div>
-      <div class="p-4 border-t flex justify-between">
-        <span class="font-semibold">Total</span>
-        <span class="text-green-600 font-bold">Rp {{ total|floatformat:0 }}</span>
-      </div>
-    </div>
 
-    <form method="POST" class="mt-6">
-      {% csrf_token %}
-      <div class="flex gap-3">
-        <a href="{% url 'shop:view_cart' %}" class="flex-1 text-center bg-gray-500 hover:bg-gray-600 text-white py-3 rounded">Kembali</a>
-        <button id="confirm-btn" type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded">
-          Konfirmasi Beli
-        </button>
-      </div>
-    </form>
-  </div>
+        <div class="max-w-4xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Order Items -->
+                <div class="lg:col-span-2">
+                    <div class="bg-gray-50 rounded-2xl shadow-xl overflow-hidden border">
+                        <!-- Header -->
+                        <div class="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6">
+                            <h2 class="text-xl font-semibold flex items-center">
+                                <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                                </svg>
+                                Order Summary
+                            </h2>
+                            <p class="text-blue-100 mt-1">{{ cart_items|length }} item{{ cart_items|length|pluralize }} in your order</p>
+                        </div>
+
+                        <!-- Items List -->
+                        <div class="divide-y divide-gray-200 bg-white">
+                            {% for item in cart_items %}
+                            <div class="p-6 hover:bg-gray-50 transition-colors">
+                                <div class="flex items-start space-x-4">
+                                    <!-- Product Image -->
+                                    <div class="flex-shrink-0">
+                                        {% if item.product.thumbnail %}
+                                        <img src="{{ item.product.thumbnail }}" alt="{{ item.product.name }}" class="w-20 h-20 object-cover rounded-lg shadow-md">
+                                        {% else %}
+                                        <div class="w-20 h-20 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-lg flex items-center justify-center shadow-md">
+                                            <svg class="w-8 h-8 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Product Details -->
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="text-lg font-semibold text-gray-900 line-clamp-2">
+                                            {{ item.product.name }}
+                                        </h3>
+                                        {% if item.product.category %}
+                                        <p class="text-sm text-gray-500 mt-1 flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                                            </svg>
+                                            {{ item.product.category }}
+                                        </p>
+                                        {% endif %}
+                                        
+                                        <div class="flex items-center justify-between mt-3">
+                                            <div class="flex items-center space-x-4">
+                                                <span class="text-sm text-gray-600">Price:</span>
+                                                <span class="text-lg font-medium text-gray-900">Rp {{ item.product.price|floatformat:0 }}</span>
+                                            </div>
+                                            <div class="flex items-center space-x-4">
+                                                <span class="text-sm text-gray-600">Qty:</span>
+                                                <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                    {{ item.quantity }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Item Subtotal -->
+                                    <div class="text-right">
+                                        <p class="text-sm text-gray-500 mb-1">Subtotal</p>
+                                        <p class="text-xl font-bold text-blue-600">Rp {{ item.subtotal|floatformat:0 }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Total & Actions -->
+                <div class="lg:col-span-1">
+                    <div class="sticky top-8 space-y-6">
+                        <!-- Total Summary -->
+                        <div class="bg-gray-50 rounded-2xl shadow-xl p-6 border">
+                            <h3 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                                <svg class="w-6 h-6 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                                Order Total
+                            </h3>
+                            
+                            <div class="space-y-4">
+                                <div class="flex justify-between text-gray-600">
+                                    <span>Items ({{ cart_items|length }})</span>
+                                    <span>Rp {{ total|floatformat:0 }}</span>
+                                </div>
+                                <div class="flex justify-between text-gray-600">
+                                    <span>Shipping</span>
+                                    <span class="text-green-600 font-medium">FREE</span>
+                                </div>
+                                <div class="border-t pt-4">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-lg font-semibold text-gray-900">Total Amount</span>
+                                        <span class="text-2xl font-bold text-green-600">Rp {{ total|floatformat:0 }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Info -->
+                        <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6">
+                            <div class="flex items-start">
+                                <svg class="w-6 h-6 text-green-600 mt-1 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <div>
+                                    <h4 class="font-semibold text-green-800 mb-2">Secure Checkout</h4>
+                                    <p class="text-sm text-green-700 leading-relaxed">
+                                        Your order will be processed securely. You'll receive an email confirmation once your order is placed.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <form method="POST" class="space-y-4">
+                            {% csrf_token %}
+                            <button id="confirm-btn" type="submit" 
+                                    class="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center disabled:opacity-75 disabled:cursor-not-allowed disabled:transform-none">
+                                <svg id="check-icon" class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <svg id="loading-icon" class="w-5 h-5 mr-3 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span id="btn-text">Complete Order</span>
+                            </button>
+                            
+                            <a href="{% url 'shop:view_cart' %}" 
+                               class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-4 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center">
+                                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                                </svg>
+                                Back to Cart
+                            </a>
+                        </form>
+
+                        <!-- Security Badge -->
+                        <div class="bg-gray-100 border border-gray-200 rounded-xl p-4">
+                            <div class="flex items-center justify-center space-x-2 text-gray-600">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                </svg>
+                                <span class="text-sm font-medium">256-bit SSL Encrypted</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmBtn = document.getElementById('confirm-btn');
+    const btnText = document.getElementById('btn-text');
+    const checkIcon = document.getElementById('check-icon');
+    const loadingIcon = document.getElementById('loading-icon');
+    const form = confirmBtn.closest('form');
+    
+    form.addEventListener('submit', function(e) {
+        // Prevent double submission
+        if (confirmBtn.disabled) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Show loading state
+        confirmBtn.disabled = true;
+        checkIcon.classList.add('hidden');
+        loadingIcon.classList.remove('hidden');
+        btnText.textContent = 'Processing Order...';
+        
+        // The form will submit naturally after this
+        // No need to prevent default or handle the submission manually
+    });
+});
+</script>
 {% endblock %}

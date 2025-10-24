@@ -15,7 +15,6 @@ from django.db.models import F
 
 
 def is_admin(user):
-    # Admin: superuser/staff, atau role profile 'ADMIN', atau anggota group 'admin'
     if not user or not user.is_authenticated:
         return False
     if getattr(user, 'is_superuser', False) or getattr(user, 'is_staff', False):
@@ -73,7 +72,7 @@ def load_dataset_cycling(request):
         })
     
     # Load datasets
-    products_df = pd.read_csv('https://drive.google.com/file/d/1fsPmjhnXxkk7p   Y1h7QoNWMNr9TN-h0I_/view?usp=drive_link')
+    products_df = pd.read_csv(csv_path, nrows=100)
     for data in products_df.itertuples():
         Product.objects.get_or_create(
             name=data.name,
@@ -97,17 +96,14 @@ def load_dataset_cycling(request):
 
 
 def load_dataset_running(request):
-    # Gunakan path absolut berdasarkan BASE_DIR
     csv_path = os.path.join(settings.BASE_DIR, 'shop', 'running.csv')
     
-    # Cek apakah file ada
     if not os.path.exists(csv_path):
         return JsonResponse({
             'status': 'error', 
             'message': f'File CSV tidak ditemukan di: {csv_path}'
         })
     
-    # Load datasets
     products_df = pd.read_csv(csv_path, nrows=100)
 
     running_products = products_df[products_df['name'].str.contains('Running', case=False, na=False)]
@@ -123,7 +119,6 @@ def load_dataset_running(request):
             seller= request.user if request.user.is_authenticated else None
         )
     
-    # Convert DataFrame to list of dictionaries
     products_data = running_products.to_dict(orient='records')
     
     return JsonResponse({
@@ -133,17 +128,14 @@ def load_dataset_running(request):
     })
 
 def load_dataset_swimming(request):
-    # Gunakan path absolut berdasarkan BASE_DIR
     csv_path = os.path.join(settings.BASE_DIR, 'shop', 'swimming_ril.csv')
     
-    # Cek apakah file ada
     if not os.path.exists(csv_path):
         return JsonResponse({
             'status': 'error', 
             'message': f'File CSV tidak ditemukan di: {csv_path}'
         })
     
-    # Load datasets
     products_df = pd.read_csv(csv_path)
     
     for data in products_df.itertuples():
@@ -157,7 +149,7 @@ def load_dataset_swimming(request):
             seller= request.user if request.user.is_authenticated else None
         )
     
-    # Convert DataFrame to list of dictionaries
+
     products_data = products_df.to_dict(orient='records')
     
     return JsonResponse({
@@ -192,7 +184,6 @@ def add_product(request):
     return render(request, "add_product.html", context)
 
 def show_product(request):
-    # Admin delete via POST ke halaman yang sama
     if request.method == 'POST' and request.user.is_authenticated and is_admin(request.user):
         action = request.POST.get('action')
         if action == 'admin_delete':
@@ -200,14 +191,14 @@ def show_product(request):
             product = get_object_or_404(Product, pk=pid)
             name = product.name
 
-            # hapus file thumbnail jika ada
+    
             try:
                 if getattr(product, 'thumbnail', None) and hasattr(product.thumbnail, 'path') and os.path.isfile(product.thumbnail.path):
                     product.thumbnail.delete(save=False)
             except Exception:
                 pass
 
-            product.delete()  # FK cascade akan membersihkan CartItem/Wishlist terkait
+            product.delete() 
 
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'success', 'product_id': str(pid), 'message': f'Produk "{name}" dihapus'})
@@ -254,13 +245,12 @@ def product_detail(request, id):
     """Show individual product detail (AJAX-enabled)"""
     product = get_object_or_404(Product, pk=id)
 
-    # Jika request AJAX, kembalikan JSON
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         data = {
             'id': product.id,
             'name': product.name,
             'price': float(product.price),
-            'description': product.description,  # kirim apa adanya, di-escape di sisi klien bila perlu
+            'description': product.description, 
             'stock': product.stock,
             'category': product.category,
             'seller': (product.seller.username if getattr(product, 'seller', None) else None),
@@ -276,9 +266,7 @@ def product_detail(request, id):
         }
         return JsonResponse({'status': 'success', 'product': data})
 
-    # Render HTML biasa: cukup kirim product_id agar JS bisa fetch detail via AJAX
     return render(request, "product_detail.html", {'product_id': product.id})
-# ...existing code...
 
 @login_required
 def delete_product(request, id):
@@ -457,7 +445,7 @@ def remove_from_cart(request, product_id):
 
 @login_required
 def toggle_wishlist(request, product_id):
-    """Tambah/hapus product dari wishlist (ManyToMany)"""
+    
     product = get_object_or_404(Product, pk=product_id)
     wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
 
@@ -466,7 +454,6 @@ def toggle_wishlist(request, product_id):
         in_wishlist = False
         msg = f'{product.name} removed from wishlist'
         
-        # Jika request dari halaman wishlist (bukan AJAX), redirect ke wishlist
         referer = request.META.get('HTTP_REFERER', '')
         if 'wishlist' in referer and not request.headers.get('x-requested-with') == 'XMLHttpRequest':
             messages.success(request, msg)
@@ -476,7 +463,6 @@ def toggle_wishlist(request, product_id):
         in_wishlist = True
         msg = f'{product.name} added to wishlist'
 
-    # Response AJAX
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return JsonResponse({
             'status': 'success',
@@ -492,13 +478,12 @@ def toggle_wishlist(request, product_id):
 def view_wishlist(request):
     """Tampilkan wishlist user (M2M)"""
     wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
-    # Hindari select_related('product') — gunakan prefetch_related('products')
     products_qs = wishlist.products.all()
 
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         products_data = [
             {
-                'id': str(p.id),  # UUID ke string
+                'id': str(p.id),
                 'name': p.name,
                 'price': str(p.price),
                 'thumbnail': p.thumbnail or '',
@@ -514,7 +499,7 @@ def view_wishlist(request):
 
     context = {
         'wishlist': wishlist,
-        'products': products_qs,  # iterasi di template
+        'products': products_qs,  
     }
     return render(request, 'wishlist_detail.html', context)
 
@@ -528,19 +513,17 @@ def checkout(request):
         messages.error(request, 'Keranjang kosong')
         return redirect('shop:view_cart')
 
-    # Ringkasan dan total untuk GET
     total = sum(ci.product.price * ci.quantity for ci in cart_items)
 
     if request.method == 'POST':
-        # Buat map {product_id: total_quantity} dari cart items
         qty_map = {}
         for ci in cart_items:
             qty_map[ci.product_id] = qty_map.get(ci.product_id, 0) + ci.quantity
 
-        # Kunci produk yang terlibat agar stok konsisten
+       
         products = list(Product.objects.select_for_update().filter(id__in=qty_map.keys()))
 
-        # Validasi stok berdasarkan quantity TERBARU dari cart
+      
         kurang = []
         for p in products:
             if qty_map[p.id] > p.stock:
@@ -549,23 +532,23 @@ def checkout(request):
             messages.error(request, 'Stok tidak cukup: ' + ', '.join(kurang))
             return redirect('shop:view_cart')
 
-        # Kurangi stok sesuai quantity di cart (aman dengan F)
+       
         for p in products:
             Product.objects.filter(id=p.id).update(stock=F('stock') - qty_map[p.id])
 
-        # Kosongkan cart user
+        
         CartItem.objects.filter(cart=cart).delete()
 
         total_items = sum(qty_map.values())
         messages.success(request, f'Pembelian berhasil! {total_items} item dengan total harga Rp {total:,.0f}.')
         return redirect('shop:shop')
 
-    # GET: tampilkan halaman konfirmasi dengan quantity TERBARU
+    
     items_data = [
         {
             'id': ci.id,
             'product': ci.product,
-            'quantity': ci.quantity,  # quantity terbaru dari cart
+            'quantity': ci.quantity, 
             'subtotal': ci.product.price * ci.quantity
         } for ci in cart_items
     ]
@@ -600,10 +583,10 @@ def update_cart_quantity(request, item_id):
         cart_item.quantity = new_quantity
         cart_item.save()
         
-        # Calculate new subtotal
+       
         subtotal = cart_item.product.price * cart_item.quantity
         
-        # Calculate new total
+       
         cart_items = CartItem.objects.filter(cart=cart)
         total = sum(item.product.price * item.quantity for item in cart_items)
         

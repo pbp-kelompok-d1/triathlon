@@ -17,10 +17,6 @@ def ajax_headers():
     return {'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'}
 
 
-# ============================================================================
-# TEST FUNGSI HELPER
-# ============================================================================
-
 class IsAdminFunctionTest(TestCase):
     """Test fungsi is_admin"""
     
@@ -58,11 +54,6 @@ class IsAdminFunctionTest(TestCase):
         """Test None bukan admin"""
         self.assertFalse(is_admin(None))
 
-
-# ============================================================================
-# TEST PRODUCT MANAGEMENT (ADMIN)
-# ============================================================================
-
 class DeleteAllProductsTest(TestCase):
     """Test delete_all_products view"""
     
@@ -93,10 +84,6 @@ class DeleteAllProductsTest(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['status'], 'success')
 
-
-# ============================================================================
-# TEST DATASET LOADING
-# ============================================================================
 
 class LoadDatasetCyclingTest(TestCase):
     """Test load_dataset_cycling view"""
@@ -157,10 +144,6 @@ class LoadDatasetSwimmingTest(TestCase):
         data = res.json()
         self.assertEqual(data['status'], 'error')
 
-
-# ============================================================================
-# TEST PRODUCT LISTING & FILTERING
-# ============================================================================
 
 class ShowProductTest(TestCase):
     """Test show_product view"""
@@ -261,10 +244,6 @@ class ShowProductTest(TestCase):
         self.assertTrue(Product.objects.filter(id=self.p1.id).exists())
 
 
-# ============================================================================
-# TEST PRODUCT DETAIL
-# ============================================================================
-
 class ProductDetailTest(TestCase):
     """Test product_detail view"""
     
@@ -303,10 +282,6 @@ class ProductDetailTest(TestCase):
         except Exception:
             self.skipTest("UUID format tidak match")
 
-
-# ============================================================================
-# TEST ADD PRODUCT
-# ============================================================================
 
 class AddProductTest(TestCase):
     """Test add_product view"""
@@ -360,11 +335,6 @@ class AddProductTest(TestCase):
         })
         
         self.assertEqual(res.status_code, 400)
-
-
-# ============================================================================
-# TEST EDIT PRODUCT
-# ============================================================================
 
 class EditProductTest(TestCase):
     """Test edit_product view"""
@@ -447,10 +417,6 @@ class EditProductTest(TestCase):
         self.assertEqual(self.product.name, 'Admin Edit')
 
 
-# ============================================================================
-# TEST DELETE PRODUCT
-# ============================================================================
-
 class DeleteProductTest(TestCase):
     """Test delete_product view"""
     
@@ -505,11 +471,6 @@ class DeleteProductTest(TestCase):
         msg = res.json()['message']
         self.assertTrue(msg.startswith('[ADMIN]'))
         self.assertFalse(Product.objects.filter(id=self.product.id).exists())
-
-
-# ============================================================================
-# TEST CART
-# ============================================================================
 
 class CartViewTest(TestCase):
     """Test cart views"""
@@ -593,11 +554,6 @@ class CartViewTest(TestCase):
         url = reverse('shop:remove_from_cart', args=[self.product.id])
         res = self.client.post(url, **ajax_headers())
         self.assertEqual(res.status_code, 404)
-
-
-# ============================================================================
-# TEST WISHLIST
-# ============================================================================
 
 class WishlistViewTest(TestCase):
     """Test wishlist views"""
@@ -684,11 +640,6 @@ class WishlistViewTest(TestCase):
         url = reverse('shop:view_wishlist')
         res = self.client.get(url)
         self.assertEqual(res.status_code, 302)
-
-
-# ============================================================================
-# TEST CHECKOUT
-# ============================================================================
 
 class CheckoutViewTest(TestCase):
     """Test checkout view"""
