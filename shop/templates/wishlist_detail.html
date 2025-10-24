@@ -1,31 +1,76 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <h1 class="my-4">Wishlist Anda</h1>
+<div class="container mx-auto px-4 py-6">
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold mb-2">Wishlist Anda</h1>
+        <a href="{% url 'shop:shop' %}" class="text-blue-600 hover:text-blue-800">
+            ← Kembali ke Shop
+        </a>
+    </div>
 
     {% if not products %}
-        <div class="alert alert-info" role="alert">
-            Wishlist Anda masih kosong.
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
+            <svg class="w-16 h-16 mx-auto text-blue-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+            </svg>
+            <p class="text-gray-600 text-lg mb-4">Wishlist Anda masih kosong.</p>
+            <a href="{% url 'shop:shop' %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md transition">
+                Lihat Produk
+            </a>
         </div>
-        <a href="{% url 'shop:shop' %}" class="btn btn-primary">Lihat Produk</a>
     {% else %}
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            {% for product in products %}
-            <div class="col">
-                <div class="card h-100 shadow-sm">
-                    {% if product.thumbnail %}
-                        <img src="{{ product.thumbnail.url }}" class="card-img-top" alt="{{ product.name }}">
-                    {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title">{{ product.name }}</h5>
-                        <h6 class="card-subtitle mb-2 fw-bold">Rp {{ product.price }}</h6>
-                        <a href="{% url 'shop:product_detail' product.id %}" class="btn btn-primary">Lihat Detail</a>
-                        <a href="{% url 'shop:toggle_wishlist' product.id %}" class="btn btn-outline-danger ms-2">Hapus</a>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="mb-4">
+                <p class="text-gray-600">Total: <strong>{{ products|length }}</strong> produk dalam wishlist</p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                {% for product in products %}
+                <div class="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow duration-300 flex flex-col">
+                    <div class="relative">
+                        <div class="aspect-square overflow-hidden rounded-t-lg">
+                            {% if product.thumbnail %}
+                                <img src="{{ product.thumbnail }}" alt="{{ product.name }}" class="w-full h-full object-cover">
+                            {% else %}
+                                <div class="w-full h-full bg-gray-200 flex items-center justify-center">
+                                    <span class="text-gray-400 text-sm">No Image</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="p-3 flex-1 flex flex-col">
+                        <a href="{% url 'shop:product_detail' product.id %}" class="block mb-2">
+                            <h5 class="text-sm font-semibold text-gray-800 hover:text-blue-600 line-clamp-2 min-h-[2.5rem]">
+                                {{ product.name }}
+                            </h5>
+                        </a>
+                        
+                        <div class="mt-auto">
+                            <div class="text-lg font-bold text-gray-900 mb-3">
+                                Rp {{ product.price|floatformat:0 }}
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <a href="{% url 'shop:product_detail' product.id %}" 
+                                   class="block w-full bg-blue-600 hover:bg-blue-700 text-white text-center px-3 py-2 rounded-md text-sm transition">
+                                    Lihat Detail
+                                </a>
+                                
+                                <form method="post" action="{% url 'shop:toggle_wishlist' product.id %}" class="w-full">
+                                    {% csrf_token %}
+                                    <button type="submit" 
+                                            class="w-full bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm transition">
+                                        Hapus dari Wishlist
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
     {% endif %}
 </div>

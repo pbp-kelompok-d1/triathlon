@@ -1,31 +1,158 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container">
-    <h1>{{ product.name }}</h1>
-    <div class="product-detail">
-        <img src="{{ product.thumbnail }}" alt="{{ product.name }}" class="product-image">
-        <div class="product-info">
-            <p><strong>Price:</strong> ${{ product.price }}</p>
-            <p><strong>Description:</strong> {{ product.description|safe }}</p>
-            <p><strong>Stock:</strong> {{ product.stock }}</p>
-            <p><strong>Category:</strong> {{ product.category }}</p>
-            <p><strong>Seller:</strong> {{ product.seller }}</p>
-        </div>
-    </div>
-    <div class="product-actions">
-        {% if product.seller == user %}
-        <a href="{% url 'shop:edit_product' product.id %}">Edit Product</a>
-        <a href="{% url 'shop:delete_product' product.id %}">Delete Product</a>
-        {% endif %}
-    </div>
+    <div id="product-root" data-product-id="{{ product_id }}">
+        <h1 id="p-name" class="text-2xl font-bold">Loading...</h1>
 
-    <div class="mt-4">
-    <form action="{% url 'shop:add_to_cart' product.id %}" method="post" class="d-inline">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-success">Masukkan ke Keranjang</button>
-    </form>
-    <a href="{% url 'shop:toggle_wishlist' product.id %}" class="btn btn-outline-danger">Tambah ke Wishlist</a>
-    <a href="{% url 'shop:shop' %}" class="btn btn-outline-danger">Kembali ke halaman utama</a>
+        <div class="product-detail mt-4">
+            <img id="p-image" src="" alt="" class="product-image" style="max-width: 320px; display:none;">
+            <div class="product-info mt-3">
+                <p><strong>Price:</strong> <span id="p-price">-</span></p>
+                <p><strong>Description:</strong> <span id="p-desc">-</span></p>
+                <p><strong>Stock:</strong> <span id="p-stock">-</span></p>
+                <p><strong>Category:</strong> <span id="p-cat">-</span></p>
+                <p><strong>Seller:</strong> <span id="p-seller">-</span></p>
+            </div>
+        </div>
+
+        <div class="product-actions mt-3" id="owner-actions" style="display:none;">
+            <a id="edit-link" href="#" class="btn btn-primary">Edit Product</a>
+            <a id="delete-link" href="#" class="btn btn-danger">Delete Product</a>
+        </div>
+
+        <div class="mt-4 flex gap-2">
+            <button id="btn-add-cart" class="btn btn-success">Masukkan ke Keranjang</button>
+            <button id="btn-toggle-wishlist" class="btn btn-outline-danger">Tambah ke Wishlist</button>
+            <a href="{% url 'shop:shop' %}" class="btn btn-outline-secondary">Kembali ke halaman utama</a>
+        </div>
+
+        <div id="detail-msg" class="mt-3 text-sm"></div>
+    </div>
 </div>
-</div>
+
+<script>
+(function() {
+    function getCookie(name) {
+        const value = '; ' + document.cookie;
+        const parts = value.split('; ' + name + '=');
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    const root = document.getElementById('product-root');
+    const productId = root.dataset.productId;
+
+    const el = {
+        name: document.getElementById('p-name'),
+        img: document.getElementById('p-image'),
+        price: document.getElementById('p-price'),
+        desc: document.getElementById('p-desc'),
+        stock: document.getElementById('p-stock'),
+        cat: document.getElementById('p-cat'),
+        seller: document.getElementById('p-seller'),
+        msg: document.getElementById('detail-msg'),
+        ownerActions: document.getElementById('owner-actions'),
+        editLink: document.getElementById('edit-link'),
+        deleteLink: document.getElementById('delete-link'),
+        btnCart: document.getElementById('btn-add-cart'),
+        btnWish: document.getElementById('btn-toggle-wishlist'),
+    };
+
+    function setMsg(text, type='info') {
+        el.msg.textContent = text || '';
+        el.msg.style.color = (type === 'error') ? '#b91c1c' : (type === 'success' ? '#065f46' : '');
+    }
+
+    function loadDetail() {
+        setMsg('Memuat detail produk...');
+        fetch(window.location.href, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status !== 'success') throw new Error('Gagal memuat');
+            const p = data.product;
+
+            el.name.textContent = p.name;
+            el.price.textContent = 'Rp' + (p.price ?? '-');
+            el.desc.innerHTML = p.description || '-';
+            el.stock.textContent = p.stock ?? '-';
+            el.cat.textContent = p.category || '-';
+            el.seller.textContent = p.seller || '-';
+
+            if (p.thumbnail) {
+                el.img.src = p.thumbnail;
+                el.img.alt = p.name;
+                el.img.style.display = 'block';
+            } else {
+                el.img.style.display = 'none';
+            }
+
+            // Simpan URL aksi pada dataset
+            root.dataset.cartUrl = p.cart_url;
+            root.dataset.wishlistUrl = p.wishlist_url;
+
+            if (p.can_edit) {
+                el.ownerActions.style.display = 'block';
+                el.editLink.href = p.edit_url;
+                el.deleteLink.href = p.delete_url;
+            } else {
+                el.ownerActions.style.display = 'none';
+            }
+
+            setMsg('');
+        })
+        .catch(() => {
+            setMsg('Gagal memuat detail produk.', 'error');
+        });
+    }
+
+    el.btnCart.addEventListener('click', function() {
+        const url = root.dataset.cartUrl;
+        if (!url) return;
+        setMsg('Menambah ke keranjang...');
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.status === 'success') {
+                setMsg(d.message || 'Ditambahkan ke keranjang', 'success');
+            } else {
+                setMsg(d.message || 'Gagal menambah ke keranjang', 'error');
+            }
+        })
+        .catch(() => setMsg('Terjadi kesalahan jaringan', 'error'));
+    });
+
+    el.btnWish.addEventListener('click', function() {
+        const url = root.dataset.wishlistUrl;
+        if (!url) return;
+        setMsg('Memproses wishlist...');
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.status === 'success') {
+                setMsg(d.message || 'Wishlist diperbarui', 'success');
+            } else {
+                setMsg(d.message || 'Gagal memperbarui wishlist', 'error');
+            }
+        })
+        .catch(() => setMsg('Terjadi kesalahan jaringan', 'error'));
+    });
+
+    // Muat saat halaman siap
+    document.addEventListener('DOMContentLoaded', loadDetail);
+})();
+</script>
 {% endblock %}
