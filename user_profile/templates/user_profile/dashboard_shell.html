@@ -1,0 +1,924 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="bg-gray-50 min-h-screen py-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+    <div class="lg:col-span-2 space-y-8">
+
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        
+        <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+          <div>
+            {% if user_role == 'SELLER' %}
+              <h1 class="text-3xl font-bold text-gray-900">Seller Dashboard</h1>
+              <p class="text-gray-500 text-sm mt-1">Manage your products and posts.</p>
+            {% elif user_role == 'FACILITY_ADMIN' %}
+              <h1 class="text-3xl font-bold text-gray-900">Facility Admin Dashboard</h1>
+              <p class="text-gray-500 text-sm mt-1">Manage your facilities and tickets.</p>
+            {% else %}
+              <h1 class="text-3xl font-bold text-gray-900">User Dashboard</h1>
+              <p class="text-gray-500 text-sm mt-1">Manage your activity and profile here.</p>
+            {% endif %}
+          </div>
+          
+          <form id="category-filter-form" class="flex-shrink-0 flex gap-2">
+            <input type="hidden" name="view" id="view-hidden-input" value="{{ initial_view }}">
+            
+            <select name="category" id="category-select" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="">All Sport Categories</option>
+              <option value="swimming" {% if initial_category == "swimming" %}selected{% endif %}>Swimming</option>
+              <option value="running" {% if initial_category == "running" %}selected{% endif %}>Running</option>
+              <option value="cycling" {% if initial_category == "cycling" %}selected{% endif %}>Cycling</option>
+            </select>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 text-sm font-medium shadow-sm">
+              Filter
+            </button>
+            
+          </form>
+        </div>
+
+        <div class="border-t border-gray-200 mt-6 pt-4">
+          <div class="flex flex-wrap gap-2" id="view-filter-buttons">
+            
+            {% if user_role == 'USER' %}
+              <button data-view="all" type="button" class="js-view-filter px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200">
+                All Activities
+              </button>
+              <button data-view="posts" type="button" class="js-view-filter px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200">
+                My Posts
+              </button>
+              <button data-view="replies" type="button" class="js-view-filter px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200">
+                My Replies
+              </button>
+              <button data-view="wishlist" type="button" class="js-view-filter px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200">
+                My Wishlist
+              </button>
+            
+            {% elif user_role == 'SELLER' %}
+              <button data-view="all" type="button" class="js-view-filter px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200">
+                All
+              </button>
+              <button data-view="products" type="button" class="js-view-filter px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200">
+                My Products
+              </button>
+              <button data-view="posts" type="button" class="js-view-filter px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200">
+                My Posts
+              </button>
+              
+            {% elif user_role == 'FACILITY_ADMIN' %}
+              <button data-view="all" type="button" class="js-view-filter px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200">
+                All
+              </button>
+              <button data-view="facilities" type="button" class="js-view-filter px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200">
+                My Facilities
+              </button>
+              <button data-view="tickets" type="button" class="js-view-filter px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200">
+                Ticket Orders
+              </button>
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+      <div id="dashboard-content-container" class="space-y-10">
+        <div id="dashboard-loader" class="bg-white rounded-xl shadow-sm border p-12 text-center">
+          <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto" ...>
+            </svg>
+          <p class="mt-4 text-gray-500">Loading dashboard content...</p>
+        </div>
+      </div>
+      
+    </div>
+
+    <div class="lg:col-span-1">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center sticky top-12">
+        <img src="{% static 'img/default_profile.png' %}" alt="Profile Photo" 
+             class="w-36 h-36 rounded-full mx-auto mb-4 object-cover ring-4 ring-blue-200">
+
+        {% if user.first_name or user.last_name %}
+        <h3 id="profile_full_name" class="text-2xl font-bold text-gray-900 truncate px-4">{{ user.first_name }} {{ user.last_name }}</h3>
+        <p id="profile_username" class="text-sm text-gray-500">@{{ user.username }}</p>
+        {% else %}
+        <h3 id="profile_full_name" class="text-2xl font-bold text-gray-900 truncate px-4">@{{ user.username }}</h3>
+        <p id="profile_username" class="text-sm text-gray-500" style="display: none;"></p>
+        {% endif %}
+        <div class="mt-2 mb-4"> {% with role=user.profile.role|default:"USER" %}
+            {% if role == 'ADMIN' %}
+            <span class="text-xs px-3 py-1 rounded-full font-medium bg-red-100 text-red-700">Admin</span>
+            {% elif role == 'SELLER' %}
+            <span class="text-xs px-3 py-1 rounded-full font-medium bg-green-100 text-green-700">Seller</span>
+            {% elif role == 'FACILITY_ADMIN' %}
+            <span class="text-xs px-3 py-1 rounded-full font-medium bg-indigo-100 text-indigo-700">Facility Admin</span>
+            {% else %}
+            <span class="text-xs px-3 py-1 rounded-full font-medium bg-blue-100 text-blue-700">User</span>
+            {% endif %}
+        {% endwith %}
+        </div>
+
+        <div id="profile_bio_wrapper" class="text-sm text-gray-700 mb-6 text-left border-t border-b border-gray-100 py-4 px-4">
+        {% if user.profile.bio %}
+            <p id="profile_bio_text">💬 &nbsp; <span class="italic">"{{ user.profile.bio }}"</span></p>
+        {% else %}
+            <p id="profile_bio_text" class="italic text-gray-500">✍️ &nbsp; This person hasn't written their bio yet… maybe they're out training for their next triathlon?</p>
+        {% endif %}
+        </div>
+        <div class="space-y-3 text-sm text-left pt-0"> <div class="flex justify-between items-center">
+            <span class="font-medium text-gray-500">Email:</span>
+            <span class="text-gray-800 truncate ml-2">{{ user.email }}</span>
+        </div>
+        <div class="flex justify-between items-center">
+            <span class="font-medium text-gray-500">Phone:</span>
+            <span id="profile_phone" class="text-gray-800">{{ user.profile.phone_number|default_if_none:"Not set" }}</span>
+        </div>
+        <div class="flex justify-between items-center">
+            <span class="font-medium text-gray-500">Joined:</span>
+            <span class="text-gray-800">{{ user.date_joined|date:"M d, Y" }}</span>
+        </div>
+        </div>
+
+        <button type="button" onclick="openEditProfileModal()"
+                class="mt-8 inline-block w-full px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 font-medium shadow-sm hover:shadow-md">
+        Edit Profile
+        </button>
+
+        <button type="button" onclick="openChangePasswordModal()"
+                class="mt-2 inline-block w-full px-5 py-3 bg-white text-gray-700 rounded-lg hover:bg-gray-100 transition duration-200 font-medium border border-gray-300 shadow-sm">
+            Change Password
+        </button>
+
+        <button type="button" onclick="openDeleteModal()"
+                class="mt-4 inline-block w-full px-5 py-3 bg-white text-red-600 rounded-lg hover:bg-red-50 transition duration-200 font-medium border border-red-200 shadow-sm">
+            Delete Account
+        </button>
+    </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="editProfileModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden" onclick="closeEditProfileModalOnClickOutside(event)">
+  <div class="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+    <div class="mt-3">
+      <button type="button" onclick="closeEditProfileModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+
+      <h3 class="text-xl leading-6 font-medium text-gray-900 text-center mb-6">Edit Profile</h3>
+
+      <form id="editProfileForm" class="mt-2 space-y-4">
+        {% csrf_token %}
+        
+        <div class="px-4">
+            <label for="edit_username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <input type="text" name="username" id="edit_username" value="{{ user.username }}"
+                class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm">
+        </div>
+
+        <div class="px-4">
+            <label for="edit_email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input type="email" name="email" id="edit_email" value="{{ user.email }}"
+                class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm">
+        </div>
+
+        <hr class="mx-4">
+        
+        <div class="px-4">
+            <label for="edit_first_name" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+            <input type="text" name="first_name" id="edit_first_name" value="{{ user.first_name|default:"" }}"
+                placeholder="Enter your first name"
+                class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm">
+        </div>
+
+        <div class="px-4">
+            <label for="edit_last_name" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+            <input type="text" name="last_name" id="edit_last_name" value="{{ user.last_name|default:"" }}"
+                placeholder="Enter your last name"
+                class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm">
+        </div>
+
+        <div class="px-4">
+            <label for="edit_phone_number" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+            <input type="tel" name="phone_number" id="edit_phone_number" value="{{ user.profile.phone_number|default:"" }}"
+                placeholder="Enter your phone number (optional)"
+                class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm">
+        </div>
+
+        <div class="px-4">
+            <label for="edit_bio" class="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+            <textarea name="bio" id="edit_bio"
+                    placeholder="Enter your bio that describes you"
+                    rows="3"
+                    class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm">{{ user.profile.bio|default:"" }}</textarea>
+        </div>
+
+        <div id="editProfileMessage" class="hidden mt-4 mx-4 p-3 rounded-md text-sm"></div>
+
+        <div class="px-4 py-4 border-t border-gray-200 bg-gray-50 rounded-b-md flex justify-end gap-3">
+            <button type="button" onclick="closeEditProfileModal()"
+                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
+                Cancel
+            </button>
+            <button id="saveProfileButton" type="submit"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium shadow-sm">
+                Save Changes
+            </button>
+        </div>
+    </form>
+    </div>
+  </div>
+</div>
+
+<div id="changePasswordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden" onclick="closeChangePasswordModalOnClickOutside(event)">
+  <div class="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+    <div class="mt-3">
+      <button type="button" onclick="closeChangePasswordModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+
+      <h3 class="text-xl leading-6 font-medium text-gray-900 text-center mb-6">Change Password</h3>
+
+      <form id="changePasswordForm" class="mt-2 space-y-4">
+        {% csrf_token %} 
+        
+        <div class="px-4">
+            <label for="current_password" class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+            <div class="relative">
+                <input type="password" name="current_password" id="current_password" required
+                       placeholder="Enter your current password"
+                       class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm pr-10">
+                <button type="button" onclick="togglePassword('current_password', 'current-pass-icon')" 
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                    <svg id="current-pass-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="px-4">
+            <label for="new_password" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+            <div class="relative">
+                <input type="password" name="new_password" id="new_password" required
+                       placeholder="Enter new password"
+                       class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm pr-10">
+                <button type="button" onclick="togglePassword('new_password', 'new-pass-icon')" 
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                    <svg id="new-pass-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="px-4">
+            <label for="new_password_confirm" class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+            <div class="relative">
+                <input type="password" name="new_password_confirm" id="new_password_confirm" required
+                       placeholder="Confirm new password"
+                       class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm pr-10">
+                <button type="button" onclick="togglePassword('new_password_confirm', 'confirm-pass-icon')" 
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                    <svg id="confirm-pass-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="changePasswordMessage" class="hidden mt-4 mx-4 p-3 rounded-md text-sm"></div>
+
+        <div class="px-4 py-4 border-t border-gray-200 bg-gray-50 rounded-b-md flex justify-end gap-3">
+          <button type="button" onclick="closeChangePasswordModal()"
+                  class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
+              Cancel
+          </button>
+          <button id="savePasswordButton" type="submit"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium shadow-sm">
+              Save New Password
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<div id="deleteAccountModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden" onclick="closeDeleteModalOnClickOutside(event)">
+  <div class="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+    <div class="mt-3">
+      <button type="button" onclick="closeDeleteModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+
+      <div class="flex flex-col items-center">
+        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+          <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h3 class="text-xl leading-6 font-medium text-gray-900 text-center mt-4" id="modal-title">
+          Delete Your Account
+        </h3>
+        <div class="mt-2 px-4">
+          <p class="text-sm text-gray-500 text-center">
+            Are you sure? This action is irreversible. All your data (posts, replies, products, etc.) will be permanently deleted.
+          </p>
+          <p class="text-sm text-gray-500 text-center font-medium mt-2">
+            Please enter your password to confirm.
+          </p>
+        </div>
+      </div>
+
+      <form id="deleteAccountForm" class="mt-6 space-y-4">
+        {% csrf_token %} 
+        
+        <div class="px-4">
+            <label for="password_confirm_delete" class="block text-sm font-medium text-gray-700 mb-1">Confirm Your Password</label>
+            <div class="relative">
+                <input type="password" name="password_confirm_delete" id="password_confirm_delete" required
+                       placeholder="Enter your current password"
+                       class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent sm:text-sm pr-10">
+                <button type="button" onclick="togglePassword('password_confirm_delete', 'delete-pass-icon')" 
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                    <svg id="delete-pass-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="deleteAccountMessage" class="hidden mt-4 mx-4 p-3 rounded-md text-sm"></div>
+
+        <div class="px-4 py-4 border-t border-gray-200 bg-gray-50 rounded-b-md flex justify-end gap-3">
+          <button type="button" onclick="closeDeleteModal()"
+                  class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
+            Cancel
+          </button>
+          <button id="deleteAccountButton" type="submit"
+                  class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium shadow-sm">
+            Yes, Delete My Account
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<script>
+function togglePassword(inputId, iconId) {
+  const passwordInput = document.getElementById(inputId);
+  const eyeIcon = document.getElementById(iconId);
+  
+  if (passwordInput.type === 'password') {
+    passwordInput.type = 'text';
+    // Change to "eye-off" icon
+    eyeIcon.innerHTML = `
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+    `;
+  } else {
+    passwordInput.type = 'password';
+    // Change back to "eye" icon
+    eyeIcon.innerHTML = `
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    `;
+  }
+}
+
+// === DEKLARASI VARIABEL MODAL & SIDEBAR ===
+let editModal, editForm, saveButton, editMessageDiv;
+let usernameInput, emailInput, firstNameInput, lastNameInput, phoneInput, bioInput;
+let changePassModal, changePassForm, savePassButton, changePassMessageDiv;
+let currentPasswordInput, newPasswordInput, newPasswordConfirmInput;
+let profileFullName, profileUsername, profileEmail, profileBioText, profilePhone;
+let dashboardHeaderTitle;
+let deleteModal, deleteForm, deleteButton, deleteMessageDiv, deletePasswordInput;
+
+document.addEventListener('DOMContentLoaded', function() {
+
+    // --- 1. State dan Referensi DOM (AJAX Dashboard) ---
+    let currentView = '{{ initial_view|default:"all" }}';
+    let currentCategory = '{{ initial_category|default:"" }}';
+    const contentContainer = document.getElementById('dashboard-content-container');
+    const categoryForm = document.getElementById('category-filter-form');
+    const categorySelect = document.getElementById('category-select');
+    const viewHiddenInput = document.getElementById('view-hidden-input');
+    const viewFilterButtons = document.querySelectorAll('.js-view-filter');
+    const dataUrl = '{% url "user_profile:get_dashboard_content" %}';
+    const pageUrl = '{% url "user_profile:profile" %}';
+    
+    // === ASSIGNMENT VARIABEL MODAL PROFIL ===
+    editModal = document.getElementById('editProfileModal');
+    editForm = document.getElementById('editProfileForm');
+    saveButton = document.getElementById('saveProfileButton');
+    editMessageDiv = document.getElementById('editProfileMessage'); 
+    usernameInput = document.getElementById('edit_username');
+    emailInput = document.getElementById('edit_email');
+    firstNameInput = document.getElementById('edit_first_name');
+    lastNameInput = document.getElementById('edit_last_name');
+    phoneInput = document.getElementById('edit_phone_number');
+    bioInput = document.getElementById('edit_bio');
+
+    // === ASSIGNMENT VARIABEL MODAL PASSWORD ===
+    changePassModal = document.getElementById('changePasswordModal');
+    changePassForm = document.getElementById('changePasswordForm');
+    savePassButton = document.getElementById('savePasswordButton');
+    changePassMessageDiv = document.getElementById('changePasswordMessage');
+    currentPasswordInput = document.getElementById('current_password');
+    newPasswordInput = document.getElementById('new_password');
+    newPasswordConfirmInput = document.getElementById('new_password_confirm');
+
+    // === ASSIGNMENT VARIABEL MODAL DELETE ===
+    deleteModal = document.getElementById('deleteAccountModal');
+    deleteForm = document.getElementById('deleteAccountForm');
+    deleteButton = document.getElementById('deleteAccountButton');
+    deleteMessageDiv = document.getElementById('deleteAccountMessage');
+    deletePasswordInput = document.getElementById('password_confirm_delete');
+
+    // === ASSIGNMENT VARIABEL TAMPILAN (SIDEBAR & HEADER) ===
+    profileFullName = document.getElementById('profile_full_name');
+    profileUsername = document.getElementById('profile_username');
+    const emailSpan = Array.from(document.querySelectorAll('.lg\\:col-span-1 .space-y-3 span')).find(s => s.textContent === 'Email:');
+    profileEmail = emailSpan ? emailSpan.nextElementSibling : null;
+    profileBioText = document.getElementById('profile_bio_text');
+    profilePhone = document.getElementById('profile_phone');
+    dashboardHeaderTitle = document.querySelector('.lg\\:col-span-2 h1');
+    
+    // --- 2. Fungsi Utama (AJAX Dashboard) ---
+    async function fetchContent(view, category) {
+        showLoader(true);
+        const url = new URL(dataUrl, window.location.origin);
+        url.searchParams.set('view', view);
+        if (category) { 
+            url.searchParams.set('category', category); 
+        }
+        try {
+            const response = await fetch(url, { cache: 'no-cache' }); 
+            
+            if (!response.ok) { 
+                throw new Error(`HTTP error! status: ${response.status}`); 
+            }
+            const html = await response.text();
+            if(contentContainer) contentContainer.innerHTML = html;
+        } catch (error) {
+            console.error('Failed to fetch dashboard content:', error);
+            if(contentContainer) {
+                contentContainer.innerHTML = `
+                    <div class="bg-white rounded-xl border border-red-300 p-12 text-center">
+                        <h3 class="text-xl font-semibold text-red-700 mb-2">Error Loading Content</h3>
+                        <p class="text-gray-600">Could not retrieve dashboard data. Please try refreshing the page.</p>
+                    </div>
+                `;
+            }
+        }
+    }
+    
+    function updateActiveButtons(activeView) {
+        viewFilterButtons.forEach(button => {
+            const buttonView = button.dataset.view;
+            if (buttonView === activeView) {
+                button.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+                button.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-blue-100', 'hover:text-blue-700');
+            } else {
+                button.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+                button.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-blue-100', 'hover:text-blue-700');
+            }
+        });
+    }
+    
+    function updateBrowserURL(view, category) {
+        const url = new URL(pageUrl, window.location.origin);
+        url.searchParams.set('view', view);
+        if (category) { 
+            url.searchParams.set('category', category); 
+        }
+        history.pushState({ view, category }, '', url.toString());
+    }
+    
+    function showLoader(isLoading) {
+        if (isLoading && contentContainer) {
+            const loaderHtml = `
+                <div id="dashboard-loader" class="bg-white rounded-xl shadow-sm border p-12 text-center">
+                    <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="mt-4 text-gray-500">Loading dashboard content...</p>
+                </div>
+            `;
+            contentContainer.innerHTML = loaderHtml;
+        }
+    }
+
+    // --- 3. Event Listeners (AJAX Dashboard) ---
+    viewFilterButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const newView = e.currentTarget.dataset.view;
+            if (newView === currentView) return;
+            currentView = newView;
+            if(viewHiddenInput) viewHiddenInput.value = currentView;
+            updateActiveButtons(currentView);
+            updateBrowserURL(currentView, currentCategory);
+            fetchContent(currentView, currentCategory);
+        });
+    });
+    
+    if (categoryForm) {
+        categoryForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newCategory = categorySelect ? categorySelect.value : '';
+            if (newCategory === currentCategory) return; 
+            currentCategory = newCategory;
+            updateBrowserURL(currentView, currentCategory);
+            fetchContent(currentView, currentCategory);
+        });
+    }
+    
+    window.addEventListener('popstate', (e) => {
+        if (e.state) {
+            currentView = e.state.view || 'all';
+            currentCategory = e.state.category || '';
+            if (categorySelect) categorySelect.value = currentCategory;
+            if (viewHiddenInput) viewHiddenInput.value = currentView;
+            updateActiveButtons(currentView);
+            fetchContent(currentView, currentCategory);
+        } else {
+            const initialViewFromURL = new URLSearchParams(window.location.search).get('view') || '{{ initial_view|default:"all" }}';
+            const initialCategoryFromURL = new URLSearchParams(window.location.search).get('category') || '{{ initial_category|default:"" }}';
+            currentView = initialViewFromURL;
+            currentCategory = initialCategoryFromURL;
+            updateActiveButtons(currentView);
+        }
+    });
+
+    // --- MODAL EDIT PROFIL ---
+    window.openEditProfileModal = function() {
+        if (!editModal) { 
+            console.error("Modal 'editProfileModal' not found"); 
+            return; 
+        }
+        
+        try {
+            if(usernameInput) usernameInput.value = profileUsername.dataset.username || '{{ user.username|escapejs }}';
+            if(emailInput) emailInput.value = profileEmail.dataset.email || '{{ user.email|escapejs }}';
+            if(firstNameInput) firstNameInput.value = profileFullName.dataset.firstName || '{{ user.first_name|default:""|escapejs }}';
+            if(lastNameInput) lastNameInput.value = profileFullName.dataset.lastName || '{{ user.last_name|default:""|escapejs }}';
+            if(phoneInput) phoneInput.value = profilePhone.dataset.phone || '{{ user.profile.phone_number|default:""|escapejs }}';
+            if(bioInput) bioInput.value = profileBioText.dataset.bio || '{{ user.profile.bio|default:""|escapejs }}';
+        } catch (e) {
+            console.error("Gagal mengisi modal:", e);
+            if(usernameInput) usernameInput.value = '{{ user.username|escapejs }}';
+            if(emailInput) emailInput.value = '{{ user.email|escapejs }}';
+            if(firstNameInput) firstNameInput.value = '{{ user.first_name|default:""|escapejs }}';
+            if(lastNameInput) lastNameInput.value = '{{ user.last_name|default:""|escapejs }}';
+            if(phoneInput) phoneInput.value = '{{ user.profile.phone_number|default:""|escapejs }}';
+            if(bioInput) bioInput.value = '{{ user.profile.bio|default:""|escapejs }}';
+        }
+
+        if (editMessageDiv) {
+            editMessageDiv.classList.add('hidden');
+            editMessageDiv.textContent = '';
+            editMessageDiv.classList.remove('bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+        }
+        editModal.classList.remove('hidden');
+    };
+    
+    window.closeEditProfileModal = function() {
+        if (!editModal) return;
+        editModal.classList.add('hidden');
+    };
+    
+    window.closeEditProfileModalOnClickOutside = function(event) {
+        if (event.target === editModal) { 
+            closeEditProfileModal(); 
+        }
+    };
+    
+    function showModalError(message) {
+        if (!editMessageDiv) return;
+        editMessageDiv.textContent = message;
+        editMessageDiv.classList.remove('hidden', 'bg-green-100', 'text-green-700');
+        editMessageDiv.classList.add('bg-red-100', 'text-red-700');
+    }
+
+    if (editForm) {
+        editForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!saveButton) return;
+            
+            saveButton.disabled = true;
+            saveButton.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg> 
+                Saving...
+            `;
+            
+            if (editMessageDiv) editMessageDiv.classList.add('hidden');
+
+            const formData = new FormData(editForm);
+            const url = '{% url "user_profile:edit_profile" %}'; 
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showToast(data.message || 'Profile updated!', '', 'success');
+                    
+                    // Update UI
+                    if (profileFullName && profileUsername) {
+                        if (data.first_name || data.last_name) {
+                            profileFullName.textContent = data.first_name + ' ' + data.last_name;
+                            profileUsername.textContent = '@' + data.username;
+                            profileUsername.style.display = 'block';
+                        } else {
+                            profileFullName.textContent = '@' + data.username;
+                            profileUsername.style.display = 'none';
+                        }
+                        profileFullName.dataset.firstName = data.first_name;
+                        profileFullName.dataset.lastName = data.last_name;
+                        profileUsername.dataset.username = data.username;
+                    }
+                    
+                    if (profileEmail) { 
+                        profileEmail.textContent = data.email;
+                        profileEmail.dataset.email = data.email;
+                    }
+                    
+                    if (profileBioText) {
+                        if (data.bio) {
+                            profileBioText.innerHTML = `💬 &nbsp; <span class="italic">"${data.bio}"</span>`;
+                            profileBioText.classList.remove('italic', 'text-gray-500');
+                        } else {
+                            profileBioText.innerHTML = `✍️ &nbsp; This person hasn't written their bio yet… maybe they're out training for their next triathlon?`;
+                            profileBioText.classList.add('italic', 'text-gray-500');
+                        }
+                        profileBioText.dataset.bio = data.bio;
+                    }
+                    
+                    if (profilePhone) { 
+                        profilePhone.textContent = data.phone_number || 'Not set';
+                        profilePhone.dataset.phone = data.phone_number;
+                    }
+                    
+                    if (dashboardHeaderTitle && '{{ user_role }}' === 'USER') {
+                        if(data.first_name || data.last_name) {
+                            dashboardHeaderTitle.textContent = data.first_name + ' ' + data.last_name + "'s Dashboard";
+                        } else {
+                            dashboardHeaderTitle.textContent = data.username + "'s Dashboard"; 
+                        }
+                    }
+                    
+                    setTimeout(closeEditProfileModal, 1000); 
+                } else {
+                    showModalError(data.error || `Failed to update (Status: ${response.status})`);
+                }
+            } catch (error) {
+                console.error('Error submitting profile via AJAX:', error);
+                showModalError('An network error occurred. Please check connection.');
+            } finally {
+                saveButton.disabled = false;
+                saveButton.innerHTML = 'Save Changes';
+            }
+        });
+    }
+
+    // --- MODAL GANTI PASSWORD ---
+    window.openChangePasswordModal = function() {
+        if (!changePassModal) { 
+            console.error("Modal 'changePasswordModal' not found"); 
+            return; 
+        }
+        if(changePassForm) changePassForm.reset();
+
+        ['current-pass-icon', 'new-pass-icon', 'confirm-pass-icon'].forEach(iconId => {
+            const icon = document.getElementById(iconId);
+            if (icon) {
+                icon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                `;
+            }
+        });
+        
+        ['current_password', 'new_password', 'new_password_confirm'].forEach(inputId => {
+            const input = document.getElementById(inputId);
+            if (input) input.type = 'password';
+        });
+
+        if (changePassMessageDiv) {
+            changePassMessageDiv.classList.add('hidden');
+            changePassMessageDiv.textContent = '';
+            changePassMessageDiv.classList.remove('bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+        }
+        changePassModal.classList.remove('hidden');
+    };
+    
+    window.closeChangePasswordModal = function() {
+        if (!changePassModal) return;
+        changePassModal.classList.add('hidden');
+    };
+    
+    window.closeChangePasswordModalOnClickOutside = function(event) {
+        if (event.target === changePassModal) { 
+            closeChangePasswordModal(); 
+        }
+    };
+    
+    function showPasswordModalError(message) {
+        if (!changePassMessageDiv) return;
+        changePassMessageDiv.textContent = message;
+        changePassMessageDiv.classList.remove('hidden', 'bg-green-100', 'text-green-700');
+        changePassMessageDiv.classList.add('bg-red-100', 'text-red-700');
+    }
+    
+    if (changePassForm) {
+        changePassForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!savePassButton) return;
+            
+            savePassButton.disabled = true;
+            savePassButton.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg> 
+                Saving...
+            `;
+            
+            if (changePassMessageDiv) changePassMessageDiv.classList.add('hidden');
+            
+            const formData = new FormData(changePassForm);
+            const url = '{% url "user_profile:change_password" %}'; 
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showToast(data.message || 'Password updated!', '', 'success');
+                    setTimeout(closeChangePasswordModal, 1000); 
+                } else {
+                    showPasswordModalError(data.error || `Failed to update (Status: ${response.status})`);
+                }
+            } catch (error) {
+                console.error('Error submitting password via AJAX:', error);
+                showPasswordModalError('An network error occurred. Please check connection.');
+            } finally {
+                savePassButton.disabled = false;
+                savePassButton.innerHTML = 'Save New Password';
+            }
+        });
+    }
+
+    // --- MODAL DELETE ACCOUNT ---
+    window.openDeleteModal = function() {
+        if (!deleteModal) { 
+            console.error("Modal 'deleteAccountModal' not found"); 
+            return; 
+        }
+        if(deleteForm) deleteForm.reset();
+
+        // Reset ikon mata
+        const icon = document.getElementById('delete-pass-icon');
+        if (icon) {
+            icon.innerHTML = `
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            `;
+        }
+        // Reset tipe input
+        if (deletePasswordInput) deletePasswordInput.type = 'password';
+
+        // Sembunyikan pesan error
+        if (deleteMessageDiv) {
+            deleteMessageDiv.classList.add('hidden');
+            deleteMessageDiv.textContent = '';
+            deleteMessageDiv.classList.remove('bg-red-100', 'text-red-700');
+        }
+        deleteModal.classList.remove('hidden');
+    };
+    
+    window.closeDeleteModal = function() {
+        if (!deleteModal) return;
+        deleteModal.classList.add('hidden');
+    };
+    
+    window.closeDeleteModalOnClickOutside = function(event) {
+        if (event.target === deleteModal) { 
+            closeDeleteModal(); 
+        }
+    };
+    
+    function showDeleteModalError(message) {
+        if (!deleteMessageDiv) return;
+        deleteMessageDiv.textContent = message;
+        deleteMessageDiv.classList.remove('hidden', 'bg-green-100', 'text-green-700');
+        deleteMessageDiv.classList.add('bg-red-100', 'text-red-700');
+    }
+    
+    if (deleteForm) {
+        deleteForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!deleteButton) return;
+            
+            deleteButton.disabled = true;
+            deleteButton.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg> 
+                Deleting...
+            `;
+            
+            if (deleteMessageDiv) deleteMessageDiv.classList.add('hidden');
+            
+            const formData = new FormData(deleteForm);
+            // URL dari urls.py Anda
+            const url = '{% url "user_profile:delete_account" %}'; 
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Berhasil!
+                    // Tampilkan toast, tutup modal, dan redirect
+                    closeDeleteModal(); 
+                    showToast(data.message || 'Account deleted successfully.', '', 'success');
+                    
+                    // Nonaktifkan tombol untuk mencegah klik ganda
+                    deleteButton.disabled = true;
+
+                    // Redirect ke halaman main (guest) setelah 1.5 detik
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || '/'; // Fallback ke home
+                    }, 1500);
+
+                } else {
+                    // Gagal (misal: password salah)
+                    showDeleteModalError(data.error || `Failed to delete (Status: ${response.status})`);
+                }
+            } catch (error) {
+                console.error('Error submitting delete account via AJAX:', error);
+                showDeleteModalError('An network error occurred. Please check connection.');
+            } finally {
+                // Hanya aktifkan tombol lagi jika GAGAL
+                if (!deleteButton.disabled || deleteButton.innerHTML.includes('Deleting...')) {
+                   deleteButton.disabled = false;
+                   deleteButton.innerHTML = 'Yes, Delete My Account';
+                }
+            }
+        });
+    }
+    
+    // --- 4. Inisialisasi ---
+    (function initSidebarData() {
+        if (profileUsername) profileUsername.dataset.username = '{{ user.username|escapejs }}';
+        if (profileEmail) profileEmail.dataset.email = '{{ user.email|escapejs }}';
+        if (profileFullName) {
+            profileFullName.dataset.firstName = '{{ user.first_name|default:""|escapejs }}';
+            profileFullName.dataset.lastName = '{{ user.last_name|default:""|escapejs }}';
+        }
+        if (profilePhone) profilePhone.dataset.phone = '{{ user.profile.phone_number|default:""|escapejs }}';
+        if (profileBioText) profileBioText.dataset.bio = '{{ user.profile.bio|default:""|escapejs }}';
+    })();
+    
+    updateActiveButtons(currentView);
+    fetchContent(currentView, currentCategory);
+
+});
+</script>
+
+{% endblock %}
