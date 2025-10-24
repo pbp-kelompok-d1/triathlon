@@ -23,10 +23,10 @@ class Ticket(models.Model):
 
     # Detail pemesanan
     ticket_quantity = models.PositiveIntegerField(default=1, verbose_name="Ticket Quantity")
-    booking_date = models.DateField(verbose_name="Booking Date", default=timezone.now)  # ✅ default agar tidak null
+    booking_date = models.DateField(verbose_name="Booking Date", default=timezone.now)  # default agar tidak null
 
     # Harga (auto-calculated)
-    total_price = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Total Price", default=0)  # ✅ default=0
+    total_price = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Total Price", default=0)  # default=0
 
     # Tracking
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
