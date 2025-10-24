@@ -1,0 +1,50 @@
+<!-- templates/filter_activities_modal.html -->
+<div id="filterModal" class="hidden fixed inset-0 z-50 w-full h-full flex items-center justify-center bg-gray-800 bg-opacity-50">
+  <div class="bg-white rounded-lg shadow-lg w-11/12 sm:w-3/4 md:w-1/2 lg:w-2/5 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between p-4 border-b">
+      <h3 class="text-xl font-semibold text-gray-900">Filter Activities</h3>
+      <button type="button" class="text-gray-400 hover:text-gray-700" onclick="hideFilterModal()">
+        <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="px-6 py-4 space-y-4">
+      <!-- Sport -->
+      <div>
+        <label for="filter_sport" class="block text-sm font-medium text-gray-700">Sport</label>
+        <select id="filter_sport"
+                class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black">
+          <option value="">All sports</option>
+          <option value="running">Running</option>
+          <option value="cycling">Cycling</option>
+          <option value="swimming">Swimming</option>
+        </select>
+      </div>
+
+      <!-- Distance range -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Distance range (meters)</label>
+        <div class="grid grid-cols-2 gap-3 mt-1">
+          <input id="filter_distance_min" type="number" min="0" placeholder="Min"
+                 class="block w-full border border-gray-300 rounded-md px-3 py-2 text-black">
+          <input id="filter_distance_max" type="number" min="0" placeholder="Max"
+                 class="block w-full border border-gray-300 rounded-md px-3 py-2 text-black">
+        </div>
+        <p class="text-xs text-gray-500 mt-1">Leave blank to ignore a bound.</p>
+      </div>
+    </div>
+
+    <div class="flex gap-3 p-6 border-t">
+      <button type="button" id="cancelFilterBtn"
+              class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100">
+        Cancel
+      </button>
+      <button type="button" id="applyFilterBtn"
+              class="flex-1 bg-gray-900 text-white px-6 py-3 rounded-md font-semibold hover:bg-black/80">
+        Apply Filters
+      </button>
+    </div>
+  </div>
+</div>

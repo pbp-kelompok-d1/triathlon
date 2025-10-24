@@ -1,0 +1,493 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block meta %}<title>Triathlon | Activities</title>{% endblock meta %}
+
+{% block content %}
+<!-- Hidden CSRF for JS -->
+<form style="display:none">{% csrf_token %}</form>
+
+<!-- Header -->
+<div class="bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-700 text-white">
+  <div class="max-w-7xl mx-auto px-2 sm:px-2 lg:px-2 pt-4 pb-px">
+    <div class="text-center">
+      <h1 class="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight">Activities</h1>
+      {% if user.profile.role != 'ADMIN' %}
+      <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto leading-relaxed">Save your running, swimming, and cycling activities here!</p>
+      {% else %}
+      <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto leading-relaxed">See what the community has been up to</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div id="statsPanel" class="mb-8">
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    <!-- 1) Total calories -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="text-xs uppercase tracking-wide text-gray-500">Total calories burned</div>
+      <div id="stat-total-cal" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    </div>
+
+    <!-- 2) Count -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="text-xs uppercase tracking-wide text-gray-500">Exercises</div>
+      <div id="stat-count" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    </div>
+
+    <!-- 3) Avg kcal / hour -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="text-xs uppercase tracking-wide text-gray-500">Avg calories / hour</div>
+      <div id="stat-avg-cals-hour" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    </div>
+
+    <!-- 4) Avg distance by sport -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="text-xs uppercase tracking-wide text-gray-500">Avg distance (Running)</div>
+      <div id="stat-avg-dist-running" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="text-xs uppercase tracking-wide text-gray-500">Avg distance (Cycling)</div>
+      <div id="stat-avg-dist-cycling" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="text-xs uppercase tracking-wide text-gray-500">Avg distance (Swimming)</div>
+      <div id="stat-avg-dist-swimming" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    </div>
+
+    <!-- 5) Avg duration by sport -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="text-xs uppercase tracking-wide text-gray-500">Avg duration (Running)</div>
+      <div id="stat-avg-dur-running" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="text-xs uppercase tracking-wide text-gray-500">Avg duration (Cycling)</div>
+      <div id="stat-avg-dur-cycling" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="text-xs uppercase tracking-wide text-gray-500">Avg duration (Swimming)</div>
+      <div id="stat-avg-dur-swimming" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- Action bar -->
+<div class="bg-gray-50 min-h-screen">
+  <div class="mx-auto px-4 sm:px-6 lg:px-8 py-12 max-w-7xl">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 flex flex-wrap gap-3 justify-between">
+      <button type="button"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition"
+              onclick="showCreateActivityModal()">+ Add Activity</button>
+
+      <button id="filterActivitiesBtn" type="button"
+              class="ml-auto bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 px-4 rounded transition">
+        Filter
+      </button>
+
+      <button id="refreshActivitiesBtn" type="button"
+              class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition"
+              onclick="reloadActivities()">
+        <svg id="refreshIcon" class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+        Refresh
+      </button>
+    </div>
+
+    {% if filters.category or filters.min != None or filters.max != None %}
+      <div class="mb-6 flex flex-wrap gap-2">
+        {% if filters.category %}
+          <span class="px-2 py-1 text-sm rounded bg-blue-50 text-blue-700">
+            Sport: {{ filters.category|title }}
+          </span>
+        {% endif %}
+        {% if filters.min != None or filters.max != None %}
+          <span class="px-2 py-1 text-sm rounded bg-green-50 text-green-700">
+            Distance:
+            {% if filters.min != None %}{{ filters.min }}{% else %}0{% endif %}–{% if filters.max != None %}{{ filters.max }}{% else %}∞{% endif %} m
+          </span>
+        {% endif %}
+        <a href="{% url 'activities:my_activities' %}"
+           class="px-2 py-1 text-sm rounded bg-gray-100 text-gray-600 hover:bg-gray-200">
+          Clear filters
+        </a>
+      </div>
+    {% endif %}
+
+    <!-- Cards -->
+    <div id="activitiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for act in activities %}
+      <div id="card-{{ act.id }}" class="bg-white rounded-xl shadow border border-gray-200 p-5 flex flex-col">
+        <div class="flex items-start justify-between">
+          <div>
+            {% if user.profile.role == 'ADMIN' %}
+            <p class="text-xs text-gray-500">@{{ act.author.username }}</p>
+            {% endif %}
+            {% if act.place %}
+            <p class="text-xs text-gray-500">{{ act.place.name }}</p>
+            {% endif %}
+            <h3 class="text-lg font-semibold text-gray-900">{{ act.title }}</h3>
+            <p class="text-sm text-gray-500">
+              {{ act.get_sport_category_display }} • {{ act.done_at|date:"M d, Y" }}
+            </p>
+          </div>
+          <span class="px-2 py-1 text-xs rounded bg-blue-50 text-blue-700">
+            {{ act.calories_burned|floatformat:0 }} kcal
+          </span>
+        </div>
+
+        <div class="mt-4 grid grid-cols-3 gap-3 text-sm">
+          <div class="p-3 bg-gray-50 rounded">
+            <div class="font-medium">Duration</div>
+            <!-- mark for client-side formatting -->
+            <div class="text-gray-700 js-duration" data-dur="{{ act.duration }}">{{ act.duration }}</div>
+          </div>
+          <div class="p-3 bg-gray-50 rounded">
+            <div class="font-medium">Distance</div>
+            <div class="text-gray-700">{{ act.distance }} m</div>
+          </div>
+          <div class="p-3 bg-gray-50 rounded">
+            <div class="font-medium">Sport</div>
+            <div class="text-gray-700">{{ act.sport_category|title }}</div>
+          </div>
+        </div>
+
+        {% if act.notes %}
+        <p class="mt-4 text-gray-700">{{ act.notes }}</p>
+        {% endif %}
+
+        <div class="mt-5 flex gap-3">
+          <button type="button"
+                  class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded font-semibold"
+                  onclick="openEditActivityModal(this)"
+                  data-id="{{ act.id }}"
+                  data-title="{{ act.title|escape }}"
+                  data-duration="{{ act.duration }}"
+                  data-distance="{{ act.distance }}"
+                  data-sport="{{ act.sport_category }}"
+                  data-date="{{ act.done_at|date:'Y-m-d' }}"
+                  data-notes="{{ act.notes|default_if_none:''|escape }}"
+                  data-place-id="{{ act.place_id|default_if_none:'' }}">
+            Edit
+          </button>
+          <button type="button"
+                  class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold"
+                  onclick="openDeleteActivityModal('{{ act.id }}', '{{ act.title|escapejs }}')">
+            Delete
+          </button>
+        </div>
+      </div>
+      {% empty %}
+      <div class="text-gray-600">No activities yet. Click “Add Activity”.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Include modals -->
+{% include 'add_activities_modal.html' %}
+{% include 'edit_activity_modal.html' %}
+{% include 'delete_activity_modal.html' %}
+{% include 'filter_activities_modal.html' %}
+
+<script>
+  const CSRF = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  // Routes (same names/URLs you already use)
+  const CREATE_URL = "{% url 'activities:create_activity' %}";
+  const EDIT_URL_TEMPLATE = "{% url 'activities:edit_activity' actid='00000000-0000-0000-0000-000000000000' %}";
+  const DELETE_URL_TEMPLATE = "{% url 'activities:delete_activity' actid='00000000-0000-0000-0000-000000000000' %}";
+  const LIST_JSON_URL = "{% url 'activities:activity_json_endpoint' %}";
+  const editUrl = (id) => EDIT_URL_TEMPLATE.replace('00000000-0000-0000-0000-000000000000', id);
+  const deleteUrl = (id) => DELETE_URL_TEMPLATE.replace('00000000-0000-0000-0000-000000000000', id);
+
+  // ---------- Duration formatting (no template tags) ----------
+  function parseDurationToHM(str) {
+    // supports "1 day, 2:03:00" and "02:03:00"
+    if (!str) return {h:0, m:0};
+    let days = 0, h = 0, m = 0;
+    const dm = String(str).match(/(\d+)\s+day/);
+    if (dm) days = parseInt(dm[1], 10);
+    const tm = String(str).match(/(\d+):(\d+):/);
+    if (tm) {
+      h = parseInt(tm[1], 10);
+      m = parseInt(tm[2], 10);
+    }
+    h += days * 24;
+    return {h, m};
+  }
+  function displayHM(str) {
+    const {h, m} = parseDurationToHM(String(str));
+    return `${h}h ${String(m).padStart(2,'0')}m`;
+  }
+  // Format server-rendered durations on load
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.js-duration').forEach(el => {
+      el.textContent = displayHM(el.dataset.dur);
+    });
+  });
+
+  // ---------- Edit modal ----------
+  let currentEditId = null;
+
+  function openEditActivityModal(btn) {
+    currentEditId = btn.dataset.id;
+    document.getElementById('edit_place_id').value = btn.dataset.placeId || '';
+    document.getElementById('edit_title').value = btn.dataset.title || '';
+    const hm = parseDurationToHM(btn.dataset.duration || '0:00:00');
+    document.getElementById('edit_duration_hours').value = hm.h;
+    document.getElementById('edit_duration_minutes').value = String(hm.m).padStart(2,'0');
+    document.getElementById('edit_distance').value = btn.dataset.distance || 0;
+    document.getElementById('edit_sport_category').value = btn.dataset.sport || '';
+    document.getElementById('edit_done_at').value = btn.dataset.date || '';
+    document.getElementById('edit_notes').value = btn.dataset.notes || '';
+
+    document.getElementById('editActivityModal').classList.remove('hidden');
+  }
+  function hideEditActivityModal() {
+    document.getElementById('editActivityModal').classList.add('hidden');
+  }
+
+  document.getElementById('submitEditBtn').addEventListener('click', async () => {
+    if (!currentEditId) return;
+
+    const h = parseInt(document.getElementById('edit_duration_hours').value || '0', 10);
+    const m = parseInt(document.getElementById('edit_duration_minutes').value || '0', 10);
+    if (Number.isNaN(h) || Number.isNaN(m) || m < 0 || m > 59 || h < 0) {
+      alert('Please enter a valid duration (minutes 0–59).');
+      return;
+    }
+    const duration = `${String(h)}:${String(m).padStart(2,'0')}`;
+
+    const fd = new FormData();
+    fd.append('place_id', document.getElementById('edit_place_id').value || '');
+    fd.append('title', document.getElementById('edit_title').value);
+    fd.append('duration', duration);
+    fd.append('distance', document.getElementById('edit_distance').value);
+    fd.append('notes', document.getElementById('edit_notes').value);
+    fd.append('sport_category', document.getElementById('edit_sport_category').value);
+    fd.append('done_at', document.getElementById('edit_done_at').value);
+
+    try {
+      const res = await fetch(editUrl(currentEditId), {
+        method: 'POST',
+        headers: {'X-CSRFToken': CSRF},
+        body: fd,
+        credentials: 'same-origin',
+      });
+      if (res.ok) {
+        hideEditActivityModal();
+        await reloadActivities(); // async refresh instead of full reload
+      } else {
+        alert('Failed to update: ' + (await res.text()));
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Network error updating activity.');
+    }
+  });
+
+  // ================= Delete modal ====================
+  let deleteId = null;
+  function openDeleteActivityModal(id, title) {
+    deleteId = id;
+    document.getElementById('delete-confirmation-text').textContent =
+      `Delete "${title}"? This cannot be undone.`;
+    document.getElementById('deleteModal').classList.remove('hidden');
+  }
+  function hideDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+  }
+  document.getElementById('confirmDeleteButton').addEventListener('click', async () => {
+    if (!deleteId) return;
+    try {
+      const res = await fetch(deleteUrl(deleteId), {
+        method: 'POST',
+        headers: {'X-CSRFToken': CSRF},
+        credentials: 'same-origin',
+      });
+      if (res.ok) {
+        // remove card without reloading
+        const el = document.getElementById(`card-${deleteId}`);
+        if (el) el.remove();
+        hideDeleteModal();
+        await reloadStats();
+      } else {
+        alert('Failed to delete: ' + (await res.text()));
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Network error deleting activity.');
+    }
+  });
+
+  // ---------- Filter modal ----------
+  document.getElementById('filterActivitiesBtn').addEventListener('click', async () => {
+    const params = new URLSearchParams(window.location.search);
+    document.getElementById('filter_sport').value = params.get('category') || '';
+    document.getElementById('filter_distance_min').value = params.get('distance_min') || '';
+    document.getElementById('filter_distance_max').value = params.get('distance_max') || '';
+    document.getElementById('filterModal').classList.remove('hidden');
+  });
+
+  function hideFilterModal() {
+    document.getElementById('filterModal').classList.add('hidden');
+  }
+  document.getElementById('cancelFilterBtn').addEventListener('click', hideFilterModal);
+
+  document.getElementById('applyFilterBtn').addEventListener('click', async () => {
+    const sport = document.getElementById('filter_sport').value;
+    const minv  = document.getElementById('filter_distance_min').value.trim();
+    const maxv  = document.getElementById('filter_distance_max').value.trim();
+
+    const params = new URLSearchParams(window.location.search);
+    if (sport) params.set('category', sport); else params.delete('category');
+    if (minv !== '') params.set('distance_min', minv); else params.delete('distance_min');
+    if (maxv !== '') params.set('distance_max', maxv); else params.delete('distance_max');
+
+    const mi = parseInt(minv, 10), ma = parseInt(maxv, 10);
+    if (!Number.isNaN(mi) && !Number.isNaN(ma) && mi > ma) {
+      params.set('distance_min', String(ma));
+      params.set('distance_max', String(mi));
+    }
+
+    // update URL (no reload) and refresh cards via AJAX
+    history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+    hideFilterModal();
+    await reloadActivities();
+  });
+
+  // =============== AJAX refresh ================
+  function escapeHtml(s){ return String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function escapeAttr(s){ return escapeHtml(s).replace(/\n/g, ' '); }
+
+  function cardHTML(a) {
+    const hm = displayHM(String(a.duration));
+    const date = a.done_at_display || a.done_at || '';
+    const sport = a.sport_label || (a.sport_category || '');
+    const kcal = Math.round(a.calories_burned || 0);
+    const owner = a.creator_username ? `<p class="text-xs text-gray-500">@${escapeHtml(a.creator_username)}</p>` : '';
+    const placeLine = a.place_name ? `<p class="text-xs text-gray-500">${escapeHtml(a.place_name)}</p>` : '';
+
+    return `
+      <div id="card-${a.id}" class="bg-white rounded-xl shadow border border-gray-200 p-5 flex flex-col">
+        <div class="flex items-start justify-between">
+          <div>
+            ${owner}
+            ${placeLine}
+            <h3 class="text-lg font-semibold text-gray-900">${escapeHtml(a.title)}</h3>
+            <p class="text-sm text-gray-500">${escapeHtml(sport)} • ${escapeHtml(date)}</p>
+          </div>
+          <span class="px-2 py-1 text-xs rounded bg-blue-50 text-blue-700">${kcal} kcal</span>
+        </div>
+
+        <div class="mt-4 grid grid-cols-3 gap-3 text-sm">
+          <div class="p-3 bg-gray-50 rounded">
+            <div class="font-medium">Duration</div>
+            <div class="text-gray-700">${hm}</div>
+          </div>
+          <div class="p-3 bg-gray-50 rounded">
+            <div class="font-medium">Distance</div>
+            <div class="text-gray-700">${a.distance} m</div>
+          </div>
+          <div class="p-3 bg-gray-50 rounded">
+            <div class="font-medium">Sport</div>
+            <div class="text-gray-700">${escapeHtml(sport)}</div>
+          </div>
+        </div>
+
+        ${a.notes_short ? `<p class="mt-4 text-gray-700">${escapeHtml(a.notes_short)}</p>` : ''}
+
+        <div class="mt-5 flex gap-3">
+          <button type="button"
+                  class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded font-semibold"
+                  onclick="openEditActivityModal(this)"
+                  data-id="${a.id}"
+                  data-title="${escapeAttr(a.title)}"
+                  data-duration="${escapeAttr(String(a.duration))}"
+                  data-distance="${a.distance}"
+                  data-sport="${escapeAttr(a.sport_category)}"
+                  data-date="${escapeAttr(a.done_at_iso || '')}"
+                  data-notes="${escapeAttr(a.notes_short || '')}"
+                  data-place-id="{{ act.place_id|default_if_none:'' }}">
+            Edit
+          </button>
+          <button type="button"
+                  class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold"
+                  onclick="openDeleteActivityModal('${a.id}', '${escapeAttr(a.title)}')">
+            Delete
+          </button>
+        </div>
+      </div>`;
+  }
+
+  async function reloadActivities() {
+    const container = document.getElementById('activitiesGrid');
+
+    await reloadStats();
+
+    if (!container) return;
+
+    const btn = document.getElementById('refreshActivitiesBtn');
+    const icon = document.getElementById('refreshIcon');
+    btn?.classList.add('opacity-75'); if (btn) btn.disabled = true;
+    icon?.classList.add('animate-spin');
+
+    try {
+      // keep current filters by forwarding ?query params
+      const res = await fetch(LIST_JSON_URL + window.location.search, {credentials: 'same-origin'});
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      container.innerHTML = data.map(cardHTML).join('');
+    } catch (e) {
+      console.error(e);
+      alert('Could not refresh activities.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.classList.remove('opacity-75'); }
+      icon?.classList.remove('animate-spin');
+    }
+  }
+
+// =========================== STATS ==========================
+const STATS_JSON_URL = "{% url 'activities:activity_stats_endpoint' %}";
+
+document.addEventListener('DOMContentLoaded', () => { reloadStats(); });
+
+// === Tiny formatters ===
+function nInt(n){ return (n ?? 0).toLocaleString(); }
+function nFixed(n, d=0){ return (n ?? 0).toLocaleString(undefined,{minimumFractionDigits:d, maximumFractionDigits:d}); }
+function secondsToHM(sec){
+  const s = Math.max(0, parseInt(sec || 0, 10));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return h ? `${h}h ${String(m).padStart(2,'0')}m` : `${m}m`;
+}
+
+// FETCH
+async function reloadStats(){
+  try{
+    const res = await fetch(STATS_JSON_URL + window.location.search, {credentials:'same-origin'});
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const s = await res.json();
+
+    // headline stats
+    document.getElementById('stat-total-cal')?.replaceChildren(document.createTextNode(`${nFixed(s.total_calories,0)} kcal`));
+    document.getElementById('stat-count')?.replaceChildren(document.createTextNode(nInt(s.count_exercises)));
+    document.getElementById('stat-avg-cals-hour')?.replaceChildren(document.createTextNode(`${nFixed(s.avg_calories_per_hour,0)} kcal/h`));
+
+    // avg distance
+    document.getElementById('stat-avg-dist-running')?.replaceChildren(document.createTextNode(`${nInt(s.avg_distance?.running || 0)} m`));
+    document.getElementById('stat-avg-dist-cycling')?.replaceChildren(document.createTextNode(`${nInt(s.avg_distance?.cycling || 0)} m`));
+    document.getElementById('stat-avg-dist-swimming')?.replaceChildren(document.createTextNode(`${nInt(s.avg_distance?.swimming || 0)} m`));
+
+    // avg duration
+    document.getElementById('stat-avg-dur-running')?.replaceChildren(document.createTextNode(secondsToHM(s.avg_duration_seconds?.running || 0)));
+    document.getElementById('stat-avg-dur-cycling')?.replaceChildren(document.createTextNode(secondsToHM(s.avg_duration_seconds?.cycling || 0)));
+    document.getElementById('stat-avg-dur-swimming')?.replaceChildren(document.createTextNode(secondsToHM(s.avg_duration_seconds?.swimming || 0)));
+  }catch(e){
+    console.error('stats refresh failed:', e);
+  }
+}
+</script>
+{% endblock content %}
