@@ -1,3 +1,25 @@
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse, HttpResponse
+from django.contrib.auth.decorators import login_required
+# ================================ LIKE/UNLIKE POST ================================
+@require_POST
+@login_required(login_url='/login/')
+def toggle_like(request, post_id):
+    post = get_object_or_404(ForumPost, pk=post_id)
+    user = request.user
+    if post.user_has_liked(user):
+        post.likes.remove(user)
+        liked = False
+    else:
+        post.likes.add(user)
+        liked = True
+    return JsonResponse({
+        'success': True,
+        'liked': liked,
+        'like_count': post.like_count(),
+    })
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_POST
@@ -57,9 +79,22 @@ def post_detail(request, id):
             reply.total_posts = 0
         replies_with_counts.append(reply)
 
+    # Calculate total posts for original poster
+    if post.author:
+        forum_posts_count = ForumPost.objects.filter(author=post.author).count()
+        replies_count = ForumReply.objects.filter(author=post.author).count()
+        original_poster_total_posts = forum_posts_count + replies_count
+    else:
+        original_poster_total_posts = 0
+
+    user_has_liked_post = False
+    if request.user.is_authenticated:
+        user_has_liked_post = post.user_has_liked(request.user)
     context = {
         'post': post,
-        'replies': replies_with_counts
+        'replies': replies_with_counts,
+        'original_poster_total_posts': original_poster_total_posts,
+        'user_has_liked_post': user_has_liked_post
     }
     return render(request, "forum_thread.html", context)
 
@@ -85,6 +120,7 @@ def show_json(request):
             'author_id': post.author.id if post.author else None,
             'author_initial': post.author.username[0].upper() if post.author else 'A',
             'author_role': post.author.profile.role if post.author and hasattr(post.author, 'profile') else 'USER',
+            'like_count': post.like_count(),
         }
         for post in post_list
     ]
@@ -130,6 +166,7 @@ def add_reply(request, post_id):
     try:
         post = get_object_or_404(ForumPost, pk=post_id)
         content = request.POST.get('content', '')
+        quote_reply_id = request.POST.get('quote_reply_id')
         
         if not content.strip():
             return JsonResponse({'error': 'Content cannot be empty'}, status=400)
@@ -140,6 +177,17 @@ def add_reply(request, post_id):
             author=request.user if request.user.is_authenticated else None,
             content=content
         )
+
+        # If a quote_reply_id was provided, attach the quoted reply (ensure it belongs to same post)
+        if quote_reply_id:
+            try:
+                quoted = ForumReply.objects.get(pk=quote_reply_id)
+                if quoted.post_id == post.id:
+                    reply.quote_reply = quoted
+                    reply.save()
+            except ForumReply.DoesNotExist:
+                # ignore invalid quote id
+                pass
         
         # Update the post's last activity time
         post.last_activity = timezone.now()
@@ -153,6 +201,16 @@ def add_reply(request, post_id):
         else:
             total_posts = 0
         
+        # Prepare quote info for response if present
+        quote_info = None
+        if reply.quote_reply:
+            quote_info = {
+                'id': str(reply.quote_reply.id),
+                'author': reply.quote_reply.author.username if reply.quote_reply.author else 'Anonymous',
+                'content': reply.quote_reply.content,
+                'created_at': reply.quote_reply.created_at.strftime('%b %d, %Y at %I:%M %p')
+            }
+
         return JsonResponse({
             'success': True,
             'message': 'Reply added successfully',
@@ -166,6 +224,7 @@ def add_reply(request, post_id):
                 'created_at': reply.created_at.strftime('%b %d, %Y at %I:%M %p'),
                 'reply_number': post.replies.count() + 1,
                 'total_posts': total_posts,
+                'quote': quote_info,
             }
         })
         

@@ -6,6 +6,7 @@ app_name = 'forum'
 urlpatterns = [
     path('', views.show_forums, name='forums'),
     path('<uuid:id>/', views.post_detail, name='post_detail'),
+    path('<uuid:post_id>/like/', views.toggle_like, name='toggle_like'),
     path('<uuid:post_id>/reply/', views.add_reply, name='add_reply'),
     
     # AJAX endpoints

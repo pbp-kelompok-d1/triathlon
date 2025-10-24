@@ -48,6 +48,34 @@
 
 <body class="bg-white">
 
+  <!-- NAVBAR -->
+  <nav class="bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo -->
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+            <span class="text-blue-600 font-bold text-lg">T</span>
+          </div>
+          <span class="text-white font-bold text-xl">Triathlon</span>
+        </div>
+
+        <!-- Nav links -->
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="#about" class="text-white hover:text-blue-100 transition">About</a>
+          <a href="#benefits" class="text-white hover:text-blue-100 transition">Benefits</a>
+          <a href="#team" class="text-white hover:text-blue-100 transition">Team</a>
+        </div>
+
+        <!-- Auth Buttons -->
+        <div class="flex items-center space-x-4">
+          <a href="{% url 'main:login' %}" class="text-white hover:text-blue-100 transition font-medium">Sign In</a>
+          <a href="{% url 'main:register' %}" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition font-medium">Sign Up</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
   <!-- HERO SECTION -->
   <section class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen flex items-center p-4 md:p-8">
     <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center w-full">
@@ -195,7 +223,7 @@
   </div>
 </section>
 
-<!-- Team Section -->
+<!-- TEAM SECTION -->
 <section id="team" class="py-16 md:py-24 bg-white">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Section Header -->
@@ -211,61 +239,62 @@
       
       <!-- Member 1 -->
       <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg">
-        <div class="bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-5">
-          <span class="text-white text-6xl">👨‍💼</span>
+        <div class="rounded-2xl h-36 w-36 overflow-hidden shadow-lg mx-auto mb-5">
+          <img src="{% static 'img/jarred.png' %}" alt="Jarred" class="object-cover w-full h-full">
         </div>
         <h4 class="text-base font-bold text-gray-900">Jarred Muhammad Raditya</h4>
-        <p class="text-gray-600 text-sm">Founder & CEO</p>
+        <p class="text-gray-600 text-sm">Shop Developer</p>
       </div>
 
       <!-- Member 2 -->
       <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg">
-        <div class="bg-gradient-to-br from-red-400 to-red-600 rounded-2xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-5">
-          <span class="text-white text-6xl">👩‍💻</span>
+        <div class="rounded-2xl h-36 w-36 overflow-hidden shadow-lg mx-auto mb-5">
+          <img src="{% static 'img/justin.png' %}" alt="Justin" class="object-cover w-full h-full">
         </div>
         <h4 class="text-base font-bold text-gray-900">Justin Dwitama Seniang</h4>
-        <p class="text-gray-600 text-sm">Lead Developer</p>
+        <p class="text-gray-600 text-sm">Place Developer</p>
       </div>
 
       <!-- Member 3 -->
       <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg">
-        <div class="bg-gradient-to-br from-green-400 to-green-600 rounded-2xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-5">
-          <span class="text-white text-6xl">👨‍🏫</span>
+        <div class="rounded-2xl h-36 w-36 overflow-hidden shadow-lg mx-auto mb-5">
+          <img src="{% static 'img/helmi.png' %}" alt="Helmi" class="object-cover w-full h-full">
         </div>
         <h4 class="text-base font-bold text-gray-900">Muhammad Helmi Alfarissi</h4>
-        <p class="text-gray-600 text-sm">Coach & Advisor</p>
+        <p class="text-gray-600 text-sm">User & Profile Developer</p>
       </div>
 
       <!-- Member 4 -->
       <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg">
-        <div class="bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-5">
-          <span class="text-white text-6xl">👩‍🎨</span>
+        <div class="rounded-2xl h-36 w-36 overflow-hidden shadow-lg mx-auto mb-5">
+          <img src="{% static 'img/aidam.png' %}" alt="Aidam" class="object-cover w-full h-full">
         </div>
         <h4 class="text-base font-bold text-gray-900">Muhammad Kaila Aidam Riyan</h4>
-        <p class="text-gray-600 text-sm">Design Lead</p>
+        <p class="text-gray-600 text-sm">Forum Developer</p>
       </div>
 
       <!-- Member 5 -->
       <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg">
-        <div class="bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-2xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-5">
-          <span class="text-white text-6xl">👨‍🎨</span>
+        <div class="rounded-2xl h-36 w-36 overflow-hidden shadow-lg mx-auto mb-5">
+          <img src="{% static 'img/touya.png' %}" alt="Touya" class="object-cover w-full h-full">
         </div>
         <h4 class="text-base font-bold text-gray-900">Randuichi Touya</h4>
-        <p class="text-gray-600 text-sm">Design Lead</p>
+        <p class="text-gray-600 text-sm">Activity Developer</p>
       </div>
 
       <!-- Member 6 -->
       <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg">
-        <div class="bg-gradient-to-br from-pink-400 to-pink-600 rounded-2xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-5">
-          <span class="text-white text-6xl">👩‍🎨</span>
+        <div class="rounded-2xl h-36 w-36 overflow-hidden shadow-lg mx-auto mb-5">
+          <img src="{% static 'img/syakirah.png' %}" alt="Syakirah" class="object-cover w-full h-full">
         </div>
         <h4 class="text-base font-bold text-gray-900">Syakirah Zahra Dhawini</h4>
-        <p class="text-gray-600 text-sm">Design Lead</p>
+        <p class="text-gray-600 text-sm">Ticket Developer</p>
       </div>
 
     </div>
   </div>
 </section>
+
   
   <!-- CTA -->
   <section class="py-16 md:py-24 bg-gradient-to-r from-blue-600 to-blue-700">

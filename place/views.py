@@ -13,6 +13,8 @@ from django.contrib.auth.models import Group
 from django.db import transaction
 from django.core.exceptions import PermissionDenied
 from django.db.models import Avg
+from django.contrib import messages
+
 
 @transaction.atomic
 def create_facility_admin_group():
@@ -127,30 +129,66 @@ def is_facility_admin(user):
         return False
     return hasattr(user, 'profile') and user.profile.role == "FACILITY_ADMIN"
 
-# views.py
-
-@login_required # Ganti decoratornya jadi @login_required
+@login_required
 def edit_place(request, pk):
-    # --- TAMBAHKAN PENGECEKAN INI ---
+    # Pengecekan izin (pastikan ini sudah benar sesuai sistem profile kamu)
     if not is_facility_admin(request.user):
         raise PermissionDenied("Anda bukan Facility Administrator.")
-    # -------------------------------
+    
+    place = get_object_or_404(Place, id=pk) # Gunakan id=pk atau pk=pk, konsisten
 
-    place = get_object_or_404(Place, id=pk)
-
-    # Pengecekan ini SUDAH BENAR (hanya pemilik yang bisa edit)
+    # Pengecekan kepemilikan
     if request.user != place.admin:
         raise PermissionDenied("Anda tidak memiliki izin untuk mengedit tempat ini.")
 
     if request.method == 'POST':
-        form = PlaceForm(request.POST, request.FILES, instance=place)
+        # Pastikan request.FILES diteruskan ke form
+        form = PlaceForm(request.POST, request.FILES, instance=place) 
+        
         if form.is_valid():
-            form.save()
-            return redirect('place:place_detail', pk=place.pk)
-    else:
-        form = PlaceForm(instance=place)
-    return render(request, 'place/edit_place.html', {'form': form, 'place': place})
+            # ============================================
+            # CEK LOGIKA HAPUS GAMBAR DI SINI
+            # ============================================
+            
+            # 1. Ambil instance TAPI JANGAN save ke DB dulu
+            place_instance = form.save(commit=False) 
 
+            # 2. Cek nilai checkbox DARI cleaned_data
+            clear_checked = form.cleaned_data.get('clear_image')
+            
+            # Debugging: Cetak nilai checkbox
+            print(f"Checkbox 'clear_image' dicentang: {clear_checked}") 
+
+            if clear_checked:
+                # 3. Hapus file fisiknya JIKA ADA
+                if place_instance.image: # Pastikan ada file untuk dihapus
+                   print(f"Menghapus gambar: {place_instance.image.name}")
+                   place_instance.image.delete(save=False) # save=False penting!
+                
+                # 4. Set field image di instance menjadi None
+                place_instance.image = None
+                print("Field image di instance diset ke None")
+
+            # 5. BARU simpan instance ke DB setelah semua modifikasi
+            place_instance.save() 
+            print("Instance disimpan ke DB")
+            
+            # form.save_m2m() # (Tidak perlu jika tidak ada ManyToMany)
+            
+            # ============================================
+
+            messages.success(request, f"Tempat '{place.name}' berhasil diperbarui.") # Tambahkan pesan sukses
+            return redirect('place:place_list')
+        else:
+            # Tetap cetak error jika form tidak valid
+            print("Form errors:", form.errors) 
+            messages.error(request, "Gagal memperbarui tempat. Periksa error di bawah.") # Tambahkan pesan error
+            
+    else: # GET request
+        form = PlaceForm(instance=place)
+
+    # Pastikan messages framework di-setup di base.html agar pesan muncul
+    return render(request, 'place/edit_place.html', {'form': form, 'place': place})
 
 @login_required # Ganti decoratornya jadi @login_required
 def delete_place(request, pk):
@@ -170,3 +208,21 @@ def delete_place(request, pk):
         return redirect('place:place_list')
     
     return redirect('place:place_detail', pk=pk)
+
+@login_required
+def delete_image(request, pk):
+    if not is_facility_admin(request.user):
+        raise PermissionDenied("Anda bukan Facility Administrator.")
+
+    place = get_object_or_404(Place, id=pk)
+
+    if request.user != place.admin:
+        raise PermissionDenied("Anda tidak memiliki izin menghapus gambar tempat ini.")
+
+    if place.image:
+        place.image.delete(save=False)
+        place.image = None
+        place.save()
+    
+    messages.success(request, f"Gambar untuk tempat '{place.name}' telah dihapus.")
+    return redirect('place:edit_place', pk=pk)
