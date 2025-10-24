@@ -27,6 +27,9 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .models import ForumPost, ForumReply
 from .forms import ForumPostForm
+from place.models import Place
+from shop.models import Product
+import uuid
 
 
 # ================================ SHOWING FORUM POSTS AND DETAILS AND JSON DATA ================================
@@ -54,6 +57,9 @@ def show_forums(request):
         'user': request.user,
         'last_login': request.COOKIES.get('last_login', 'Never')
     }
+    # Include available places and products for the create-post modal dropdowns
+    context['places'] = Place.objects.all()
+    context['products'] = Product.objects.all()
     return render(request, "forums.html", context)
 
 
@@ -90,11 +96,27 @@ def post_detail(request, id):
     user_has_liked_post = False
     if request.user.is_authenticated:
         user_has_liked_post = post.user_has_liked(request.user)
+    # Try to resolve linked Product and Place objects (if any)
+    linked_product = None
+    linked_place = None
+    try:
+        if post.product_id:
+            linked_product = Product.objects.filter(pk=post.product_id).first()
+    except Exception:
+        linked_product = None
+    try:
+        if post.location_id:
+            linked_place = Place.objects.filter(pk=post.location_id).first()
+    except Exception:
+        linked_place = None
+
     context = {
         'post': post,
         'replies': replies_with_counts,
         'original_poster_total_posts': original_poster_total_posts,
-        'user_has_liked_post': user_has_liked_post
+        'user_has_liked_post': user_has_liked_post,
+        'linked_product': linked_product,
+        'linked_place': linked_place,
     }
     return render(request, "forum_thread.html", context)
 
@@ -113,7 +135,7 @@ def show_json(request):
             'sport_category_display': post.get_sport_category_display(),
             'post_views': post.post_views,
             'is_pinned': post.is_pinned,
-            'product_id': post.product_id,
+            'product_id': str(post.product_id) if post.product_id else None,
             'location_id': post.location_id,
             'created_at': post.created_at.strftime('%b %d, %Y'),
             'author': post.author.username if post.author else 'Anonymous',
@@ -146,6 +168,19 @@ def add_post_ajax(request):
     is_admin = hasattr(user, 'profile') and user.profile.role == 'ADMIN'
     is_pinned = (request.POST.get("is_pinned") == 'on') if is_admin else False
 
+    # Convert product/location IDs safely
+    def _to_uuid_or_none(val):
+        try:
+            return uuid.UUID(val) if val else None
+        except (ValueError, TypeError, AttributeError):
+            return None
+
+    def _to_int_or_none(val):
+        try:
+            return int(val) if val else None
+        except (ValueError, TypeError):
+            return None
+
     new_post = ForumPost(
         title=title,
         content=content,
@@ -153,8 +188,8 @@ def add_post_ajax(request):
         sport_category=sport_category,
         is_pinned=is_pinned,
         author=user,
-        product_id=int(product_id) if product_id else None,
-        location_id=int(location_id) if location_id else None,
+        product_id=_to_uuid_or_none(product_id),
+        location_id=_to_int_or_none(location_id),
     )
     new_post.save()
     return HttpResponse(b"CREATED", status=201)
@@ -279,8 +314,20 @@ def edit_post_ajax(request, post_id):
     # Update product_id and location_id
     product_id = request.POST.get("product_id")
     location_id = request.POST.get("location_id")
-    post.product_id = int(product_id) if product_id else None
-    post.location_id = int(location_id) if location_id else None
+    def _to_uuid_or_none(val):
+        try:
+            return uuid.UUID(val) if val else None
+        except (ValueError, TypeError, AttributeError):
+            return None
+
+    def _to_int_or_none(val):
+        try:
+            return int(val) if val else None
+        except (ValueError, TypeError):
+            return None
+
+    post.product_id = _to_uuid_or_none(product_id)
+    post.location_id = _to_int_or_none(location_id)
     
     # Set last_edited timestamp
     post.last_edited = timezone.now()

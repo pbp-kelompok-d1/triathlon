@@ -37,7 +37,9 @@ class ForumPost(models.Model):
     is_pinned = models.BooleanField(default=False)
     
     # External connections for future apps
-    product_id = models.IntegerField(null=True, blank=True)  # Will link to Product model later
+    # product_id uses UUIDs to match Product.id (Product uses a UUID primary key)
+    product_id = models.UUIDField(null=True, blank=True)
+    # location_id remains IntegerField because Place uses integer PKs
     location_id = models.IntegerField(null=True, blank=True)  # Will link to Location model later
 
     # each user can like a post only once
