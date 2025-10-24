@@ -17,6 +17,14 @@
       + Tambah Tempat
     </a>
   </div>
+  <div class="mb-4 p-4 border rounded bg-gray-50">
+    <h3 class="font-semibold mb-2">Load Data Awal (Admin Only)</h3>
+    <div class="flex gap-2">
+      <a href="{% url 'place:load_cycling' %}" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm">Load Cycling Places</a>
+      <a href="{% url 'place:load_running' %}" class="bg-green-500 text-white px-3 py-1 rounded text-sm">Load Running Places</a>
+      <a href="{% url 'place:load_swimming' %}" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">Load Swimming Places</a>
+    </div>
+  </div>
   {% endif %}
 
   <div class="mb-8">
@@ -99,17 +107,27 @@
           {% endif %}
         </div>
 
-        <div class="p-5">
+<div class="p-5">
           <div class="flex items-center gap-2 mb-1">
              <h2 class="text-xl font-bold text-gray-900 truncate">{{ place.name }}</h2>
           </div>
 
-          <div class="flex items-center text-gray-500 text-sm mb-3">
-            <svg class="w-4 h-4 mr-1.5 flex-shrink-0" ...>...</svg>
-            <span>{{ place.city }}, {{ place.province }}</span>
+          <div class="flex items-center text-gray-500 text-sm mb-2"> 
+            <svg class="w-4 h-4 mr-1.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+            </svg>
+            <span>
+                {% if place.city %}{{ place.city }}{% endif %}{% if place.city and place.province %}, {% endif %}{% if place.province %}{{ place.province }}{% endif %}
+                {% if not place.city and not place.province %}Lokasi tidak tersedia{% endif %}
+            </span>
           </div>
 
-          <p class="text-gray-700 text-sm mb-4 h-10">{{ place.description|truncatechars:80 }}</p>
+          <div class="text-green-600 text-base font-semibold mb-3">
+             Rp {{ place.price|floatformat:0 }} 
+          </div>
+
+          <p class="text-gray-700 text-sm mb-4 min-h-[40px]">{{ place.description|truncatechars:80 }}</p> {# Ganti h-10 jadi min-h #}
 
           <div class="flex justify-between items-center pt-4 border-t border-gray-100">
 
@@ -120,14 +138,13 @@
               <span>{% if place.avg_rating %}{{ place.avg_rating|floatformat:1 }}{% else %}0.0{% endif %}</span>
             </div>
 
-            <div class="flex items-center space-x-3"> <a href="{% url 'place:place_detail' place.pk %}" title="View Details" class="text-blue-600 hover:text-blue-800 transition">
+            <div class="flex items-center space-x-3"> 
+              <a href="{% url 'place:place_detail' place.pk %}" title="View Details" class="text-blue-600 hover:text-blue-800 transition">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                   <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
                 </svg>
-                
-              </a>
-              <h4>Views Details</h4>
+                </a>
 
               {% if request.user == place.admin %}
                 <a href="{% url 'place:edit_place' place.pk %}" title="Edit Place" class="text-yellow-600 hover:text-yellow-800 transition">
@@ -136,8 +153,10 @@
                   </svg>
                 </a>
                 <form action="{% url 'place:delete_place' place.pk %}" method="POST"
-                      onsubmit="return confirm('Apakah Anda yakin ingin menghapus tempat ini?');" class="inline m-0 p-0"> {% csrf_token %}
-                  <button type="submit" title="Delete Place" class="text-red-600 hover:text-red-800 transition bg-transparent border-none p-0 cursor-pointer"> <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      onsubmit="return confirm('Apakah Anda yakin ingin menghapus tempat ini?');" class="inline m-0 p-0"> 
+                  {% csrf_token %}
+                  <button type="submit" title="Delete Place" class="text-red-600 hover:text-red-800 transition bg-transparent border-none p-0 cursor-pointer"> 
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                       <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                     </svg>
                   </button>
