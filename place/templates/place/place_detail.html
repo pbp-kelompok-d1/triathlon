@@ -20,7 +20,7 @@
       <p class="text-gray-700 leading-relaxed mb-6">{{ place.description }}</p>
 
       <div class="flex items-center gap-3">
-        <a href="{% url 'ticketing_page' place.id %}" 
+        <a href="#" 
            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg transition">
           Pesan Tiket
         </a>
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const comment = document.getElementById('review-comment').value;
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    const response = await fetch("{% url 'add_review' place.id %}", {
+    const response = await fetch("{% url 'place:add_review' place.id %}", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
