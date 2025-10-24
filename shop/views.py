@@ -12,7 +12,7 @@ import pandas as pd
 
 def load_datasets(request):
     # Load datasets
-    products_df = pd.read_csv('https://drive.google.com/file/d/1fsPmjhnXxkk7pY1h7QoNWMNr9TN-h0I_/view?usp=drive_link')
+    products_df = pd.read_csv('https://drive.google.com/file/d/1fsPmjhnXxkk7p   Y1h7QoNWMNr9TN-h0I_/view?usp=drive_link')
     for data in products_df.itertuples():
         Product.objects.get_or_create(
             name=data.name,
