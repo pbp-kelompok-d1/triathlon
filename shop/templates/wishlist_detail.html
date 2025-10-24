@@ -1,77 +1,170 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Wishlist - Triathlon Store{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-6">
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold mb-2">Wishlist Anda</h1>
-        <a href="{% url 'shop:shop' %}" class="text-blue-600 hover:text-blue-800">
-            ← Kembali ke Shop
-        </a>
-    </div>
-
-    {% if not products %}
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
-            <svg class="w-16 h-16 mx-auto text-blue-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-            </svg>
-            <p class="text-gray-600 text-lg mb-4">Wishlist Anda masih kosong.</p>
-            <a href="{% url 'shop:shop' %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md transition">
-                Lihat Produk
-            </a>
+<div class="min-h-screen bg-white py-8">
+    <div class="container mx-auto px-4">
+        <!-- Header with Breadcrumb -->
+        <div class="mb-8">
+            <nav class="flex mb-4" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                    <li class="inline-flex items-center">
+                        <a href="{% url 'shop:shop' %}" class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors">
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+                            </svg>
+                            <span class="text-sm font-medium">Shop</span>
+                        </a>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="text-sm font-medium text-gray-500">Wishlist</span>
+                        </div>
+                    </li>
+                </ol>
+            </nav>
+            <h1 class="text-4xl font-bold text-gray-900 flex items-center">
+                <svg class="w-10 h-10 mr-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                </svg>
+                My Wishlist
+            </h1>
         </div>
-    {% else %}
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div class="mb-4">
-                <p class="text-gray-600">Total: <strong>{{ products|length }}</strong> produk dalam wishlist</p>
+
+        {% if not products %}
+        <!-- Empty Wishlist -->
+        <div class="bg-gray-50 rounded-2xl shadow-xl p-12 text-center border border-gray-200">
+            <div class="max-w-md mx-auto">
+                <div class="w-32 h-32 bg-gradient-to-br from-red-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-16 h-16 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Your wishlist is empty</h2>
+                <a href="{% url 'shop:shop' %}" class="inline-flex items-center bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-8 py-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    Browse Products
+                </a>
             </div>
-            
-            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+        </div>
+        {% else %}
+        <!-- Wishlist Summary -->
+        <div class="bg-gray-50 rounded-2xl shadow-xl p-6 mb-8 border border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="bg-gradient-to-r from-red-100 to-pink-100 rounded-lg p-3 mr-4">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">Total Products in Wishlist</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ products|length }} item{{ products|length|pluralize }}</p>
+                    </div>
+                </div>
+                <a href="{% url 'shop:shop' %}" class="inline-flex items-center bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg transition-colors duration-200">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Continue Shopping
+                </a>
+            </div>
+        </div>
+
+        <!-- Wishlist Items -->
+        <div class="bg-gray-50 rounded-2xl shadow-xl p-6 border border-gray-200">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
                 {% for product in products %}
-                <div class="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow duration-300 flex flex-col">
-                    <div class="relative">
-                        <div class="aspect-square overflow-hidden rounded-t-lg">
-                            {% if product.thumbnail %}
-                                <img src="{{ product.thumbnail }}" alt="{{ product.name }}" class="w-full h-full object-cover">
-                            {% else %}
-                                <div class="w-full h-full bg-gray-200 flex items-center justify-center">
-                                    <span class="text-gray-400 text-sm">No Image</span>
-                                </div>
-                            {% endif %}
+                <div class="bg-white rounded-xl border border-gray-300 hover:shadow-xl transition-all duration-300 group overflow-hidden">
+                    <!-- Product Image -->
+                    <div class="relative aspect-square overflow-hidden">
+                        {% if product.thumbnail %}
+                        <img src="{{ product.thumbnail }}" alt="{{ product.name }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                        {% else %}
+                        <div class="w-full h-full bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center">
+                            <svg class="w-16 h-16 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Wishlist Badge -->
+                        <div class="absolute top-3 right-3">
+                            <div class="bg-red-500 text-white rounded-full p-2 shadow-lg">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                </svg>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="p-3 flex-1 flex flex-col">
-                        <a href="{% url 'shop:product_detail' product.id %}" class="block mb-2">
-                            <h5 class="text-sm font-semibold text-gray-800 hover:text-blue-600 line-clamp-2 min-h-[2.5rem]">
-                                {{ product.name }}
-                            </h5>
-                        </a>
+                    <!-- Product Info -->
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <a href="{% url 'shop:product_detail' product.id %}" class="block group-hover:text-blue-600 transition-colors">
+                                <h3 class="text-lg font-semibold text-gray-900 line-clamp-2 min-h-[3rem]">
+                                    {{ product.name }}
+                                </h3>
+                            </a>
+                            {% if product.category %}
+                            <p class="text-sm text-gray-500 mt-1 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                                </svg>
+                                {{ product.category }}
+                            </p>
+                            {% endif %}
+                        </div>
                         
-                        <div class="mt-auto">
-                            <div class="text-lg font-bold text-gray-900 mb-3">
+                        <div class="flex items-center justify-between">
+                            <div class="text-2xl font-bold text-blue-600">
                                 Rp {{ product.price|floatformat:0 }}
                             </div>
-                            
-                            <div class="space-y-2">
-                                <a href="{% url 'shop:product_detail' product.id %}" 
-                                   class="block w-full bg-blue-600 hover:bg-blue-700 text-white text-center px-3 py-2 rounded-md text-sm transition">
-                                    Lihat Detail
-                                </a>
-                                
-                                <form method="post" action="{% url 'shop:toggle_wishlist' product.id %}" class="w-full">
-                                    {% csrf_token %}
-                                    <button type="submit" 
-                                            class="w-full bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm transition">
-                                        Hapus dari Wishlist
-                                    </button>
-                                </form>
+                            {% if product.stock %}
+                            <div class="text-sm text-gray-500 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                </svg>
+                                Stock: {{ product.stock }}
                             </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="space-y-3 pt-4 border-t border-gray-200">
+                            <a href="{% url 'shop:product_detail' product.id %}" 
+                               class="block w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white text-center px-4 py-3 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105">
+                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                                View Details
+                            </a>
+                            
+                            <form method="post" action="{% url 'shop:toggle_wishlist' product.id %}" class="w-full">
+                                {% csrf_token %}
+                                <button type="submit" 
+                                        class="w-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-4 py-3 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 flex items-center justify-center">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    Remove from Wishlist
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
         </div>
-    {% endif %}
+        {% endif %}
+    </div>
 </div>
 {% endblock %}
