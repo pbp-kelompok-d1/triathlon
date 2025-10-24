@@ -9,11 +9,13 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError 
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
+from django.urls import reverse
 from .models import UserProfile
 from forum.models import ForumPost, ForumReply
 from shop.models import Product, Wishlist
 from place.models import Place
-from ticket.models import Ticket          
+from ticket.models import Ticket
+from main.views import logout          
 
 # ==========================================================
 # DECORATOR (TIDAK BERUBAH)
@@ -315,3 +317,56 @@ def change_password(request):
     except Exception as e:
         # Tangkap error server lainnya
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+# ==========================================================
+# 5. VIEW BARU: HAPUS AKUN (AJAX)
+# ==========================================================
+@login_required
+def delete_user_account(request):
+    """
+    Menangani penghapusan akun user via AJAX POST.
+    Memerlukan konfirmasi password.
+    """
+    # Hanya izinkan via AJAX POST
+    if request.method != 'POST' or not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
+    
+    user = request.user
+    # Ambil password dari form AJAX
+    password_confirm = request.POST.get('password_confirm_delete')
+
+    try:
+        # 1. Validasi password
+        if not password_confirm:
+            raise ValidationError('Password Anda diperlukan untuk konfirmasi penghapusan akun.')
+        
+        if not user.check_password(password_confirm):
+            raise ValidationError('Password yang Anda masukkan salah.')
+
+        # 2. Siapkan URL redirect SEBELUM user dihapus
+        # Sesuai permintaan Anda: redirect ke 'main' (guest)
+        # Asumsi nama URL-nya adalah 'main:show_main' seperti di decorator Anda
+        redirect_url = reverse('main:show_main')
+        
+        # 3. Hapus user
+        # Ini akan otomatis menghapus UserProfile jika menggunakan on_delete=models.CASCADE
+        user.delete()
+        
+        # 4. Logout user dari sesi saat ini
+        logout(request)
+
+        # 5. Kirim respon sukses beserta URL redirect
+        return JsonResponse({
+            'success': True, 
+            'message': 'Akun Anda telah berhasil dihapus.',
+            'redirect_url': redirect_url  # Kirim URL ini ke JavaScript
+        })
+
+    except ValidationError as e:
+        # Tangkap error validasi (password salah, dll)
+        error_message = '; '.join(e.messages) if hasattr(e, 'messages') else str(e)
+        return JsonResponse({'success': False, 'error': error_message}, status=400)
+    
+    except Exception as e:
+        # Tangkap error server lainnya
+        return JsonResponse({'success': False, 'error': f'Terjadi kesalahan: {str(e)}'}, status=500)

@@ -147,6 +147,11 @@
                 class="mt-2 inline-block w-full px-5 py-3 bg-white text-gray-700 rounded-lg hover:bg-gray-100 transition duration-200 font-medium border border-gray-300 shadow-sm">
             Change Password
         </button>
+
+        <button type="button" onclick="openDeleteModal()"
+                class="mt-4 inline-block w-full px-5 py-3 bg-white text-red-600 rounded-lg hover:bg-red-50 transition duration-200 font-medium border border-red-200 shadow-sm">
+            Delete Account
+        </button>
     </div>
     </div>
 
@@ -302,6 +307,70 @@
   </div>
 </div>
 
+
+<div id="deleteAccountModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden" onclick="closeDeleteModalOnClickOutside(event)">
+  <div class="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+    <div class="mt-3">
+      <button type="button" onclick="closeDeleteModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+
+      <div class="flex flex-col items-center">
+        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+          <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h3 class="text-xl leading-6 font-medium text-gray-900 text-center mt-4" id="modal-title">
+          Delete Your Account
+        </h3>
+        <div class="mt-2 px-4">
+          <p class="text-sm text-gray-500 text-center">
+            Are you sure? This action is irreversible. All your data (posts, replies, products, etc.) will be permanently deleted.
+          </p>
+          <p class="text-sm text-gray-500 text-center font-medium mt-2">
+            Please enter your password to confirm.
+          </p>
+        </div>
+      </div>
+
+      <form id="deleteAccountForm" class="mt-6 space-y-4">
+        {% csrf_token %} 
+        
+        <div class="px-4">
+            <label for="password_confirm_delete" class="block text-sm font-medium text-gray-700 mb-1">Confirm Your Password</label>
+            <div class="relative">
+                <input type="password" name="password_confirm_delete" id="password_confirm_delete" required
+                       placeholder="Enter your current password"
+                       class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent sm:text-sm pr-10">
+                <button type="button" onclick="togglePassword('password_confirm_delete', 'delete-pass-icon')" 
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                    <svg id="delete-pass-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="deleteAccountMessage" class="hidden mt-4 mx-4 p-3 rounded-md text-sm"></div>
+
+        <div class="px-4 py-4 border-t border-gray-200 bg-gray-50 rounded-b-md flex justify-end gap-3">
+          <button type="button" onclick="closeDeleteModal()"
+                  class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
+            Cancel
+          </button>
+          <button id="deleteAccountButton" type="submit"
+                  class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium shadow-sm">
+            Yes, Delete My Account
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
 <script>
 function togglePassword(inputId, iconId) {
   const passwordInput = document.getElementById(inputId);
@@ -330,6 +399,7 @@ let changePassModal, changePassForm, savePassButton, changePassMessageDiv;
 let currentPasswordInput, newPasswordInput, newPasswordConfirmInput;
 let profileFullName, profileUsername, profileEmail, profileBioText, profilePhone;
 let dashboardHeaderTitle;
+let deleteModal, deleteForm, deleteButton, deleteMessageDiv, deletePasswordInput;
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -364,6 +434,13 @@ document.addEventListener('DOMContentLoaded', function() {
     currentPasswordInput = document.getElementById('current_password');
     newPasswordInput = document.getElementById('new_password');
     newPasswordConfirmInput = document.getElementById('new_password_confirm');
+
+    // === ASSIGNMENT VARIABEL MODAL DELETE ===
+    deleteModal = document.getElementById('deleteAccountModal');
+    deleteForm = document.getElementById('deleteAccountForm');
+    deleteButton = document.getElementById('deleteAccountButton');
+    deleteMessageDiv = document.getElementById('deleteAccountMessage');
+    deletePasswordInput = document.getElementById('password_confirm_delete');
 
     // === ASSIGNMENT VARIABEL TAMPILAN (SIDEBAR & HEADER) ===
     profileFullName = document.getElementById('profile_full_name');
@@ -718,6 +795,114 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // --- MODAL DELETE ACCOUNT ---
+    window.openDeleteModal = function() {
+        if (!deleteModal) { 
+            console.error("Modal 'deleteAccountModal' not found"); 
+            return; 
+        }
+        if(deleteForm) deleteForm.reset();
+
+        // Reset ikon mata
+        const icon = document.getElementById('delete-pass-icon');
+        if (icon) {
+            icon.innerHTML = `
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            `;
+        }
+        // Reset tipe input
+        if (deletePasswordInput) deletePasswordInput.type = 'password';
+
+        // Sembunyikan pesan error
+        if (deleteMessageDiv) {
+            deleteMessageDiv.classList.add('hidden');
+            deleteMessageDiv.textContent = '';
+            deleteMessageDiv.classList.remove('bg-red-100', 'text-red-700');
+        }
+        deleteModal.classList.remove('hidden');
+    };
+    
+    window.closeDeleteModal = function() {
+        if (!deleteModal) return;
+        deleteModal.classList.add('hidden');
+    };
+    
+    window.closeDeleteModalOnClickOutside = function(event) {
+        if (event.target === deleteModal) { 
+            closeDeleteModal(); 
+        }
+    };
+    
+    function showDeleteModalError(message) {
+        if (!deleteMessageDiv) return;
+        deleteMessageDiv.textContent = message;
+        deleteMessageDiv.classList.remove('hidden', 'bg-green-100', 'text-green-700');
+        deleteMessageDiv.classList.add('bg-red-100', 'text-red-700');
+    }
+    
+    if (deleteForm) {
+        deleteForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!deleteButton) return;
+            
+            deleteButton.disabled = true;
+            deleteButton.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg> 
+                Deleting...
+            `;
+            
+            if (deleteMessageDiv) deleteMessageDiv.classList.add('hidden');
+            
+            const formData = new FormData(deleteForm);
+            // URL dari urls.py Anda
+            const url = '{% url "user_profile:delete_account" %}'; 
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Berhasil!
+                    // Tampilkan toast, tutup modal, dan redirect
+                    closeDeleteModal(); 
+                    showToast(data.message || 'Account deleted successfully.', '', 'success');
+                    
+                    // Nonaktifkan tombol untuk mencegah klik ganda
+                    deleteButton.disabled = true;
+
+                    // Redirect ke halaman main (guest) setelah 1.5 detik
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || '/'; // Fallback ke home
+                    }, 1500);
+
+                } else {
+                    // Gagal (misal: password salah)
+                    showDeleteModalError(data.error || `Failed to delete (Status: ${response.status})`);
+                }
+            } catch (error) {
+                console.error('Error submitting delete account via AJAX:', error);
+                showDeleteModalError('An network error occurred. Please check connection.');
+            } finally {
+                // Hanya aktifkan tombol lagi jika GAGAL
+                if (!deleteButton.disabled || deleteButton.innerHTML.includes('Deleting...')) {
+                   deleteButton.disabled = false;
+                   deleteButton.innerHTML = 'Yes, Delete My Account';
+                }
+            }
+        });
+    }
+    
     // --- 4. Inisialisasi ---
     (function initSidebarData() {
         if (profileUsername) profileUsername.dataset.username = '{{ user.username|escapejs }}';

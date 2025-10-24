@@ -1,4 +1,5 @@
 {% load static %}
+{% include 'navbar.html' %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,224 +12,262 @@
     html {
       scroll-behavior: smooth;
     }
+
+    /* =========================== */
+    /* ANIMASI KETIK DAN FADE-IN  */
+    /* =========================== */
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+    @keyframes blink-caret {
+      from, to { border-color: transparent; }
+      50% { border-color: #3b82f6; }
+    }
+    .typing-effect {
+      overflow: hidden;
+      border-right: .15em solid #3b82f6;
+      white-space: nowrap;
+      animation:
+        typing 2.5s steps(19, end) forwards,
+        blink-caret .75s step-end infinite;
+      width: 0;
+      display: inline-block;
+      margin: 0;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in-delay {
+      opacity: 0;
+      animation: fadeIn 1s ease-out 2.5s forwards;
+    }
   </style>
 </head>
+
 <body class="bg-white">
 
-  <!-- Navbar -->
-  <nav class="bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-16">
-        <div class="flex items-center space-x-2">
-          <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-            <span class="text-blue-600 font-bold text-lg">T</span>
-          </div>
-          <span class="text-white font-bold text-xl">Triathlon</span>
+  <!-- HERO SECTION -->
+  <section class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen flex items-center p-4 md:p-8">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center w-full">
+      <div class="text-center md:text-left">
+        <div class="mb-4 inline-block">
+          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 typing-effect">
+            Welcome, Champion!
+          </h1>
         </div>
-        <div class="hidden md:flex items-center space-x-8">
-          <a href="#about" class="text-white hover:text-blue-100 transition">About</a>
-          <a href="#benefits" class="text-white hover:text-blue-100 transition">Benefits</a>
-          <a href="#team" class="text-white hover:text-blue-100 transition">Team</a>
-        </div>
-        <div class="flex items-center space-x-4">
-          <a href="{% url 'main:login' %}" class="text-white hover:text-blue-100 transition font-medium">Sign In</a>
-          <a href="{% url 'main:register' %}" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition font-medium">Sign Up</a>
-        </div>
-      </div>
-    </div>
-  </nav>
 
-  <!-- Hero Section -->
-  <section class="bg-gradient-to-br from-blue-50 to-blue-100 py-16 md:py-24">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="grid md:grid-cols-2 gap-8 items-center">
-        <div>
-          <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">GAMBAR TRIATHLON</h1>
-          <p class="text-lg text-gray-700 mb-4 leading-relaxed">
-            Nanti disini ngasih tahu platform untuk atlet/orang mau olahraga.
+        <div class="fade-in-delay">
+          <p class="text-xl md:text-2xl text-gray-700 mb-8 max-w-xl mx-auto md:mx-0 font-medium italic">
+            "We Achieve, We Persevere, We Triumph."
           </p>
-          <p class="text-base text-gray-600 mb-8 leading-relaxed">
-            About nanti scroll ke bawah jika dipencet (scroll behavior).
-          </p>
-          <div class="flex flex-col sm:flex-row gap-4">
-            <a href="{% url 'main:register' %}" class="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-lg font-bold transition transform hover:scale-105">
-              Get Started
+          <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+            <a href="{% url 'main:register' %}" class="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-lg font-bold transition transform hover:scale-105 shadow-lg">
+              Join The Challenge
             </a>
-            <a href="#benefits" class="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg font-bold transition">
-              Learn More
+            <a href="#about" class="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg font-bold transition">
+              Want to know about Triathlon?
             </a>
           </div>
         </div>
-        <div class="bg-white rounded-xl shadow-xl p-8 border-4 border-blue-400">
-          <div class="bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg h-64 flex items-center justify-center">
-            <span class="text-gray-400 text-lg font-semibold">Gambar Triathlon</span>
-          </div>
-        </div>
+      </div>
+
+      <div class="flex items-center justify-center p-4">
+        <img src="https://via.placeholder.com/700x700/BFDBFE/1E40AF?text=Triathlon+Image"
+             alt="Triathlon athlete illustration"
+             class="rounded-lg shadow-2xl max-w-full h-auto"
+             style="max-height: 700px; max-width: 700px;" />
       </div>
     </div>
   </section>
 
-  <!-- About Section -->
-  <section id="about" class="py-16 md:py-24 bg-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="grid md:grid-cols-2 gap-8">
-        <div class="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-12 flex flex-col items-center justify-center min-h-64 shadow-lg hover:shadow-xl transition">
-          <div class="bg-white rounded-full flex items-center justify-center mb-6 shadow-md">
-            <img src="{% static 'img/logo_triathlon.png' %}" alt="Triathlon Logo" />
-          </div>
+ <!-- ABOUT -->
+<section id="about" class="py-16 md:py-24 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid md:grid-cols-2 gap-10 items-center">
+      
+      <!-- Logo Section -->
+      <div class="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-12 flex flex-col items-center justify-center shadow-lg hover:shadow-xl transition">
+        <img 
+          src="{% static 'img/logo_triathlon.png' %}" 
+          alt="Triathlon Logo" 
+          class="w-64 h-64 object-contain mb-4"
+        />
+      </div>
+
+      <!-- About Text -->
+      <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-12 shadow-lg hover:shadow-xl transition">
+        <h3 class="text-3xl font-bold text-gray-900 mb-6">About Triathlon</h3>
+        <p class="text-gray-700 leading-relaxed mb-4">
+          Triathlon adalah olahraga yang menggabungkan tiga disiplin: renang, bersepeda, dan lari. Ini adalah tantangan ultimate untuk atlet yang mencari pengalaman komprehensif.
+        </p>
+        <p class="text-gray-600 leading-relaxed">
+          Platform kami menyediakan semua yang Anda butuhkan untuk memulai, berkembang, dan bersaing dalam dunia triathlon.
+        </p>
+        <div class="mt-6 flex items-center space-x-2">
+          <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+          <span class="text-sm font-semibold text-gray-700">Bergabunglah dengan ribuan atlet</span>
         </div>
-        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-12 flex flex-col justify-center shadow-lg hover:shadow-xl transition">
-          <h3 class="text-3xl font-bold text-gray-900 mb-6">About Triathlon</h3>
-          <p class="text-gray-700 leading-relaxed mb-4">
-            Triathlon adalah olahraga yang menggabungkan tiga disiplin: renang, bersepeda, dan lari. Ini adalah tantangan ultimate untuk atlet yang mencari pengalaman komprehensif.
-          </p>
-          <p class="text-gray-600 leading-relaxed">
-            Platform kami menyediakan semua yang Anda butuhkan untuk memulai, berkembang, dan bersaing dalam dunia triathlon.
-          </p>
-          <div class="mt-6 flex items-center space-x-2">
-            <div class="w-2 h-2 bg-red-500 rounded-full"></div>
-            <span class="text-sm font-semibold text-gray-700">Bergabunglah dengan ribuan atlet</span>
-          </div>
+      </div>
+      
+    </div>
+  </div>
+</section>
+
+<!-- Benefits Section -->
+<section id="benefits" class="py-16 md:py-24 bg-gradient-to-br from-gray-50 to-gray-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="text-4xl font-bold text-gray-900 mb-4">Benefit Triathlon</h2>
+      <p class="text-lg text-gray-600">
+        Temukan mengapa triathlon adalah pilihan terbaik untuk kesehatan dan kebugaran Anda
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Card 1 -->
+      <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2 flex flex-col items-start">
+        <div class="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center mb-6">
+          <span class="text-3xl">💪</span>
         </div>
+        <h4 class="text-xl font-bold text-gray-900 mb-3">Full Body Workout</h4>
+        <p class="text-gray-600 leading-relaxed">
+          Latih semua kelompok otot dengan kombinasi sempurna dari renang, bersepeda, dan lari.
+        </p>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2 flex flex-col items-start">
+        <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
+          <span class="text-3xl">❤️</span>
+        </div>
+        <h4 class="text-xl font-bold text-gray-900 mb-3">Kesehatan Kardiovaskular</h4>
+        <p class="text-gray-600 leading-relaxed">
+          Tingkatkan stamina dan kesehatan jantung Anda dengan latihan aerobik yang intens.
+        </p>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2 flex flex-col items-start">
+        <div class="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mb-6">
+          <span class="text-3xl">🧠</span>
+        </div>
+        <h4 class="text-xl font-bold text-gray-900 mb-3">Mental Resilience</h4>
+        <p class="text-gray-600 leading-relaxed">
+          Bangun ketahanan mental dan kepercayaan diri melalui tantangan yang bermakna.
+        </p>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2 flex flex-col items-start">
+        <div class="w-16 h-16 bg-yellow-100 rounded-lg flex items-center justify-center mb-6">
+          <span class="text-3xl">🤝</span>
+        </div>
+        <h4 class="text-xl font-bold text-gray-900 mb-3">Komunitas Global</h4>
+        <p class="text-gray-600 leading-relaxed">
+          Terhubung dengan atlet dari seluruh dunia dan bagikan pengalaman Anda.
+        </p>
+      </div>
+
+      <!-- Card 5 -->
+      <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2 flex flex-col items-start">
+        <div class="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
+          <span class="text-3xl">🏆</span>
+        </div>
+        <h4 class="text-xl font-bold text-gray-900 mb-3">Kompetisi & Prestasi</h4>
+        <p class="text-gray-600 leading-relaxed">
+          Ikuti kompetisi lokal dan internasional untuk menguji kemampuan Anda.
+        </p>
+      </div>
+
+      <!-- Card 6 -->
+      <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2 flex flex-col items-start">
+        <div class="w-16 h-16 bg-pink-100 rounded-lg flex items-center justify-center mb-6">
+          <span class="text-3xl">📊</span>
+        </div>
+        <h4 class="text-xl font-bold text-gray-900 mb-3">Progress Tracking</h4>
+        <p class="text-gray-600 leading-relaxed">
+          Pantau perkembangan Anda dengan analytics mendalam dan insights personal.
+        </p>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- Benefits Section -->
-  <section id="benefits" class="py-16 md:py-24 bg-gradient-to-br from-gray-50 to-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-12">
-        <h2 class="text-4xl font-bold text-gray-900 mb-4">Benefit Triathlon</h2>
-        <p class="text-lg text-gray-600">Temukan mengapa triathlon adalah pilihan terbaik untuk kesehatan dan kebugaran Anda</p>
-      </div>
-
-      <div class="grid md:grid-cols-3 gap-8">
-        <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2">
-          <div class="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center mb-6">
-            <span class="text-3xl">💪</span>
-          </div>
-          <h4 class="text-xl font-bold text-gray-900 mb-3">Full Body Workout</h4>
-          <p class="text-gray-600 leading-relaxed">
-            Latih semua kelompok otot dengan kombinasi sempurna dari renang, bersepeda, dan lari.
-          </p>
-        </div>
-
-        <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2">
-          <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
-            <span class="text-3xl">❤️</span>
-          </div>
-          <h4 class="text-xl font-bold text-gray-900 mb-3">Kesehatan Kardiovaskular</h4>
-          <p class="text-gray-600 leading-relaxed">
-            Tingkatkan stamina dan kesehatan jantung Anda dengan latihan aerobik yang intens.
-          </p>
-        </div>
-
-        <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2">
-          <div class="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mb-6">
-            <span class="text-3xl">🧠</span>
-          </div>
-          <h4 class="text-xl font-bold text-gray-900 mb-3">Mental Resilience</h4>
-          <p class="text-gray-600 leading-relaxed">
-            Bangun ketahanan mental dan kepercayaan diri melalui tantangan yang bermakna.
-          </p>
-        </div>
-
-        <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2">
-          <div class="w-16 h-16 bg-yellow-100 rounded-lg flex items-center justify-center mb-6">
-            <span class="text-3xl">🤝</span>
-          </div>
-          <h4 class="text-xl font-bold text-gray-900 mb-3">Komunitas Global</h4>
-          <p class="text-gray-600 leading-relaxed">
-            Terhubung dengan atlet dari seluruh dunia dan bagikan pengalaman Anda.
-          </p>
-        </div>
-
-        <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2">
-          <div class="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
-            <span class="text-3xl">🏆</span>
-          </div>
-          <h4 class="text-xl font-bold text-gray-900 mb-3">Kompetisi & Prestasi</h4>
-          <p class="text-gray-600 leading-relaxed">
-            Ikuti kompetisi lokal dan internasional untuk menguji kemampuan Anda.
-          </p>
-        </div>
-
-        <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2">
-          <div class="w-16 h-16 bg-pink-100 rounded-lg flex items-center justify-center mb-6">
-            <span class="text-3xl">📊</span>
-          </div>
-          <h4 class="text-xl font-bold text-gray-900 mb-3">Progress Tracking</h4>
-          <p class="text-gray-600 leading-relaxed">
-            Pantau perkembangan Anda dengan analytics mendalam dan insights personal.
-          </p>
-        </div>
-      </div>
+<!-- Team Section -->
+<section id="team" class="py-16 md:py-24 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Section Header -->
+    <div class="text-center mb-16">
+      <h2 class="text-4xl font-bold text-gray-900 mb-4">Team Behind Triathlon</h2>
+      <p class="text-lg text-gray-600">
+        Bertemu dengan para ahli yang membangun platform ini
+      </p>
     </div>
-  </section>
 
-  <!-- Team Section -->
-  <section id="team" class="py-16 md:py-24 bg-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-12">
-        <h2 class="text-4xl font-bold text-gray-900 mb-4">Team Behind Triathlon</h2>
-        <p class="text-lg text-gray-600">Bertemu dengan para ahli yang membangun platform ini</p>
+    <!-- Team Grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-10">
+      
+      <!-- Member 1 -->
+      <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg">
+        <div class="bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-5">
+          <span class="text-white text-6xl">👨‍💼</span>
+        </div>
+        <h4 class="text-base font-bold text-gray-900">Jarred Muhammad Raditya</h4>
+        <p class="text-gray-600 text-sm">Founder & CEO</p>
       </div>
 
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
-
-        <div class="text-center">
-          <div class="bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-4">
-            <span class="text-white text-6xl">👨‍💼</span>
-          </div>
-          <h4 class="text-sm font-bold text-gray-900">Jarred Muhammad Raditya</h4>
-          <p class="text-gray-600 text-xs">Founder & CEO</p>
+      <!-- Member 2 -->
+      <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg">
+        <div class="bg-gradient-to-br from-red-400 to-red-600 rounded-2xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-5">
+          <span class="text-white text-6xl">👩‍💻</span>
         </div>
-
-        <div class="text-center">
-          <div class="bg-gradient-to-br from-red-400 to-red-600 rounded-xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-4">
-            <span class="text-white text-6xl">👩‍💻</span>
-          </div>
-          <h4 class="text-sm font-bold text-gray-900">Justin Dwitama Seniang</h4>
-          <p class="text-gray-600 text-xs">Lead Developer</p>
-        </div>
-
-        <div class="text-center">
-          <div class="bg-gradient-to-br from-green-400 to-green-600 rounded-xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-4">
-            <span class="text-white text-6xl">👨‍🏫</span>
-          </div>
-          <h4 class="text-sm font-bold text-gray-900">Muhammad Helmi Alfarissi</h4>
-          <p class="text-gray-600 text-xs">Coach & Advisor</p>
-        </div>
-
-        <div class="text-center">
-          <div class="bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-4">
-            <span class="text-white text-6xl">👩‍🎨</span>
-          </div>
-          <h4 class="text-sm font-bold text-gray-900">Muhammad Kaila Aidam Riyan</h4>
-          <p class="text-gray-600 text-xs">Design Lead</p>
-        </div>
-
-        <div class="text-center">
-          <div class="bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-4">
-            <span class="text-white text-6xl">👩‍🎨</span>
-          </div>
-          <h4 class="text-sm font-bold text-gray-900">Randuichi Touya</h4>
-          <p class="text-gray-600 text-xs">Design Lead</p>
-        </div>
-
-        <div class="text-center">
-          <div class="bg-gradient-to-br from-pink-400 to-pink-600 rounded-xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-4">
-            <span class="text-white text-6xl">👩‍🎨</span>
-          </div>
-          <h4 class="text-sm font-bold text-gray-900">Syakirah Zahra Dhawini</h4>
-          <p class="text-gray-600 text-xs">Design Lead</p>
-        </div>
-
+        <h4 class="text-base font-bold text-gray-900">Justin Dwitama Seniang</h4>
+        <p class="text-gray-600 text-sm">Lead Developer</p>
       </div>
+
+      <!-- Member 3 -->
+      <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg">
+        <div class="bg-gradient-to-br from-green-400 to-green-600 rounded-2xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-5">
+          <span class="text-white text-6xl">👨‍🏫</span>
+        </div>
+        <h4 class="text-base font-bold text-gray-900">Muhammad Helmi Alfarissi</h4>
+        <p class="text-gray-600 text-sm">Coach & Advisor</p>
+      </div>
+
+      <!-- Member 4 -->
+      <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg">
+        <div class="bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-5">
+          <span class="text-white text-6xl">👩‍🎨</span>
+        </div>
+        <h4 class="text-base font-bold text-gray-900">Muhammad Kaila Aidam Riyan</h4>
+        <p class="text-gray-600 text-sm">Design Lead</p>
+      </div>
+
+      <!-- Member 5 -->
+      <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg">
+        <div class="bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-2xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-5">
+          <span class="text-white text-6xl">👨‍🎨</span>
+        </div>
+        <h4 class="text-base font-bold text-gray-900">Randuichi Touya</h4>
+        <p class="text-gray-600 text-sm">Design Lead</p>
+      </div>
+
+      <!-- Member 6 -->
+      <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg">
+        <div class="bg-gradient-to-br from-pink-400 to-pink-600 rounded-2xl h-36 w-36 flex items-center justify-center shadow-lg mx-auto mb-5">
+          <span class="text-white text-6xl">👩‍🎨</span>
+        </div>
+        <h4 class="text-base font-bold text-gray-900">Syakirah Zahra Dhawini</h4>
+        <p class="text-gray-600 text-sm">Design Lead</p>
+      </div>
+
     </div>
-  </section>
-
-  <!-- CTA Section -->
+  </div>
+</section>
+  
+  <!-- CTA -->
   <section class="py-16 md:py-24 bg-gradient-to-r from-blue-600 to-blue-700">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
       <h2 class="text-4xl font-bold text-white mb-6">Siap Memulai Perjalanan Triathlon Anda?</h2>
@@ -241,7 +280,7 @@
     </div>
   </section>
 
-  <!-- Footer -->
+  <!-- FOOTER -->
   <footer class="bg-gray-900 text-gray-300 py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="grid md:grid-cols-4 gap-8 mb-8">
@@ -278,6 +317,7 @@
           </div>
         </div>
       </div>
+
       <div class="border-t border-gray-800 pt-8 text-center text-sm">
         <p>&copy; 2025 Triathlon Platform. All rights reserved.</p>
       </div>
