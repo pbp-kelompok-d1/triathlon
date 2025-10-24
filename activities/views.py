@@ -47,7 +47,7 @@ def show_activities(request):
     if min_s is None:
         min_m = None
     
-    activity = activity.order_by('-duration')
+    activity = activity.select_related('author', 'place').order_by('-duration')
 
     context = {
         'activities': activity,
@@ -101,6 +101,9 @@ def show_json(request):
             "calories_burned": float(act.calories_burned or 0),
             "done_at_iso": act.done_at.strftime("%Y-%m-%d") if act.done_at else "",
             "done_at_display": act.done_at.strftime("%b %d, %Y") if act.done_at else "",
+            # Place
+            "place_id": act.place_id,
+            "place_name": act.place.name if act.place else None,
         })
     return JsonResponse(data, safe=False)
 

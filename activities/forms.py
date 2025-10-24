@@ -2,6 +2,7 @@
 from datetime import timedelta
 from django import forms
 from .models import ExerciseActivity
+from place.models import Place
 
 class ExerciseActivityForm(forms.ModelForm):
 
@@ -10,6 +11,8 @@ class ExerciseActivityForm(forms.ModelForm):
         required=True,
         label="Duration (HH:MM)"
     )
+
+    place_id = forms.IntegerField(required=False, min_value=1, label="Place ID")
 
     class Meta:
         model = ExerciseActivity
@@ -37,3 +40,21 @@ class ExerciseActivityForm(forms.ModelForm):
         
         except Exception:
             raise forms.ValidationError("Duration must be HH:MM or HH:MM:SS.")
+        
+    def clean_place_id(self):
+        pid = self.cleaned_data.get('place_id')
+        if pid in (None, ''):
+            return None
+        try:
+            return Place.objects.get(pk=pid)
+        except Place.DoesNotExist:
+            raise forms.ValidationError("No Place found with that ID.")
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        place = self.cleaned_data.get('place_id')
+        if place is not None:      # place is either a Place instance or None
+            instance.place = place
+        if commit:
+            instance.save()
+        return instance

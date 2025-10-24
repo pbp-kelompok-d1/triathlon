@@ -124,6 +124,9 @@
             {% if user.profile.role == 'ADMIN' %}
             <p class="text-xs text-gray-500">@{{ act.author.username }}</p>
             {% endif %}
+            {% if act.place %}
+            <p class="text-xs text-gray-500">{{ act.place.name }}</p>
+            {% endif %}
             <h3 class="text-lg font-semibold text-gray-900">{{ act.title }}</h3>
             <p class="text-sm text-gray-500">
               {{ act.get_sport_category_display }} • {{ act.done_at|date:"M d, Y" }}
@@ -164,7 +167,8 @@
                   data-distance="{{ act.distance }}"
                   data-sport="{{ act.sport_category }}"
                   data-date="{{ act.done_at|date:'Y-m-d' }}"
-                  data-notes="{{ act.notes|default_if_none:''|escape }}">
+                  data-notes="{{ act.notes|default_if_none:''|escape }}"
+                  data-place-id="{{ act.place_id|default_if_none:'' }}">
             Edit
           </button>
           <button type="button"
@@ -229,6 +233,7 @@
 
   function openEditActivityModal(btn) {
     currentEditId = btn.dataset.id;
+    document.getElementById('edit_place_id').value = btn.dataset.placeId || '';
     document.getElementById('edit_title').value = btn.dataset.title || '';
     const hm = parseDurationToHM(btn.dataset.duration || '0:00:00');
     document.getElementById('edit_duration_hours').value = hm.h;
@@ -256,6 +261,7 @@
     const duration = `${String(h)}:${String(m).padStart(2,'0')}`;
 
     const fd = new FormData();
+    fd.append('place_id', document.getElementById('edit_place_id').value || '');
     fd.append('title', document.getElementById('edit_title').value);
     fd.append('duration', duration);
     fd.append('distance', document.getElementById('edit_distance').value);
@@ -362,12 +368,14 @@
     const sport = a.sport_label || (a.sport_category || '');
     const kcal = Math.round(a.calories_burned || 0);
     const owner = a.creator_username ? `<p class="text-xs text-gray-500">@${escapeHtml(a.creator_username)}</p>` : '';
+    const placeLine = a.place_name ? `<p class="text-xs text-gray-500">${escapeHtml(a.place_name)}</p>` : '';
 
     return `
       <div id="card-${a.id}" class="bg-white rounded-xl shadow border border-gray-200 p-5 flex flex-col">
         <div class="flex items-start justify-between">
           <div>
             ${owner}
+            ${placeLine}
             <h3 class="text-lg font-semibold text-gray-900">${escapeHtml(a.title)}</h3>
             <p class="text-sm text-gray-500">${escapeHtml(sport)} • ${escapeHtml(date)}</p>
           </div>
@@ -401,7 +409,8 @@
                   data-distance="${a.distance}"
                   data-sport="${escapeAttr(a.sport_category)}"
                   data-date="${escapeAttr(a.done_at_iso || '')}"
-                  data-notes="${escapeAttr(a.notes_short || '')}">
+                  data-notes="${escapeAttr(a.notes_short || '')}"
+                  data-place-id="{{ act.place_id|default_if_none:'' }}">
             Edit
           </button>
           <button type="button"

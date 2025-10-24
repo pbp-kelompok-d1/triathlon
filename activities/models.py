@@ -2,7 +2,7 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
-
+from place.models import Place
 
 class ExerciseActivity(models.Model):
 
@@ -12,11 +12,12 @@ class ExerciseActivity(models.Model):
         ('swimming', 'Swimming'),
     ]
 
-    # location = models.ForeignKey(Place, on_delete=models.SET_NULL,null=True,blank=True)
+    place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True, related_name='activities')
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     author = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=False, db_index=True)
     title = models.CharField(max_length=30, blank=False, null=False)
+    # location_id = models.IntegerField()
 
     # How long did the exercise take
     duration = models.DurationField()                                                                   
