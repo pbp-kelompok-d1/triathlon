@@ -14,7 +14,7 @@
       <div class="hidden md:flex items-center space-x-8">
         {% if user.is_authenticated %}
           <a href="/home" class="text-white hover:text-blue-100 transition">Home</a>
-          <a href="#" class="text-white hover:text-blue-100 transition">Activity</a>
+          <a href="{% url 'activities:my_activities' %}" class="text-white hover:text-blue-100 transition">Activity</a>
           <a href="{% url 'forum:forums' %}" class="text-white hover:text-blue-100 transition">Forum</a>
           <a href="{% url 'shop:shop' %}" class="text-white hover:text-blue-100 transition">Shop</a>
           <a href="{% url 'place:place_list' %}" class="text-white hover:text-blue-100 transition">Place</a>
@@ -61,7 +61,7 @@
           <span>My Profile ({{ user.username }})</span>
         </a>
         <a href="/home" class="block px-3 py-2 text-white hover:bg-blue-600 rounded-md">Home</a>
-        <a href="#" class="block px-3 py-2 text-white hover:bg-blue-600 rounded-md">Activity</a>
+        <a href="{% url 'activities:my_activities' %}" class="block px-3 py-2 text-white hover:bg-blue-600 rounded-md">Activity</a>
         <a href="{% url 'forum:forums' %}" class="block px-3 py-2 text-white hover:bg-blue-600 rounded-md">Forum</a>
         <a href="{% url 'shop:shop' %}" class="block px-3 py-2 text-white hover:bg-blue-600 rounded-md">Shop</a>
         <a href="{% url 'place:place_list' %}" class="block px-3 py-2 text-white hover:bg-blue-600 rounded-md">Place</a>
