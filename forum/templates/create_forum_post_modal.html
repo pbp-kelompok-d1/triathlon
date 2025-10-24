@@ -49,12 +49,22 @@
           </select>
         </div>
         <div class="mb-4 hidden" id="product_id_field">
-          <label for="product_id" class="block text-sm font-medium text-gray-700">Product ID</label>
-          <input type="number" id="product_id" name="product_id" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black" placeholder="Enter product ID">
+          <label for="product_id" class="block text-sm font-medium text-gray-700">Product</label>
+          <select id="product_id" name="product_id" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black">
+            <option value="">Select a product (optional)</option>
+            {% for prod in products %}
+            <option value="{{ prod.pk }}">{{ prod.name }}{% if prod.category %} — {{ prod.get_category_display }}{% endif %}</option>
+            {% endfor %}
+          </select>
         </div>
         <div class="mb-4 hidden" id="location_id_field">
-          <label for="location_id" class="block text-sm font-medium text-gray-700">Location ID</label>
-          <input type="number" id="location_id" name="location_id" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black" placeholder="Enter location ID">
+          <label for="location_id" class="block text-sm font-medium text-gray-700">Location</label>
+          <select id="location_id" name="location_id" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black">
+            <option value="">Select a location (optional)</option>
+            {% for place in places %}
+            <option value="{{ place.pk }}">{{ place.name }}{% if place.city %} — {{ place.city }}{% endif %}</option>
+            {% endfor %}
+          </select>
         </div>
         {% if user.profile.role == 'ADMIN' %}
         <div class="mb-4">

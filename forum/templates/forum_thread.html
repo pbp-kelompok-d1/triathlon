@@ -90,19 +90,10 @@
               <span class="text-gray-600">Posts:</span>
               <span class="text-gray-900">{{ original_poster_total_posts }}</span>
             </div>
-            <!-- <div class="flex justify-between">
-              <span class="text-gray-600">Reputation:</span>
-              <span class="text-gray-900">-</span>
-            </div> -->
+
             {% endif %}
           </div>
           
-          <!-- User Status/Badges -->
-          <!-- <div class="mt-4 pt-4 border-t border-gray-200">
-            <div class="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
-              Online
-            </div>
-          </div> -->
         </div>
         
         <!-- Main Content Area -->
@@ -152,10 +143,23 @@
           </div>
           
           <!-- External Links -->
-          {% if post.product_id or post.location_id %}
+          {% if linked_product or linked_place or post.product_id or post.location_id %}
           <div class="mt-6 pt-4 border-t border-gray-100">
             <div class="flex gap-3 flex-wrap">
-              {% if post.product_id %}
+              {% if linked_product %}
+              <a href="{% url 'shop:product_detail' linked_product.id %}" class="inline-flex items-center px-3 py-2 bg-green-50 text-green-700 rounded-lg text-sm hover:bg-green-100" title="View product details">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                </svg>
+                <span class="font-medium">{{ linked_product.name }}</span>
+                {% if linked_product.category %}
+                <span class="ml-2 text-xs text-green-800">— {{ linked_product.get_category_display }}</span>
+                {% endif %}
+                {% if linked_product.price %}
+                <span class="ml-2 text-xs text-green-700">{{ linked_product.price }}</span>
+                {% endif %}
+              </a>
+              {% elif post.product_id %}
               <div class="inline-flex items-center px-3 py-2 bg-green-50 text-green-700 rounded-lg text-sm">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
@@ -163,7 +167,22 @@
                 Product #{{ post.product_id }}
               </div>
               {% endif %}
-              {% if post.location_id %}
+
+              {% if linked_place %}
+              <a href="{% url 'place:place_detail' linked_place.pk %}" class="inline-flex items-center px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm hover:bg-blue-100" title="View location details">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <span class="font-medium">{{ linked_place.name }}</span>
+                {% if linked_place.city %}
+                <span class="ml-2 text-xs text-blue-800">— {{ linked_place.city }}</span>
+                {% endif %}
+                {% if linked_place.genre %}
+                <span class="ml-2 text-xs text-blue-700">{{ linked_place.genre }}</span>
+                {% endif %}
+              </a>
+              {% elif post.location_id %}
               <div class="inline-flex items-center px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
@@ -348,13 +367,7 @@
                   <span class="text-gray-900">-</span>
                 </div> -->
               </div>
-              
-              <!-- User Status -->
-              <!-- <div class="mt-4 pt-4 border-t border-gray-200">
-                <div class="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
-                  Online
-                </div>
-              </div> -->
+
             </div>
             
             <!-- Main Reply Content -->
@@ -867,8 +880,8 @@ function openEditModal() {
         content: dataEl.dataset.content,
         category: dataEl.dataset.category,
         sport_category: dataEl.dataset.sportCategory,
-        product_id: dataEl.dataset.productId ? parseInt(dataEl.dataset.productId) : null,
-        location_id: dataEl.dataset.locationId ? parseInt(dataEl.dataset.locationId) : null,
+      product_id: dataEl.dataset.productId ? dataEl.dataset.productId : null,
+      location_id: dataEl.dataset.locationId ? parseInt(dataEl.dataset.locationId) : null,
         is_pinned: dataEl.dataset.isPinned === 'true'
     };
     showEditModal(postData);
