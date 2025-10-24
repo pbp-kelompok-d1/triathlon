@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'user_profile',
     'place',
     'ticket',
+    'activities',
 ]
 
 MIDDLEWARE = [

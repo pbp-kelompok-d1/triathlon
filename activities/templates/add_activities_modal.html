@@ -1,0 +1,116 @@
+<!-- Add Activity Modal -->
+<div id="createActivityModal" class="hidden fixed inset-0 z-50 w-full h-full flex items-center justify-center bg-gray-800 bg-opacity-50">
+  <div class="bg-white rounded-lg shadow-lg w-11/12 sm:w-3/4 md:w-1/2 lg:w-2/5 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between p-4 border-b">
+      <h3 class="text-xl font-semibold text-gray-900">Add Activity</h3>
+      <button type="button" class="text-gray-400 hover:text-gray-700" onclick="hideCreateActivityModal()">
+        <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+      </button>
+    </div>
+
+    <form id="ExerciseActivityForm" class="px-6 py-4 space-y-4">
+      <div>
+        <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+        <input id="title" name="title" type="text" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black" placeholder="Morning Run">
+      </div>
+
+      <!-- Duration: hours + minutes inputs so no AM/PM weirdness -->
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="duration_hours" class="block text-sm font-medium text-gray-700">Hours</label>
+          <input id="duration_hours" type="number" min="0" step="1" placeholder="0" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black">
+        </div>
+        <div>
+          <label for="duration_minutes" class="block text-sm font-medium text-gray-700">Minutes</label>
+          <input id="duration_minutes" type="number" min="0" max="59" step="1" placeholder="30" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black">
+        </div>
+      </div>
+
+      <div>
+        <label for="distance" class="block text-sm font-medium text-gray-700">Distance (meters)</label>
+        <input id="distance" name="distance" type="number" min="0" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black" placeholder="5000">
+      </div>
+
+      <div>
+        <label for="sport_category" class="block text-sm font-medium text-gray-700">Sport</label>
+        <select id="sport_category" name="sport_category" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black">
+          <option value="">Select a sport</option>
+          <option value="running">Running</option>
+          <option value="cycling">Cycling</option>
+          <option value="swimming">Swimming</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="done_at" class="block text-sm font-medium text-gray-700">Date</label>
+        <input id="done_at" name="done_at" type="date" required class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black">
+      </div>
+
+      <div>
+        <label for="notes" class="block text-sm font-medium text-gray-700">Notes (optional)</label>
+        <textarea id="notes" name="notes" rows="4" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-black" placeholder="Felt strong. Easy pace."></textarea>
+      </div>
+    </form>
+
+    <div class="flex gap-3 p-6 border-t">
+      <button type="button" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100" onclick="hideCreateActivityModal()">Cancel</button>
+      <button type="button" class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-md font-semibold hover:bg-blue-700" id="submitActivityBtn">Save Activity</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // point this at your named URL for the AJAX view
+  const CREATE_ACTIVITY_URL = "{% url 'activities:create_activity' %}";
+
+  function showCreateActivityModal() {
+    document.getElementById('createActivityModal').classList.remove('hidden');
+  }
+  function hideCreateActivityModal() {
+    document.getElementById('createActivityModal').classList.add('hidden');
+    document.getElementById('ExerciseActivityForm').reset();
+  }
+
+  // Submit
+  document.getElementById('submitActivityBtn').addEventListener('click', async () => {
+    const form = document.getElementById('ExerciseActivityForm');
+    if (!form.reportValidity()) return;
+
+    // build "HH:MM" for the form cleaner
+    const h = parseInt(document.getElementById('duration_hours').value || '0', 10);
+    const m = parseInt(document.getElementById('duration_minutes').value || '0', 10);
+    if (Number.isNaN(h) || Number.isNaN(m) || m < 0 || m > 59 || h < 0) {
+      alert('Please enter a valid duration (minutes 0–59).');
+      return;
+    }
+    const duration = `${String(h)}:${String(m).padStart(2,'0')}`;
+
+    const formData = new FormData();
+    formData.append('title', document.getElementById('title').value);
+    formData.append('duration', duration);
+    formData.append('distance', document.getElementById('distance').value);
+    formData.append('notes', document.getElementById('notes').value);
+    formData.append('sport_category', document.getElementById('sport_category').value);
+    formData.append('done_at', document.getElementById('done_at').value);
+
+    try {
+      const res = await fetch(CREATE_ACTIVITY_URL, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+        body: formData,
+        credentials: 'same-origin'
+      });
+      if (res.status === 201) {
+        hideCreateActivityModal();
+        if (typeof reloadActivities === 'function') reloadActivities();
+        else window.location.reload();
+      } else {
+        const text = await res.text();
+        alert('Failed to create activity: ' + text);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error, please check console');
+    }
+  });
+</script>
