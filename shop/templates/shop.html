@@ -13,11 +13,11 @@
                 {% endif %}
             </div>
             <div class="flex gap-3">
-                <button type="button" id="openModalBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition">
+                <button type="button" id="openModalBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-md transition">
                     + Add New Product
                 </button>
-                <a href="{% url 'shop:view_cart' %}" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-md transition">View Cart</a>
-                <a href="{% url 'shop:view_wishlist' %}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md transition">View Wishlist</a>
+                <a href="{% url 'shop:view_cart' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-md transition">View Cart</a>
+                <a href="{% url 'shop:view_wishlist' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-md transition">View Wishlist</a>
             </div>
         </div>
     </div>
@@ -240,7 +240,7 @@
             <div class="col-span-12 lg:col-span-9">
                 <div class="flex items-center justify-between mb-4">
                     <div class="text-sm text-gray-600">
-                        Menampilkan <span id="product-count-display">{{ products|length }}</span> barang dari total untuk <strong id="current-category-display">"All"</strong>
+                        Showing <span id="product-count-display">{{ products|length }}</span> results for <strong id="current-category-display">"All"</strong>
                     </div>
                 </div>
 
@@ -496,9 +496,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (btn) btn.click();
     }
 
-    // ============================================
-    // MODAL FUNCTIONS
-    // ============================================
+
     function openModal() {
         modal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
@@ -535,9 +533,7 @@ document.addEventListener('DOMContentLoaded', function() {
     modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
     editModal.addEventListener('click', function(e) { if (e.target === editModal) closeEditModal(); });
 
-    // ============================================
-    // ADD PRODUCT
-    // ============================================
+   
     const submitProductBtn = document.getElementById('submit-product-btn');
     const addProductModalForm = document.getElementById('add-product-modal-form');
     const modalFormMessages = document.getElementById('modal-form-messages');
@@ -584,9 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ============================================
-    // EDIT PRODUCT
-    // ============================================
+
     const submitEditProductBtn = document.getElementById('submit-edit-product-btn');
     const editProductModalForm = document.getElementById('edit-product-modal-form');
     const editModalFormMessages = document.getElementById('edit-modal-form-messages');
@@ -635,9 +629,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ============================================
-    // PRODUCT ACTIONS (EDIT/DELETE/CART/WISHLIST)
-    // ============================================
+
     if (productContainer) {
         productContainer.addEventListener('click', function(event) {
             const editBtn = event.target.closest('.edit-product-btn');
@@ -724,9 +716,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ============================================
-    // DELETE MODAL FUNCTIONS
-    // ============================================
+
     window.openDeleteModal = function(productId, productName, sellerName, thumbnailUrl, userIsStaff, userIsOwner) {
         currentProductId = productId;
         isAdminAction = userIsStaff && !userIsOwner;
@@ -793,7 +783,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     productCard.style.transform = 'scale(0.95)';
                     setTimeout(function() { 
                         productCard.remove();
-                        // Update count after removal
+                       
                         const remainingCards = document.querySelectorAll('.product-card:not(.hidden)');
                         const productCountEl = document.getElementById('product-count-display');
                         if (productCountEl) {
