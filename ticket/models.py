@@ -1,26 +1,79 @@
 from django.db import models
-from django.contrib.auth.models import User
-from django.core.validators import MinValueValidator
 from django.utils import timezone
-
+from place.models import Place
+from user_profile.models import UserProfile  # pastikan path benar
 
 class Ticket(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tickets')
-    place_id = models.IntegerField()
-    place_name = models.CharField(max_length=200)
-    booking_date = models.DateTimeField(auto_now_add=True)
-    visit_date = models.DateField()
-    quantity = models.IntegerField(validators=[MinValueValidator(1)])
-    price_per_ticket = models.DecimalField(max_digits=10, decimal_places=2)
-    total_price = models.DecimalField(max_digits=10, decimal_places=2)
-    notes = models.TextField(blank=True)
+    customer_name = models.CharField(
+        max_length=200,
+        verbose_name="Customer Name",
+        default="Unknown"
+    )
+    place = models.ForeignKey(
+        Place,
+        on_delete=models.CASCADE,
+        related_name='tickets',
+        verbose_name="Sport Place",
+        null=True,
+        blank=True
+    )
+    ticket_quantity = models.PositiveIntegerField(default=1, verbose_name="Ticket Quantity")
+    booking_date = models.DateField(verbose_name="Booking Date", default=timezone.now)
+    total_price = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Total Price", default=0)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    user_profile = models.ForeignKey(
+        UserProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tickets',
+        verbose_name="User Profile"
+    )
+
+    class Meta:
+        ordering = ['id']
+        verbose_name = "Ticket"
+        verbose_name_plural = "Tickets"
+
+    def _str_(self):
+        return f"Ticket #{self.id} - {self.customer_name} - {self.place.name if self.place else 'No Place'}"
 
     def save(self, *args, **kwargs):
-        self.total_price = self.price_per_ticket * self.quantity
+        if self.place and self.ticket_quantity:
+            self.total_price = self.place.price * self.ticket_quantity
         super().save(*args, **kwargs)
 
-    def is_upcoming(self):
-        return self.visit_date >= timezone.now().date()
+    @property
+    def ticket_number(self):
+        return f"TK-{str(self.id).zfill(6)}"
 
-    def __str__(self):
-        return f"{self.user.username} - {self.place_name}"
+    @property
+    def status(self):
+        from datetime import date
+        today = date.today()
+        if self.booking_date < today:
+            return 'past'
+        elif self.booking_date == today:
+            return 'today'
+        else:
+            return 'upcoming'
+
+    @property
+    def status_display(self):
+        status_map = {
+            'past': 'Past',
+            'today': 'Today',
+            'upcoming': 'Upcoming'
+        }
+        return status_map.get(self.status, 'Unknown')
+
+    @property
+    def status_badge_class(self):
+        status_class = {
+            'past': 'secondary',
+            'today': 'success',
+            'upcoming': 'primary'
+        }
+        return status_class.get(self.status, 'secondary')

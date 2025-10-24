@@ -1,0 +1,688 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">Ticket Management</h1>
+            <p class="text-slate-600">Manage all ticket bookings.</p>
+        </div>
+        <button id="open-book-modal-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition whitespace-nowrap">
+            + Book New Ticket
+        </button>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow mb-8">
+        <div class="flex flex-col md:flex-row gap-4">
+            <form id="filter-form" class="flex-grow">
+                <input type="text" name="search" placeholder="Search by name, place, or ID..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            </form>
+            <div id="date-filter-buttons" class="flex-shrink-0 flex gap-2" role="group">
+                <button type="button" data-filter="all" class="js-date-filter px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 bg-indigo-600 text-white shadow-sm">
+                    All
+                </button>
+                <button type="button" data-filter="past" class="js-date-filter px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-indigo-100">
+                    Past
+                </button>
+                <button type="button" data-filter="today" class="js-date-filter px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-indigo-100">
+                    Today
+                </button>
+                <button type="button" data-filter="upcoming" class="js-date-filter px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-indigo-100">
+                    Upcoming
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Place</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="ticket-table-body" class="bg-white divide-y divide-gray-200">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="bookTicketModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden" onclick="closeBookModalOnClickOutside(event)">
+    <div class="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <button type="button" onclick="closeBookModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <h3 class="text-xl leading-6 font-medium text-gray-900 text-center mb-6">Book New Ticket</h3>
+
+            <form id="bookTicketForm" class="mt-2 space-y-4">
+                {% csrf_token %}
+                
+                <div class="px-4">
+                    <label for="book_customer_name" class="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
+                    <input type="text" name="customer_name" id="book_customer_name" required
+                           placeholder="Enter customer name"
+                           class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm">
+                </div>
+
+                <div class="px-4">
+                    <label for="book_place_name" class="block text-sm font-medium text-gray-700 mb-1">Place Name</label>
+                    <input type="text" name="place_name" id="book_place_name" required
+                           placeholder="Enter place name (e.g., Stadium)"
+                           class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm">
+                </div>
+                
+                <div class="px-4">
+                    <label for="book_booking_date" class="block text-sm font-medium text-gray-700 mb-1">Booking Date</label>
+                    <input type="date" name="booking_date" id="book_booking_date" required
+                           class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm">
+                </div>
+
+                <div class="px-4">
+                    <label for="book_total_price" class="block text-sm font-medium text-gray-700 mb-1">Total Price (Rp)</label>
+                    <input type="number" name="total_price" id="book_total_price" required min="0" step="1000"
+                           placeholder="e.g., 50000"
+                           class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm">
+                </div>
+
+                <div id="bookTicketMessage" class="hidden mt-4 mx-4 p-3 rounded-md text-sm"></div>
+
+                <div class="px-4 py-4 border-t border-gray-200 bg-gray-50 rounded-b-md flex justify-end gap-3">
+                    <button type="button" onclick="closeBookModal()"
+                            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
+                        Cancel
+                    </button>
+                    <button id="saveBookButton" type="submit"
+                            class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-medium shadow-sm">
+                        Submit Booking
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="editTicketModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden" onclick="closeEditModalOnClickOutside(event)">
+    <div class="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <button type="button" onclick="closeEditModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <h3 class="text-xl leading-6 font-medium text-gray-900 text-center mb-6">Edit Ticket</h3>
+
+            <form id="editTicketForm" class="mt-2 space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="ticket_id" id="edit_ticket_id">
+                
+                <div class="px-4">
+                    <label for="edit_customer_name" class="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
+                    <input type="text" name="customer_name" id="edit_customer_name" required
+                           class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm">
+                </div>
+
+                <div class="px-4">
+                    <label for="edit_place_name" class="block text-sm font-medium text-gray-700 mb-1">Place Name</label>
+                    <input type="text" name="place_name" id="edit_place_name" required
+                           class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm">
+                </div>
+                
+                <div class="px-4">
+                    <label for="edit_booking_date" class="block text-sm font-medium text-gray-700 mb-1">Booking Date</label>
+                    <input type="date" name="booking_date" id="edit_booking_date" required
+                           class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm">
+                </div>
+
+                <div class="px-4">
+                    <label for="edit_total_price" class="block text-sm font-medium text-gray-700 mb-1">Total Price (Rp)</label>
+                    <input type="number" name="total_price" id="edit_total_price" required min="0" step="1000"
+                           class="block w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm">
+                </div>
+
+                <div id="editTicketMessage" class="hidden mt-4 mx-4 p-3 rounded-md text-sm"></div>
+
+                <div class="px-4 py-4 border-t border-gray-200 bg-gray-50 rounded-b-md flex justify-end gap-3">
+                    <button type="button" onclick="closeEditModal()"
+                            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
+                        Cancel
+                    </button>
+                    <button id="saveEditButton" type="submit"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium shadow-sm">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="detailsTicketModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden" onclick="closeDetailsModalOnClickOutside(event)">
+    <div class="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <button type="button" onclick="closeDetailsModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <h3 class="text-xl leading-6 font-medium text-gray-900 text-center mb-6">Ticket Details</h3>
+
+            <div class="mt-2 space-y-3 px-4">
+                <div class="flex justify-between border-b pb-2">
+                    <span class="font-medium text-gray-500">Ticket ID:</span>
+                    <span id="details_ticket_id" class="text-gray-900 font-bold"></span>
+                </div>
+                <div class="flex justify-between border-b pb-2">
+                    <span class="font-medium text-gray-500">Customer:</span>
+                    <span id="details_customer_name" class="text-gray-900"></span>
+                </div>
+                <div class="flex justify-between border-b pb-2">
+                    <span class="font-medium text-gray-500">Place:</span>
+                    <span id="details_place_name" class="text-gray-900"></span>
+                </div>
+                <div class="flex justify-between border-b pb-2">
+                    <span class="font-medium text-gray-500">Booking Date:</span>
+                    <span id="details_booking_date" class="text-gray-900"></span>
+                </div>
+                <div class="flex justify-between border-b pb-2">
+                    <span class="font-medium text-gray-500">Total Price:</span>
+                    <span id="details_total_price" class="text-gray-900 font-semibold"></span>
+                </div>
+            </div>
+
+            <div class="px-4 py-4 border-t border-gray-200 mt-6 bg-gray-50 rounded-b-md flex justify-end">
+                <button type="button" onclick="closeDetailsModal()"
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="deleteTicketModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden" onclick="closeDeleteModalOnClickOutside(event)">
+    <div class="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <button type="button" onclick="closeDeleteModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <div class="flex flex-col items-center">
+                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                    <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl leading-6 font-medium text-gray-900 text-center mt-4" id="modal-title">
+                    Delete Ticket
+                </h3>
+                <div class="mt-2 px-4">
+                    <p class="text-sm text-gray-500 text-center">
+                        Are you sure you want to delete this ticket? This action is irreversible and cannot be undone.
+                    </p>
+                </div>
+            </div>
+
+            <form id="deleteTicketForm" class="mt-6 space-y-4">
+                {% csrf_token %} 
+                <input type="hidden" id="delete_ticket_id" name="ticket_id">
+                <div id="deleteTicketMessage" class="hidden mt-4 mx-4 p-3 rounded-md text-sm"></div>
+
+                <div class="px-4 py-4 border-t border-gray-200 bg-gray-50 rounded-b-md flex justify-end gap-3">
+                    <button type="button" onclick="closeDeleteModal()"
+                            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
+                        Cancel
+                    </button>
+                    <button id="deleteConfirmButton" type="submit"
+                            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium shadow-sm">
+                        Yes, Delete Ticket
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // --- 1. State & URLs ---
+    let allTickets = []; // Data mentah dari server
+    let currentDateFilter = 'all'; // 'all', 'past', 'today', 'upcoming'
+    let debounceTimer;
+    const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+    
+    // Asumsi URL (sesuaikan dengan urls.py Anda)
+    const listUrl = "{% url 'ticket:ticket_list' %}"; // URL untuk GET (fetch list)
+    const createUrl = "{% url 'ticket:ticket_create' %}"; // URL untuk POST (create)
+    // URL untuk Edit dan Delete akan dibuat dinamis
+    
+    // --- 2. Element Selectors ---
+    const filterForm = document.getElementById('filter-form');
+    const searchInput = filterForm.querySelector('input[name="search"]');
+    const tableBody = document.getElementById('ticket-table-body');
+    const dateFilterButtons = document.querySelectorAll('.js-date-filter');
+    const openBookBtn = document.getElementById('open-book-modal-btn');
+    
+    // Book Modal
+    const bookModal = document.getElementById('bookTicketModal');
+    const bookForm = document.getElementById('bookTicketForm');
+    const saveBookButton = document.getElementById('saveBookButton');
+    const bookMessageDiv = document.getElementById('bookTicketMessage');
+    
+    // Edit Modal
+    const editModal = document.getElementById('editTicketModal');
+    const editForm = document.getElementById('editTicketForm');
+    const saveEditButton = document.getElementById('saveEditButton');
+    const editMessageDiv = document.getElementById('editTicketMessage');
+    const editTicketIdInput = document.getElementById('edit_ticket_id');
+    
+    // Details Modal
+    const detailsModal = document.getElementById('detailsTicketModal');
+    
+    // Delete Modal
+    const deleteModal = document.getElementById('deleteTicketModal');
+    const deleteForm = document.getElementById('deleteTicketForm');
+    const deleteConfirmButton = document.getElementById('deleteConfirmButton');
+    const deleteMessageDiv = document.getElementById('deleteTicketMessage');
+    const deleteTicketIdInput = document.getElementById('delete_ticket_id');
+
+    // --- 3. Render Functions ---
+
+    /**
+     * PERBAIKAN: Menampilkan state loading di tabel
+     */
+    const renderLoadingState = () => {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-10 text-gray-500">
+                    <svg class="animate-spin h-6 w-6 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="mt-2">Loading tickets...</p>
+                </td>
+            </tr>`;
+    };
+
+    /**
+     * PERBAIKAN: Fungsi ini sekarang HANYA merender. Logika filter dipindahkan ke sini.
+     */
+    const renderFilteredTickets = () => {
+        const query = searchInput.value.toLowerCase();
+        const filter = currentDateFilter;
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalisasi tanggal hari ini
+
+        const filteredTickets = allTickets.filter(ticket => {
+            // --- PERBAIKAN 1: Logika pencarian data Place ---
+            const placeName = (ticket.place__name || ticket.place_name || '').toLowerCase();
+            const customerName = (ticket.customer_name || '').toLowerCase();
+            const idString = (ticket.id || '').toString();
+            
+            const searchMatch = customerName.includes(query) || 
+                              placeName.includes(query) || 
+                              idString.includes(query);
+
+            // --- PERBAIKAN 2: Logika filter tanggal (Frontend) ---
+            let dateMatch = false;
+            if (filter === 'all') {
+                dateMatch = true;
+            } else {
+                // Tambahkan T00:00:00 untuk parsing YYYY-MM-DD agar bebas timezone
+                const bookingDate = new Date(ticket.booking_date + 'T00:00:00');
+                
+                if (filter === 'past') {
+                    dateMatch = bookingDate < today;
+                } else if (filter === 'today') {
+                    dateMatch = bookingDate.getTime() === today.getTime();
+                } else if (filter === 'upcoming') {
+                    dateMatch = bookingDate > today;
+                }
+            }
+            
+            return searchMatch && dateMatch;
+        });
+
+        tableBody.innerHTML = ''; // Selalu bersihkan tabel sebelum render
+
+        if (filteredTickets.length > 0) {
+            filteredTickets.forEach(ticket => {
+                const formattedPrice = `Rp ${parseFloat(ticket.total_price || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                // --- PERBAIKAN 1 (Lagi): Gunakan variabel yang benar untuk display ---
+                const placeNameDisplay = ticket.place__name || ticket.place_name || 'N/A';
+                
+                const row = `
+                    <tr id="ticket-row-${ticket.id}">
+                        <td class="px-6 py-4 font-medium whitespace-nowrap">#${ticket.id}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${ticket.customer_name || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${placeNameDisplay}</td> 
+                        <td class="px-6 py-4 whitespace-nowrap">${ticket.booking_date || 'N/A'}</td>
+                        <td class="px-6 py-4 font-semibold whitespace-nowrap">${formattedPrice}</td>
+                        <td class="px-6 py-4 text-center space-x-2 whitespace-nowrap">
+                            <button class="details-btn text-indigo-600 hover:underline text-sm font-medium" data-id="${ticket.id}">Details</button>
+                            <button class="edit-btn text-blue-600 hover:underline text-sm font-medium" data-id="${ticket.id}">Edit</button>
+                            <button class="delete-btn text-red-600 hover:underline text-sm font-medium" data-id="${ticket.id}">Delete</button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+        } else {
+            // --- PERBAIKAN 3: Logika Custom Empty State ---
+            let emptyMessage = '';
+            if (allTickets.length === 0) {
+                // Kasus 1: Tidak ada tiket sama sekali
+                emptyMessage = `No tickets found yet. <button type="button" onclick="openBookModal()" class="text-indigo-600 hover:underline font-medium">Please book a ticket first</button>.`;
+            } else if (query) {
+                // Kasus 2: Ada tiket, tapi hasil search kosong
+                emptyMessage = `No tickets match your search for "<strong>${query}</strong>".`;
+            } else if (filter !== 'all') {
+                // Kasus 3: Ada tiket, tapi hasil filter tanggal kosong
+                emptyMessage = `No <strong>${filter}</strong> tickets found.`;
+            } else {
+                // Fallback (seharusnya tidak terjadi jika allTickets.length > 0)
+                emptyMessage = 'No tickets found.';
+            }
+            tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-gray-500">${emptyMessage}</td></tr>`;
+        }
+    };
+    
+    /**
+     * PERBAIKAN: Fungsi ini sekarang HANYA mengambil data dan memanggil render.
+     */
+    const fetchDataFromServer = async () => {
+        // PERBAIKAN 4: Tampilkan loading state
+        renderLoadingState(); 
+        
+        // Ambil SEMUA tiket, filter akan diurus frontend
+        const url = `${listUrl}`; 
+
+        try {
+            const response = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await response.json();
+            
+            allTickets = data.tickets || []; // Simpan data di state global
+            renderFilteredTickets(); // Panggil fungsi render yang sudah difilter
+        } catch (error) {
+            console.error('Error fetching tickets:', error);
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-red-500"><strong>Failed to load data.</strong> Please check your connection and try again.</td></tr>';
+        }
+    };
+
+    // --- 4. Modal Helper Functions (Open/Close) ---
+    // (Tidak ada perubahan di helper modal, masih sama)
+    const showModalError = (modalMsgDiv, message) => {
+        modalMsgDiv.textContent = message;
+        modalMsgDiv.classList.remove('hidden', 'bg-green-100', 'text-green-700');
+        modalMsgDiv.classList.add('bg-red-100', 'text-red-700');
+    };
+
+    const showModalSuccess = (modalMsgDiv, message) => {
+        modalMsgDiv.textContent = message;
+        modalMsgDiv.classList.remove('hidden', 'bg-red-100', 'text-red-700');
+        modalMsgDiv.classList.add('bg-green-100', 'text-green-700');
+    };
+
+    const resetSubmitButton = (button, text) => {
+        button.disabled = false;
+        button.innerHTML = text;
+    };
+
+    const setSubmitButtonLoading = (button, text = 'Saving...') => {
+        button.disabled = true;
+        button.innerHTML = `
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg> 
+            ${text}
+        `;
+    };
+    
+    // Book Modal
+    window.openBookModal = () => {
+        bookForm.reset();
+        bookMessageDiv.classList.add('hidden');
+        resetSubmitButton(saveBookButton, 'Submit Booking');
+        bookModal.classList.remove('hidden');
+    };
+    window.closeBookModal = () => bookModal.classList.add('hidden');
+    window.closeBookModalOnClickOutside = (e) => { if (e.target === bookModal) closeBookModal(); };
+
+    // Details Modal
+    window.openDetailsModal = (ticket) => {
+        const formattedPrice = `Rp ${parseFloat(ticket.total_price || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        // PERBAIKAN 1: Tampilkan nama place yang benar
+        const placeNameDisplay = ticket.place__name || ticket.place_name || 'N/A';
+        
+        document.getElementById('details_ticket_id').textContent = `#${ticket.id}`;
+        document.getElementById('details_customer_name').textContent = ticket.customer_name || 'N/A';
+        document.getElementById('details_place_name').textContent = placeNameDisplay;
+        document.getElementById('details_booking_date').textContent = ticket.booking_date || 'N/A';
+        document.getElementById('details_total_price').textContent = formattedPrice;
+        detailsModal.classList.remove('hidden');
+    };
+    window.closeDetailsModal = () => detailsModal.classList.add('hidden');
+    window.closeDetailsModalOnClickOutside = (e) => { if (e.target === detailsModal) closeDetailsModal(); };
+
+    // Edit Modal
+    window.openEditModal = (ticket) => {
+        editForm.reset();
+        editMessageDiv.classList.add('hidden');
+        resetSubmitButton(saveEditButton, 'Save Changes');
+        
+        // PERBAIKAN 1: Isi form dengan nama place yang benar
+        const placeNameValue = ticket.place__name || ticket.place_name || '';
+
+        editTicketIdInput.value = ticket.id;
+        document.getElementById('edit_customer_name').value = ticket.customer_name || '';
+        document.getElementById('edit_place_name').value = placeNameValue;
+        document.getElementById('edit_booking_date').value = ticket.booking_date; // Asumsi format YYYY-MM-DD
+        document.getElementById('edit_total_price').value = parseFloat(ticket.total_price || 0);
+        
+        editModal.classList.remove('hidden');
+    };
+    window.closeEditModal = () => editModal.classList.add('hidden');
+    window.closeEditModalOnClickOutside = (e) => { if (e.target === editModal) closeEditModal(); };
+    
+    // Delete Modal
+    window.openDeleteModal = (ticketId) => {
+        deleteMessageDiv.classList.add('hidden');
+        resetSubmitButton(deleteConfirmButton, 'Yes, Delete Ticket');
+        deleteTicketIdInput.value = ticketId;
+        deleteModal.classList.remove('hidden');
+    };
+    window.closeDeleteModal = () => deleteModal.classList.add('hidden');
+    window.closeDeleteModalOnClickOutside = (e) => { if (e.target === deleteModal) closeDeleteModal(); };
+
+    // --- 5. Event Listeners ---
+    
+    // Initial Load
+    fetchDataFromServer(); // Mengganti fetchAndRenderTickets
+    
+    // Search Debounce
+    searchInput.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        // PERBAIKAN: Panggil renderFilteredTickets, bukan fetch
+        debounceTimer = setTimeout(renderFilteredTickets, 300);
+    });
+
+    // Handle form submit (untuk mencegah reload)
+    filterForm.addEventListener('submit', (e) => e.preventDefault());
+    
+    // Date Filters
+    dateFilterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            currentDateFilter = button.dataset.filter;
+            
+            // Update button styles
+            dateFilterButtons.forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
+                btn.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-indigo-100');
+            });
+            button.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
+            button.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-indigo-100');
+            
+            // PERBAIKAN: Panggil renderFilteredTickets, bukan fetch
+            renderFilteredTickets(); 
+        });
+    });
+
+    // "+ Book New Ticket" Button
+    openBookBtn.addEventListener('click', openBookModal);
+
+    // Table Action Buttons (Event Delegation)
+    tableBody.addEventListener('click', async (e) => {
+        const target = e.target;
+        
+        if (target.classList.contains('details-btn')) {
+            const ticketId = target.dataset.id;
+            const ticket = allTickets.find(t => t.id == ticketId);
+            if (ticket) openDetailsModal(ticket);
+        }
+        
+        if (target.classList.contains('edit-btn')) {
+            const ticketId = target.dataset.id;
+            const ticket = allTickets.find(t => t.id == ticketId);
+            if (ticket) openEditModal(ticket);
+        }
+
+        if (target.classList.contains('delete-btn')) {
+            const ticketId = target.dataset.id;
+            openDeleteModal(ticketId);
+        }
+    });
+
+    // --- 6. Form Submit Handlers ---
+    
+    // Book Form Submit
+    bookForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        setSubmitButtonLoading(saveBookButton, 'Submitting...');
+        const formData = new FormData(bookForm);
+        
+        try {
+            const response = await fetch(createUrl, { /* ... (fetch logic) ... */
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                showModalSuccess(bookMessageDiv, data.message || 'Ticket created successfully!');
+                // PERBAIKAN: Fetch ulang data dari server setelah create
+                fetchDataFromServer(); 
+                setTimeout(closeBookModal, 1000);
+            } else {
+                showModalError(bookMessageDiv, data.error || 'Failed to create ticket.');
+            }
+        } catch (error) {
+            console.error('Error creating ticket:', error);
+            showModalError(bookMessageDiv, 'An network error occurred.');
+        } finally {
+            if (saveBookButton.disabled) {
+                 resetSubmitButton(saveBookButton, 'Submit Booking');
+            }
+        }
+    });
+    
+    // Edit Form Submit
+    editForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        setSubmitButtonLoading(saveEditButton, 'Saving...');
+        
+        const ticketId = editTicketIdInput.value;
+        const url = `/ticket/${ticketId}/edit/`; // Asumsi URL (sesuaikan!)
+        const formData = new FormData(editForm);
+
+        try {
+            const response = await fetch(url, { /* ... (fetch logic) ... */
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                showModalSuccess(editMessageDiv, data.message || 'Ticket updated successfully!');
+                // PERBAIKAN: Fetch ulang data dari server setelah edit
+                fetchDataFromServer();
+                setTimeout(closeEditModal, 1000);
+            } else {
+                showModalError(editMessageDiv, data.error || 'Failed to update ticket.');
+            }
+        } catch (error) {
+            console.error('Error editing ticket:', error);
+            showModalError(editMessageDiv, 'An network error occurred.');
+        } finally {
+            if (saveEditButton.disabled) {
+                resetSubmitButton(saveEditButton, 'Save Changes');
+            }
+        }
+    });
+
+    // Delete Form Submit
+    deleteForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        setSubmitButtonLoading(deleteConfirmButton, 'Deleting...');
+        
+        const ticketId = deleteTicketIdInput.value;
+        const url = `/ticket/${ticketId}/delete/`; // Asumsi URL (sesuaikan!)
+        
+        try {
+            const response = await fetch(url, { /* ... (fetch logic) ... */
+                method: 'POST', 
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    // (Optional: use a toast notification)
+                    
+                    // PERBAIKAN: Hapus dari state global, jangan fetch ulang
+                    allTickets = allTickets.filter(t => t.id.toString() !== ticketId);
+                    
+                    // Render ulang tabel dengan data yang sudah di-update
+                    renderFilteredTickets(); 
+                    
+                    closeDeleteModal();
+                } else {
+                    showModalError(deleteMessageDiv, data.message || 'Failed to delete ticket');
+                }
+            } else {
+                showModalError(deleteMessageDiv, 'Failed to delete ticket. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error deleting ticket:', error);
+            showModalError(deleteMessageDiv, 'An error occurred while deleting the ticket.');
+        } finally {
+            if (deleteConfirmButton.disabled) {
+                resetSubmitButton(deleteConfirmButton, 'Yes, Delete Ticket');
+            }
+        }
+    });
+    
+});
+</script>
+{% endblock %}

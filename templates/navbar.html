@@ -31,7 +31,7 @@
           <a href="{% url 'user_profile:profile' %}" class="flex items-center space-x-2 text-white hover:text-blue-100 transition">
             <img src="{% static 'img/navbar_profile.png' %}" alt="Profile Photo" 
                  class="w-8 h-8 rounded-full object-cover transition-transform duration-200 ease-in-out hover:scale-110">
-            <span class="font-medium">{{ user.username }}</span>
+            <span id="navbar_username" class="font-medium">{{ user.username }}</span>
           </a>
           <a href="{% url 'main:logout' %}?next={% url 'main:show_home' %}" class="inline-flex items-center justify-center bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition font-medium">
             Logout
@@ -58,7 +58,7 @@
       {% if user.is_authenticated %}
         <a href="{% url 'user_profile:profile' %}" class="flex items-center gap-3 px-3 py-2 text-white hover:bg-blue-600 rounded-md">
           <img src="{% static 'img/navbar_profile.png' %}" alt="Profile Photo" class="w-6 h-6 rounded-full object-cover">
-          <span>My Profile ({{ user.username }})</span>
+          <span id="mobile_navbar_username">My Profile ({{ user.username }})</span>
         </a>
         <a href="/home" class="block px-3 py-2 text-white hover:bg-blue-600 rounded-md">Home</a>
         <a href="#" class="block px-3 py-2 text-white hover:bg-blue-600 rounded-md">Activity</a>
