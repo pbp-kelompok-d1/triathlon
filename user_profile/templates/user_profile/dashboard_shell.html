@@ -18,7 +18,13 @@
               <h1 class="text-3xl font-bold text-gray-900">Facility Admin Dashboard</h1>
               <p class="text-gray-500 text-sm mt-1">Manage your facilities and tickets.</p>
             {% else %}
-              <h1 class="text-3xl font-bold text-gray-900">User Dashboard</h1>
+              <h1 class="text-3xl font-bold text-gray-900">
+                    {% if user.first_name or user.last_name %}
+                        {{ user.first_name }} {{ user.last_name }}'s Dashboard
+                    {% else %}
+                        User Dashboard
+                    {% endif %}
+             </h1>
               <p class="text-gray-500 text-sm mt-1">Manage your activity and profile here.</p>
             {% endif %}
           </div>
@@ -400,6 +406,7 @@ let currentPasswordInput, newPasswordInput, newPasswordConfirmInput;
 let profileFullName, profileUsername, profileEmail, profileBioText, profilePhone;
 let dashboardHeaderTitle;
 let deleteModal, deleteForm, deleteButton, deleteMessageDiv, deletePasswordInput;
+let navbarUsername, mobileNavbarUsername;
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -450,6 +457,8 @@ document.addEventListener('DOMContentLoaded', function() {
     profileBioText = document.getElementById('profile_bio_text');
     profilePhone = document.getElementById('profile_phone');
     dashboardHeaderTitle = document.querySelector('.lg\\:col-span-2 h1');
+    navbarUsername = document.getElementById('navbar_username');
+    mobileNavbarUsername = document.getElementById('mobile_navbar_username');
     
     // --- 2. Fungsi Utama (AJAX Dashboard) ---
     async function fetchContent(view, category) {
@@ -682,10 +691,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         if(data.first_name || data.last_name) {
                             dashboardHeaderTitle.textContent = data.first_name + ' ' + data.last_name + "'s Dashboard";
                         } else {
-                            dashboardHeaderTitle.textContent = data.username + "'s Dashboard"; 
+                            dashboardHeaderTitle.textContent = "User Dashboard"; 
                         }
                     }
                     
+                    if (navbarUsername) {
+                        navbarUsername.textContent = data.username;
+                    }
+                    if (mobileNavbarUsername) {
+                        mobileNavbarUsername.textContent = 'My Profile (' + data.username + ')';
+                    }
                     setTimeout(closeEditProfileModal, 1000); 
                 } else {
                     showModalError(data.error || `Failed to update (Status: ${response.status})`);
