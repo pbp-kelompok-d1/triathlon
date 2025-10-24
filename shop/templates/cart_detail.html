@@ -55,17 +55,19 @@
                                    min="1" 
                                    max="{{ item.product.stock }}"
                                    data-item-id="{{ item.id }}"
+                                   data-price="{{ item.product.price }}"
                                    readonly>
                             <button type="button" 
                                     class="increase-quantity bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded"
                                     data-item-id="{{ item.id }}"
-                                    data-max-stock="{{ item.product.stock }}">
+                                    data-max-stock="{{ item.product.stock }}"
+                                    data-price="{{ item.product.price }}">
                                 +
                             </button>
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="subtotal-price text-gray-900 font-medium">Rp {{ item.subtotal|floatformat:0 }}</span>
+                        <span class="subtotal-price text-gray-900 font-medium" data-item-id="{{ item.id }}">Rp {{ item.subtotal|floatformat:0 }}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <button type="button" 
@@ -130,6 +132,40 @@ document.addEventListener('DOMContentLoaded', function() {
         return 'Rp ' + Math.floor(number).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
 
+    function updateCartQuantity(itemId, newQuantity) {
+        return fetch('/shop/cart/update/' + itemId + '/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                'quantity': newQuantity
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Update subtotal di UI
+                const subtotalElement = document.querySelector('.subtotal-price[data-item-id="' + itemId + '"]');
+                subtotalElement.textContent = formatRupiah(data.subtotal);
+                
+                // Update total di UI
+                document.getElementById('cart-total').textContent = formatRupiah(data.total);
+                
+                showNotification(data.message, 'success');
+            } else {
+                showNotification(data.message || 'Failed to update quantity', 'error');
+            }
+            return data;
+        })
+        .catch(error => {
+            showNotification('Error updating quantity', 'error');
+            throw error;
+        });
+    }
+
     // Remove from cart
     document.querySelectorAll('.remove-from-cart-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -161,8 +197,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             const remainingItems = document.querySelectorAll('.cart-item-row');
                             if (remainingItems.length === 0) {
                                 window.location.reload();
-                            } else {
-                                updateCartTotal();
                             }
                         }, 300);
                     } else {
@@ -176,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Increase quantity
+    // Increase quantity - UPDATE KE DATABASE
     document.querySelectorAll('.increase-quantity').forEach(function(btn) {
         btn.addEventListener('click', function() {
             const itemId = this.getAttribute('data-item-id');
@@ -185,14 +219,23 @@ document.addEventListener('DOMContentLoaded', function() {
             const currentQuantity = parseInt(input.value);
 
             if (currentQuantity < maxStock) {
-                updateQuantity(itemId, currentQuantity + 1);
+                const newQuantity = currentQuantity + 1;
+                
+                // Update ke database
+                updateCartQuantity(itemId, newQuantity)
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Update input value
+                        input.value = newQuantity;
+                    }
+                });
             } else {
                 showNotification('Maximum stock reached', 'error');
             }
         });
     });
 
-    // Decrease quantity
+    // Decrease quantity - UPDATE KE DATABASE
     document.querySelectorAll('.decrease-quantity').forEach(function(btn) {
         btn.addEventListener('click', function() {
             const itemId = this.getAttribute('data-item-id');
@@ -200,58 +243,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const currentQuantity = parseInt(input.value);
 
             if (currentQuantity > 1) {
-                updateQuantity(itemId, currentQuantity - 1);
+                const newQuantity = currentQuantity - 1;
+                
+                // Update ke database
+                updateCartQuantity(itemId, newQuantity)
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Update input value
+                        input.value = newQuantity;
+                    }
+                });
             } else {
                 showNotification('Minimum quantity is 1', 'error');
             }
         });
     });
-
-    function updateQuantity(itemId, newQuantity) {
-        const formData = new FormData();
-        formData.append('quantity', newQuantity);
-
-        fetch('/shop/cart/update/' + itemId + '/', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(data) {
-            if (data.status === 'success') {
-                const input = document.querySelector('.quantity-input[data-item-id="' + itemId + '"]');
-                input.value = newQuantity;
-
-                const row = input.closest('.cart-item-row');
-                const subtotalElement = row.querySelector('.subtotal-price');
-                subtotalElement.textContent = formatRupiah(data.subtotal);
-
-                document.getElementById('cart-total').textContent = formatRupiah(data.total);
-
-                showNotification(data.message, 'success');
-            } else {
-                showNotification(data.message || 'Failed to update quantity', 'error');
-            }
-        })
-        .catch(function(error) {
-            showNotification('Error updating cart', 'error');
-        });
-    }
-
-    function updateCartTotal() {
-        let total = 0;
-        document.querySelectorAll('.cart-item-row').forEach(function(row) {
-            const subtotalText = row.querySelector('.subtotal-price').textContent;
-            const subtotal = parseFloat(subtotalText.replace('Rp ', '').replace(/,/g, ''));
-            total += subtotal;
-        });
-        document.getElementById('cart-total').textContent = formatRupiah(total);
-    }
 });
 </script>
 {% endblock %}

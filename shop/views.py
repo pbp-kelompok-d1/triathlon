@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
 from .forms import ProductForm
-from .models import Product, Cart, CartItem, Wishlist, Order, OrderItem
+from .models import Product, Cart, CartItem, Wishlist
 from django.contrib import messages
 from django.urls import reverse
 from django.template.defaultfilters import truncatewords
@@ -31,35 +31,35 @@ def delete_all_products(request):
     Product.objects.all().delete()
     return JsonResponse({'status': 'success', 'message': 'Semua produk telah dihapus'})
 
-def delete_products_without_seller(request):
-    """Delete all products without seller"""
-    # Hitung jumlah produk tanpa seller
-    products_without_seller = Product.objects.filter(seller__isnull=True)
-    count = products_without_seller.count()
-    
-    if count == 0:
-        return JsonResponse({
-            'status': 'info',
-            'message': 'Tidak ada produk tanpa seller yang perlu dihapus.'
-        })
-    
-    # Hapus thumbnail files terlebih dahulu jika ada
-    for product in products_without_seller:
-        if product.thumbnail:
-            try:
-                if hasattr(product.thumbnail, 'path') and os.path.isfile(product.thumbnail.path):
-                    product.thumbnail.delete(save=False)
-            except Exception:
-                pass
-    
-    # Hapus semua produk tanpa seller
-    products_without_seller.delete()
-    
-    return JsonResponse({
-        'status': 'success',
-        'message': f'Berhasil menghapus {count} produk tanpa seller.',
-        'count': count
-    })
+#def delete_products_without_seller(request):
+#    """Delete all products without seller"""
+#    # Hitung jumlah produk tanpa seller
+#    products_without_seller = Product.objects.filter(seller__isnull=True)
+#    count = products_without_seller.count()
+#    
+#    if count == 0:
+#        return JsonResponse({
+#            'status': 'info',
+#            'message': 'Tidak ada produk tanpa seller yang perlu dihapus.'
+#        })
+#    
+#    # Hapus thumbnail files terlebih dahulu jika ada
+#    for product in products_without_seller:
+#        if product.thumbnail:
+#            try:
+#                if hasattr(product.thumbnail, 'path') and os.path.isfile(product.thumbnail.path):
+#                    product.thumbnail.delete(save=False)
+#            except Exception:
+#                pass
+#    
+#    # Hapus semua produk tanpa seller
+#    products_without_seller.delete()
+#    
+#    return JsonResponse({
+#        'status': 'success',
+#        'message': f'Berhasil menghapus {count} produk tanpa seller.',
+#        'count': count
+#    })
 
 def load_dataset_cycling(request):
     # Gunakan path absolut berdasarkan BASE_DIR
@@ -211,7 +211,7 @@ def show_product(request):
             product.delete()  # FK cascade akan membersihkan CartItem/Wishlist terkait
 
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return JsonResponse({'status': 'success', 'product_id': int(pid), 'message': f'Produk "{name}" dihapus'})
+                return JsonResponse({'status': 'success', 'product_id': str(pid), 'message': f'Produk "{name}" dihapus'})
             
             messages.success(request, f'Produk "{name}" dihapus')
             return redirect('shop:shop')
@@ -457,48 +457,6 @@ def remove_from_cart(request, product_id):
         return JsonResponse({'status': 'error', 'message': 'Item not found'}, status=404)
 
 @login_required
-def update_cart_quantity(request, item_id):
-    """Update cart item quantity via AJAX"""
-    if request.method != 'POST':
-        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
-    
-    try:
-        cart_item = CartItem.objects.get(id=item_id, cart__user=request.user)
-        quantity = int(request.POST.get('quantity', 1))
-        
-        if quantity < 1:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Quantity must be at least 1'
-            })
-        
-        if quantity > cart_item.product.stock:
-            return JsonResponse({
-                'status': 'error',
-                'message': f'Only {cart_item.product.stock} items available'
-            })
-        
-        cart_item.quantity = quantity
-        cart_item.save()
-        
-        subtotal = cart_item.product.price * quantity
-        cart_items = CartItem.objects.filter(cart=cart_item.cart)
-        total = sum(item.product.price * item.quantity for item in cart_items)
-        
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Cart updated',
-            'subtotal': float(subtotal),
-            'total': float(total)
-        })
-    
-    except (CartItem.DoesNotExist, ValueError, TypeError):
-        return JsonResponse({
-            'status': 'error',
-            'message': 'Invalid request'
-        }, status=400)
-
-@login_required
 def toggle_wishlist(request, product_id):
     """Tambah/hapus product dari wishlist (ManyToMany)"""
     product = get_object_or_404(Product, pk=product_id)
@@ -508,17 +466,28 @@ def toggle_wishlist(request, product_id):
         wishlist.products.remove(product)
         in_wishlist = False
         msg = f'{product.name} removed from wishlist'
+        
+        # Jika request dari halaman wishlist (bukan AJAX), redirect ke wishlist
+        referer = request.META.get('HTTP_REFERER', '')
+        if 'wishlist' in referer and not request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            messages.success(request, msg)
+            return redirect('shop:view_wishlist')
     else:
         wishlist.products.add(product)
         in_wishlist = True
         msg = f'{product.name} added to wishlist'
 
-    return JsonResponse({
-        'status': 'success',
-        'message': msg,
-        'in_wishlist': in_wishlist,
-        'count': wishlist.products.count(),
-    })
+    # Response AJAX
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'success',
+            'message': msg,
+            'in_wishlist': in_wishlist,
+            'count': wishlist.products.count(),
+        })
+    
+    # Fallback redirect
+    return redirect('shop:view_wishlist')
 
 @login_required
 def view_wishlist(request):
@@ -564,7 +533,7 @@ def checkout(request):
     total = sum(ci.product.price * ci.quantity for ci in cart_items)
 
     if request.method == 'POST':
-        # Buat map {product_id: total_quantity} seperti contoh session
+        # Buat map {product_id: total_quantity} dari cart items
         qty_map = {}
         for ci in cart_items:
             qty_map[ci.product_id] = qty_map.get(ci.product_id, 0) + ci.quantity
@@ -572,16 +541,16 @@ def checkout(request):
         # Kunci produk yang terlibat agar stok konsisten
         products = list(Product.objects.select_for_update().filter(id__in=qty_map.keys()))
 
-        # Validasi stok
+        # Validasi stok berdasarkan quantity TERBARU dari cart
         kurang = []
         for p in products:
             if qty_map[p.id] > p.stock:
-                kurang.append(f'{p.name}')
+                kurang.append(f'{p.name} (butuh {qty_map[p.id]}, tersedia {p.stock})')
         if kurang:
             messages.error(request, 'Stok tidak cukup: ' + ', '.join(kurang))
             return redirect('shop:view_cart')
 
-        # Kurangi stok (aman dengan F)
+        # Kurangi stok sesuai quantity di cart (aman dengan F)
         for p in products:
             Product.objects.filter(id=p.id).update(stock=F('stock') - qty_map[p.id])
 
@@ -589,15 +558,15 @@ def checkout(request):
         CartItem.objects.filter(cart=cart).delete()
 
         total_items = sum(qty_map.values())
-        messages.success(request, 'Pembelian berhasil! {total_items} item dengan total harga Rp {total}.')
-        return redirect('shop:view_cart')
+        messages.success(request, f'Pembelian berhasil! {total_items} item dengan total harga Rp {total:,.0f}.')
+        return redirect('shop:shop')
 
-    # GET: tampilkan halaman konfirmasi
+    # GET: tampilkan halaman konfirmasi dengan quantity TERBARU
     items_data = [
         {
             'id': ci.id,
             'product': ci.product,
-            'quantity': ci.quantity,
+            'quantity': ci.quantity,  # quantity terbaru dari cart
             'subtotal': ci.product.price * ci.quantity
         } for ci in cart_items
     ]
@@ -605,3 +574,48 @@ def checkout(request):
         'cart_items': items_data,
         'total': total
     })
+
+@login_required
+def update_cart_quantity(request, item_id):
+    """Update cart item quantity via AJAX"""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+    
+    try:
+        import json
+        data = json.loads(request.body)
+        new_quantity = int(data.get('quantity', 1))
+        
+        if new_quantity < 1:
+            return JsonResponse({'status': 'error', 'message': 'Quantity must be at least 1'})
+        
+        cart = Cart.objects.get(user=request.user)
+        cart_item = CartItem.objects.get(id=item_id, cart=cart)
+        
+        if new_quantity > cart_item.product.stock:
+            return JsonResponse({
+                'status': 'error', 
+                'message': f'Only {cart_item.product.stock} items available in stock'
+            })
+        
+        cart_item.quantity = new_quantity
+        cart_item.save()
+        
+        # Calculate new subtotal
+        subtotal = cart_item.product.price * cart_item.quantity
+        
+        # Calculate new total
+        cart_items = CartItem.objects.filter(cart=cart)
+        total = sum(item.product.price * item.quantity for item in cart_items)
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Quantity updated',
+            'subtotal': float(subtotal),
+            'total': float(total)
+        })
+        
+    except (Cart.DoesNotExist, CartItem.DoesNotExist):
+        return JsonResponse({'status': 'error', 'message': 'Cart item not found'}, status=404)
+    except (ValueError, json.JSONDecodeError):
+        return JsonResponse({'status': 'error', 'message': 'Invalid quantity'}, status=400)

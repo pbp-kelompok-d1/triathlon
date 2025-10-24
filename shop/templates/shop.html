@@ -1,113 +1,129 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container mx-auto px-4">
-    <h1 class="text-3xl font-bold mb-6">Triathlon Shop</h1>
+<div class="container mx-auto px-4 py-6">
+    <!-- Header Section -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold mb-2">Triathlon Shop</h1>
+        <div class="flex items-center justify-between">
+            <div>
+                {% if user.is_authenticated %}
+                <p class="text-gray-600">Welcome, {{ user.username }}</p>
+                {% else %}
+                <p class="text-gray-600">Welcome, Guest!</p>
+                {% endif %}
+            </div>
+            <div class="flex gap-3">
+                <button type="button" id="openModalBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition">
+                    + Add New Product
+                </button>
+                <a href="{% url 'shop:view_cart' %}" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-md transition">View Cart</a>
+                <a href="{% url 'shop:view_wishlist' %}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md transition">View Wishlist</a>
+            </div>
+        </div>
+    </div>
 
     {% csrf_token %}
-
-    <div class="mb-4">
-        {% if user.is_authenticated %}
-        <h5 class="text-lg">Welcome, {{ user.username }}</h5>
-        {% else %}
-        <h5 class="text-lg">Welcome, Guest!</h5>
-        {% endif %}
-    </div>
-
     <div id="notification-area" class="fixed top-5 right-5 z-50 space-y-2"></div>
-
-    <div class="flex gap-3 mb-6">
-        <button type="button" id="openModalBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition">
-            + Add New Product
-        </button>
-        <a href="{% url 'shop:view_cart' %}" class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-md transition">View Cart</a>
-        <a href="{% url 'shop:view_wishlist' %}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md transition">View Wishlist</a>
-    </div>
 
     <!-- MODAL ADD PRODUCT -->
     <div id="addProductModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-                <h5 class="text-xl font-semibold">Add New Product</h5>
-                <button type="button" id="closeModalBtn" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">
-                    &times;
-                </button>
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white border-b px-8 py-6 rounded-t-2xl">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Add New Product</h2>
+                        <p class="text-sm text-gray-500 mt-1">Share your product with the triathlon community</p>
+                    </div>
+                    <button type="button" id="closeModalBtn" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
             
-            <div class="p-6">
+            <div class="px-8 py-6">
                 <div id="modal-form-messages" class="mb-4"></div>
                 
-                <form id="add-product-modal-form">
+                <form id="add-product-modal-form" class="space-y-5">
                     {% csrf_token %}
                     
-                    <div class="mb-4">
-                        <label for="product_name" class="block text-sm font-medium text-gray-700 mb-2">Product Name:</label>
-                        <input type="text" id="product_name" name="name" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div>
+                        <label for="product_name" class="block text-sm font-semibold text-gray-700 mb-2">Product Name</label>
+                        <input type="text" id="product_name" name="name" required placeholder="Enter product name"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                         <div class="form-error text-red-600 text-sm mt-1" id="modal_error_name"></div>
                     </div>
                     
-                    <div class="mb-4">
-                        <label for="product_description" class="block text-sm font-medium text-gray-700 mb-2">Description:</label>
-                        <textarea id="product_description" name="description" rows="4" required
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    <div>
+                        <label for="product_description" class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                        <textarea id="product_description" name="description" rows="4" required placeholder="Describe your product..."
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"></textarea>
                         <div class="form-error text-red-600 text-sm mt-1" id="modal_error_description"></div>
                     </div>
 
-                    <div class="mb-4">
-                        <label for="product_category" class="block text-sm font-medium text-gray-700 mb-2">Category:</label>
-                        <select id="product_category" name="category" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Select a category</option>
-                            <option value="running">Running</option>
-                            <option value="cycling">Cycling</option>
-                            <option value="swimming">Swimming</option>
-                        </select>
+                    <div>
+                        <label for="product_category" class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                        <div class="relative">
+                            <select id="product_category" name="category" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none bg-white cursor-pointer pr-10">
+                                <option value="">Select a category</option>
+                                <option value="running">Running</option>
+                                <option value="cycling">Cycling</option>
+                                <option value="swimming">Swimming</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
                         <div class="form-error text-red-600 text-sm mt-1" id="modal_error_category"></div>
                     </div>
 
-                    <div class="mb-4">
-                        <label for="product_price" class="block text-sm font-medium text-gray-700 mb-2">Price (Rp):</label>
-                        <input type="number" id="product_price" name="price" step="0.01" min="0" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div>
+                        <label for="product_price" class="block text-sm font-semibold text-gray-700 mb-2">Price (Rp)</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">Rp</span>
+                            <input type="number" id="product_price" name="price" step="0.01" min="0" required placeholder="0"
+                                   class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        </div>
                         <div class="form-error text-red-600 text-sm mt-1" id="modal_error_price"></div>
                     </div>
 
-                    <div class="mb-4">
-                        <label for="product_stock" class="block text-sm font-medium text-gray-700 mb-2">Stock Quantity:</label>
-                        <input type="number" id="product_stock" name="stock" min="0" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div>
+                        <label for="product_stock" class="block text-sm font-semibold text-gray-700 mb-2">Stock Quantity</label>
+                        <input type="number" id="product_stock" name="stock" min="0" required placeholder="Enter stock quantity"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                         <div class="form-error text-red-600 text-sm mt-1" id="modal_error_stock"></div>
                     </div>
 
-                    <div class="mb-4">
-                        <label for="product_thumbnail" class="block text-sm font-medium text-gray-700 mb-2">Thumbnail URL:</label>
-                        <input type="url" id="product_thumbnail" name="thumbnail" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div>
+                        <label for="product_thumbnail" class="block text-sm font-semibold text-gray-700 mb-2">Thumbnail URL</label>
+                        <input type="url" id="product_thumbnail" name="thumbnail" required placeholder="https://example.com/image.jpg"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                         <div class="form-error text-red-600 text-sm mt-1" id="modal_error_thumbnail"></div>
                     </div>
                 </form>
             </div>
             
-            <div class="border-t px-6 py-4 flex justify-end gap-3">
-                <button type="button" id="cancelModalBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition">
+            <div class="border-t px-8 py-5 flex justify-between items-center bg-gray-50 rounded-b-2xl">
+                <button type="button" id="cancelModalBtn" class="px-6 py-2.5 text-gray-700 font-medium hover:bg-gray-200 rounded-lg transition-all duration-200">
                     Cancel
                 </button>
-                <button type="button" id="submit-product-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition">
+                <button type="button" id="submit-product-btn" class="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
                     Add Product
                 </button>
             </div>
         </div>
     </div>
-    <!-- END MODAL ADD PRODUCT -->
 
     <!-- MODAL EDIT PRODUCT -->
     <div id="editProductModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
                 <h5 class="text-xl font-semibold" id="editModalTitle">Edit Product</h5>
-                <button type="button" id="closeEditModalBtn" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">
-                    &times;
-                </button>
+                <button type="button" id="closeEditModalBtn" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">&times;</button>
             </div>
             
             <div class="p-6">
@@ -166,121 +182,159 @@
             </div>
             
             <div class="border-t px-6 py-4 flex justify-end gap-3">
-                <button type="button" id="cancelEditModalBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition">
-                    Cancel
-                </button>
-                <button type="button" id="submit-edit-product-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition">
-                    Update Product
-                </button>
+                <button type="button" id="cancelEditModalBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition">Cancel</button>
+                <button type="button" id="submit-edit-product-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition">Update Product</button>
             </div>
         </div>
     </div>
-    <!-- END MODAL EDIT PRODUCT -->
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div class="md:col-span-1">
-            <h3 class="text-xl font-semibold mb-4">Filter Products:</h3>
-            <div class="flex flex-col gap-2" id="filter-container">
-                <button class="bg-gray-800 text-white px-4 py-2 rounded-md transition filter-btn" data-category="">All Products</button>
-                <button class="border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white px-4 py-2 rounded-md transition filter-btn" data-category="running">Running</button>
-                <button class="border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white px-4 py-2 rounded-md transition filter-btn" data-category="cycling">Cycling</button>
-                <button class="border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white px-4 py-2 rounded-md transition filter-btn" data-category="swimming">Swimming</button>
+    <!-- Main Content -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <!-- Tabs Header -->
+        <div class="border-b border-gray-200">
+            <div class="flex items-center px-6 py-3">
+                <button class="px-6 py-3 border-b-2 border-green-600 text-green-600 font-semibold flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                    Produk
+                </button>
             </div>
         </div>
 
-        <div class="md:col-span-3">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="product-list-container">
-                {% if not products %}
-                <div class="col-span-full">
-                    <p>No products available in the shop. Please check back later!</p>
-                </div>
-                {% else %}
-                {% for product in products %}
-                <div class="product-card bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full relative group" data-product-id="{{ product.id }}" data-category="{{ product.category }}">
-                    <div class="relative h-48 overflow-hidden">
-                        {% if product.thumbnail %}
-                            <img src="{{ product.thumbnail }}" alt="{{ product.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                        {% else %}
-                            <div class="w-full h-full bg-gray-200 flex items-center justify-center">
-                                <span class="text-gray-500">No Image</span>
-                            </div>
-                        {% endif %}
+        <div class="grid grid-cols-12 gap-6 p-6">
+            <!-- Left Sidebar - Filter -->
+            <div class="col-span-12 lg:col-span-3">
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">Filter</h3>
+                    </div>
+
+                    <div class="border-b border-gray-200 pb-4">
+                        <button class="flex items-center justify-between w-full text-left font-semibold text-gray-900 mb-3">
+                            <span>Jenis Kategori</span>
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                            </svg>
+                        </button>
                         
-                        {% if user == product.seller or user_is_admin %}
-                        <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-2">
-                            <!-- Edit Button -->
-                            <button type="button" 
-                                    data-product-id="{{ product.id }}"
-                                    data-product-name="{{ product.name|escapejs }}"
-                                    data-seller-name="{{ product.seller.username|escapejs }}"
-                                    data-is-staff="{% if user_is_admin %}true{% else %}false{% endif %}"
-                                    data-is-owner="{% if user == product.seller %}true{% else %}false{% endif %}"
-                                    class="edit-product-btn bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full shadow-lg transition-colors duration-200 z-10">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                </svg>
+                        <div class="space-y-2" id="filter-container">
+                            <button class="w-full text-left px-4 py-2 rounded-md bg-gray-800 text-white transition filter-btn" data-category="">
+                                All Products
                             </button>
-                            
-                            <!-- Delete Button -->
-                            <button type="button" 
-                                    data-product-id="{{ product.id }}"
-                                    data-product-name="{{ product.name|escapejs }}"
-                                    data-seller-name="{{ product.seller.username|escapejs }}"
-                                    data-thumbnail="{{ product.thumbnail|default:'' }}"
-                                    data-is-staff="{% if user_is_admin %}true{% else %}false{% endif %}"
-                                    data-is-owner="{% if user == product.seller %}true{% else %}false{% endif %}"
-                                    class="delete-product-btn bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-colors duration-200 z-10">
-                                {% if user_is_admin and user != product.seller %}
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                                    </svg>
+                            <button class="w-full text-left px-4 py-2 rounded-md border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white transition filter-btn" data-category="running">
+                                Running
+                            </button>
+                            <button class="w-full text-left px-4 py-2 rounded-md border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white transition filter-btn" data-category="cycling">
+                                Cycling
+                            </button>
+                            <button class="w-full text-left px-4 py-2 rounded-md border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white transition filter-btn" data-category="swimming">
+                                Swimming
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side - Products -->
+            <div class="col-span-12 lg:col-span-9">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="text-sm text-gray-600">
+                        Menampilkan <span id="product-count-display">{{ products|length }}</span> barang dari total untuk <strong id="current-category-display">"All"</strong>
+                    </div>
+                </div>
+
+                <!-- Product Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4" id="product-list-container">
+                    {% if not products %}
+                    <div class="col-span-full text-center py-12">
+                        <p class="text-gray-500">No products available in the shop. Please check back later!</p>
+                    </div>
+                    {% else %}
+                    {% for product in products %}
+                    <div class="product-card bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow duration-300 flex flex-col" data-product-id="{{ product.id }}" data-category="{{ product.category }}">
+                        <div class="relative">
+                            <div class="aspect-square overflow-hidden rounded-t-lg">
+                                {% if product.thumbnail %}
+                                    <img src="{{ product.thumbnail }}" alt="{{ product.name }}" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300">
                                 {% else %}
+                                    <div class="w-full h-full bg-gray-200 flex items-center justify-center">
+                                        <span class="text-gray-400 text-sm">No Image</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            {% if user == product.seller or user_is_admin %}
+                            <div class="absolute top-2 right-2 flex gap-1">
+                                <button type="button" 
+                                        data-product-id="{{ product.id }}"
+                                        data-product-name="{{ product.name|escapejs }}"
+                                        data-seller-name="{{ product.seller.username|escapejs }}"
+                                        data-is-staff="{% if user_is_admin %}true{% else %}false{% endif %}"
+                                        data-is-owner="{% if user == product.seller %}true{% else %}false{% endif %}"
+                                        class="edit-product-btn bg-white bg-opacity-90 hover:bg-opacity-100 text-blue-600 p-1.5 rounded-full shadow-md transition-all duration-200">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </button>
+                                
+                                <button type="button" 
+                                        data-product-id="{{ product.id }}"
+                                        data-product-name="{{ product.name|escapejs }}"
+                                        data-seller-name="{{ product.seller.username|escapejs }}"
+                                        data-thumbnail="{{ product.thumbnail|default:'' }}"
+                                        data-is-staff="{% if user_is_admin %}true{% else %}false{% endif %}"
+                                        data-is-owner="{% if user == product.seller %}true{% else %}false{% endif %}"
+                                        class="delete-product-btn bg-white bg-opacity-90 hover:bg-opacity-100 text-red-600 p-1.5 rounded-full shadow-md transition-all duration-200">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
-                                {% endif %}
-                            </button>
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    <div class="p-4 flex-1">
-                        <h5 class="text-lg font-semibold mb-2">
-                            <a href="{% url 'shop:product_detail' product.id %}" class="text-blue-600 hover:text-blue-800">{{ product.name }}</a>
-                        </h5>
-                        <h6 class="text-gray-600 mb-2 font-bold">Rp {{ product.price }}</h6>
-                        <p class="text-gray-700 text-sm mb-2">{{ product.description|truncatewords:15 }}</p>
-                        <div class="flex justify-between items-center text-sm text-gray-500">
-                            <span>Stock: {{ product.stock }}</span>
-                            <span>Category: {{ product.category|title }}</span>
-                        </div>
-                        
-                        {% if user == product.seller %}
-                            <div class="mt-2">
-                                <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Your Product</span>
+                                </button>
                             </div>
-                        {% elif user.is_staff %}
-                            <div class="mt-2">
-                                <span class="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Admin View</span>
-                            </div>
-                        {% endif %}
-                    </div>
+                            {% endif %}
+                        </div>
 
-                    <div class="p-4 pt-0 space-y-2">
-                        <a href="{% url 'shop:add_to_cart' product.id %}" 
-                           class="block w-full bg-green-600 hover:bg-green-700 text-white text-center px-4 py-2 rounded-md transition ajax-action-btn"
-                           data-action="add-to-cart">
-                            Add to Cart
-                        </a>
-                        <a href="{% url 'shop:toggle_wishlist' product.id %}" 
-                           class="block w-full border border-red-600 text-red-600 hover:bg-red-600 hover:text-white text-center px-4 py-2 rounded-md transition ajax-action-btn"
-                           data-action="toggle-wishlist">
-                            Add to Wishlist
-                        </a>
+                        <div class="p-3 flex-1 flex flex-col">
+                            <a href="{% url 'shop:product_detail' product.id %}" class="block mb-2">
+                                <h5 class="text-sm font-normal text-gray-800 hover:text-green-600 line-clamp-2 min-h-[2.5rem]">
+                                    {{ product.name }}
+                                </h5>
+                            </a>
+                            
+                            <div class="mt-auto">
+                                <div class="text-lg font-bold text-gray-900 mb-2">
+                                    Rp{{ product.price|floatformat:0 }}
+                                </div>
+                                
+                                <div class="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                                    <div class="flex items-center gap-1">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                                        </svg>
+                                        <span class="truncate">{{ product.category|title }}</span>
+                                    </div>
+                                    <span class="mx-1">•</span>
+                                    <span>Stock: {{ product.stock }}</span>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <a href="{% url 'shop:add_to_cart' product.id %}" 
+                                       class="block w-full bg-green-600 hover:bg-green-700 text-white text-center px-3 py-2 rounded-md text-sm transition ajax-action-btn"
+                                       data-action="add-to-cart">
+                                        Add to Cart
+                                    </a>
+                                    <a href="{% url 'shop:toggle_wishlist' product.id %}" 
+                                       class="block w-full border border-red-600 text-red-600 hover:bg-red-600 hover:text-white text-center px-3 py-2 rounded-md text-sm transition ajax-action-btn"
+                                       data-action="toggle-wishlist">
+                                        Wishlist
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                    {% endfor %}
+                    {% endif %}
                 </div>
-                {% endfor %}
-                {% endif %}
             </div>
         </div>
     </div>
@@ -290,9 +344,7 @@
 <div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900" id="modalTitle">
-                Konfirmasi Hapus Produk
-            </h3>
+            <h3 class="text-lg font-semibold text-gray-900" id="modalTitle">Konfirmasi Hapus Produk</h3>
             <button type="button" onclick="closeDeleteModal()" class="text-gray-400 hover:text-gray-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -335,14 +387,8 @@
         </div>
         
         <div class="flex items-center justify-end space-x-3">
-            <button type="button" onclick="closeDeleteModal()" 
-                    class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors duration-200">
-                Batal
-            </button>
-            <button type="button" id="confirmDeleteBtn" onclick="confirmDelete()"
-                    class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200">
-                Hapus Produk
-            </button>
+            <button type="button" onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors duration-200">Batal</button>
+            <button type="button" id="confirmDeleteBtn" onclick="confirmDelete()" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200">Hapus Produk</button>
         </div>
     </div>
 </div>
@@ -353,22 +399,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const productContainer = document.getElementById('product-list-container');
     const notificationArea = document.getElementById('notification-area');
     
-    // Add Product Modal
     const modal = document.getElementById('addProductModal');
     const openModalBtn = document.getElementById('openModalBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const cancelModalBtn = document.getElementById('cancelModalBtn');
     
-    // Edit Product Modal
     const editModal = document.getElementById('editProductModal');
     const closeEditModalBtn = document.getElementById('closeEditModalBtn');
     const cancelEditModalBtn = document.getElementById('cancelEditModalBtn');
 
-    // Delete Modal Variables
     let currentProductId = null;
     let isAdminAction = false;
-    
-    // Edit Modal Variables
     let currentEditProductId = null;
     let isEditAdminAction = false;
 
@@ -378,12 +419,12 @@ document.addEventListener('DOMContentLoaded', function() {
         notification.className = bgColor + ' text-white px-6 py-3 rounded-md shadow-lg flex items-center justify-between max-w-md';
         notification.innerHTML = '<span>' + message + '</span><button class="ml-4 text-white hover:text-gray-200 font-bold text-xl" onclick="this.parentElement.remove()">&times;</button>';
         notificationArea.appendChild(notification);
-        setTimeout(function() {
-            notification.remove();
-        }, 4000);
+        setTimeout(function() { notification.remove(); }, 4000);
     }
 
-    // --- FILTER BY CATEGORY (CLIENT-SIDE) ---
+    // ============================================
+    // FILTER FUNCTIONALITY - TANPA RELOAD!
+    // ============================================
     const filterButtons = document.querySelectorAll('.filter-btn');
 
     function clearFilterActive() {
@@ -405,21 +446,36 @@ document.addEventListener('DOMContentLoaded', function() {
             const category = btn.getAttribute('data-category') || '';
             setActiveFilterBtn(btn);
 
-            // Filter produk cards
             const productCards = document.querySelectorAll('.product-card');
+            let visibleCount = 0;
+            
             productCards.forEach(function(card) {
                 const cardCategory = (card.getAttribute('data-category') || '').toLowerCase();
                 
                 if (!category || category === '' || cardCategory === category.toLowerCase()) {
                     card.classList.remove('hidden');
                     card.style.display = 'block';
+                    visibleCount++;
                 } else {
                     card.classList.add('hidden');
                     card.style.display = 'none';
                 }
             });
 
-            // Update URL parameter tanpa reload
+            // Update count display
+            const productCountEl = document.getElementById('product-count-display');
+            if (productCountEl) {
+                productCountEl.textContent = visibleCount;
+            }
+
+            // Update category display
+            const categoryDisplayEl = document.getElementById('current-category-display');
+            if (categoryDisplayEl) {
+                const displayText = category ? '"' + category.charAt(0).toUpperCase() + category.slice(1) + '"' : '"All"';
+                categoryDisplayEl.textContent = displayText;
+            }
+
+            // Update URL without reload
             const url = new URL(window.location);
             if (category) {
                 url.searchParams.set('category', category);
@@ -430,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Restore filter dari URL saat page load
+    // Initialize filter from URL on page load
     const params = new URLSearchParams(window.location.search);
     const initCategory = params.get('category') || '';
     if (initCategory) {
@@ -440,7 +496,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (btn) btn.click();
     }
 
-    // Add Product Modal Functions
+    // ============================================
+    // MODAL FUNCTIONS
+    // ============================================
     function openModal() {
         modal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
@@ -451,12 +509,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = 'auto';
         document.getElementById('add-product-modal-form').reset();
         document.getElementById('modal-form-messages').innerHTML = '';
-        document.querySelectorAll('.form-error').forEach(function(holder) {
-            holder.innerHTML = '';
-        });
+        document.querySelectorAll('.form-error').forEach(function(holder) { holder.innerHTML = ''; });
     }
 
-    // Edit Product Modal Functions
     function openEditModal() {
         editModal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
@@ -467,32 +522,22 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = 'auto';
         document.getElementById('edit-product-modal-form').reset();
         document.getElementById('edit-modal-form-messages').innerHTML = '';
-        document.querySelectorAll('.form-error').forEach(function(holder) {
-            holder.innerHTML = '';
-        });
+        document.querySelectorAll('.form-error').forEach(function(holder) { holder.innerHTML = ''; });
         currentEditProductId = null;
     }
 
-    // Event Listeners
     openModalBtn.addEventListener('click', openModal);
     closeModalBtn.addEventListener('click', closeModal);
     cancelModalBtn.addEventListener('click', closeModal);
     closeEditModalBtn.addEventListener('click', closeEditModal);
     cancelEditModalBtn.addEventListener('click', closeEditModal);
 
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            closeModal();
-        }
-    });
+    modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+    editModal.addEventListener('click', function(e) { if (e.target === editModal) closeEditModal(); });
 
-    editModal.addEventListener('click', function(e) {
-        if (e.target === editModal) {
-            closeEditModal();
-        }
-    });
-
-    // Add Product Form Submission
+    // ============================================
+    // ADD PRODUCT
+    // ============================================
     const submitProductBtn = document.getElementById('submit-product-btn');
     const addProductModalForm = document.getElementById('add-product-modal-form');
     const modalFormMessages = document.getElementById('modal-form-messages');
@@ -500,25 +545,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (submitProductBtn && addProductModalForm) {
         submitProductBtn.addEventListener('click', function() {
             modalFormMessages.innerHTML = '';
-            document.querySelectorAll('.form-error').forEach(function(holder) {
-                holder.innerHTML = '';
-            });
+            document.querySelectorAll('.form-error').forEach(function(holder) { holder.innerHTML = ''; });
 
             const formData = new FormData(addProductModalForm);
 
             fetch("{% url 'shop:add_product' %}", {
                 method: 'POST',
                 body: formData,
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(function(response) {
                 if (!response.ok) {
-                    return response.json().then(function(data) {
-                        throw data;
-                    });
+                    return response.json().then(function(data) { throw data; });
                 }
                 return response.json();
             })
@@ -526,9 +564,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.status === 'success') {
                     closeModal();
                     showNotification(data.message, 'success');
-                    setTimeout(function() {
-                        window.location.reload();
-                    }, 1500);
+                    setTimeout(function() { window.location.reload(); }, 1500);
                 }
             })
             .catch(function(errorData) {
@@ -548,7 +584,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Edit Product Form Submission
+    // ============================================
+    // EDIT PRODUCT
+    // ============================================
     const submitEditProductBtn = document.getElementById('submit-edit-product-btn');
     const editProductModalForm = document.getElementById('edit-product-modal-form');
     const editModalFormMessages = document.getElementById('edit-modal-form-messages');
@@ -558,25 +596,18 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!currentEditProductId) return;
 
             editModalFormMessages.innerHTML = '';
-            document.querySelectorAll('.form-error').forEach(function(holder) {
-                holder.innerHTML = '';
-            });
+            document.querySelectorAll('.form-error').forEach(function(holder) { holder.innerHTML = ''; });
 
             const formData = new FormData(editProductModalForm);
 
             fetch('/shop/' + currentEditProductId + '/edit/', {
                 method: 'POST',
                 body: formData,
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(function(response) {
                 if (!response.ok) {
-                    return response.json().then(function(data) {
-                        throw data;
-                    });
+                    return response.json().then(function(data) { throw data; });
                 }
                 return response.json();
             })
@@ -584,9 +615,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.status === 'success') {
                     closeEditModal();
                     showNotification(data.message, 'success');
-                    setTimeout(function() {
-                        window.location.reload();
-                    }, 1500);
+                    setTimeout(function() { window.location.reload(); }, 1500);
                 }
             })
             .catch(function(errorData) {
@@ -606,35 +635,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Product Actions (Edit, Delete, Cart, Wishlist)
+    // ============================================
+    // PRODUCT ACTIONS (EDIT/DELETE/CART/WISHLIST)
+    // ============================================
     if (productContainer) {
         productContainer.addEventListener('click', function(event) {
-            // Check for edit button
             const editBtn = event.target.closest('.edit-product-btn');
             if (editBtn) {
                 const productId = editBtn.getAttribute('data-product-id');
                 const productName = editBtn.getAttribute('data-product-name');
                 const sellerName = editBtn.getAttribute('data-seller-name');
-                const isStaff = editBtn.getAttribute('data-is-admin') === 'true';
+                const isStaff = editBtn.getAttribute('data-is-staff') === 'true';
                 const isOwner = editBtn.getAttribute('data-is-owner') === 'true';
                 openEditProductModal(productId, productName, sellerName, isStaff, isOwner);
                 return;
             }
 
-            // Check for delete button
             const deleteBtn = event.target.closest('.delete-product-btn');
             if (deleteBtn) {
                 const productId = deleteBtn.getAttribute('data-product-id');
                 const productName = deleteBtn.getAttribute('data-product-name');
                 const sellerName = deleteBtn.getAttribute('data-seller-name');
                 const thumbnail = deleteBtn.getAttribute('data-thumbnail');
-                const isStaff = deleteBtn.getAttribute('data-is-admin') === 'true';
+                const isStaff = deleteBtn.getAttribute('data-is-staff') === 'true';
                 const isOwner = deleteBtn.getAttribute('data-is-owner') === 'true';
                 openDeleteModal(productId, productName, sellerName, thumbnail, isStaff, isOwner);
                 return;
             }
 
-            // Check for AJAX action buttons
             const target = event.target.closest('.ajax-action-btn');
             if (!target) return;
 
@@ -643,14 +671,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             fetch(url, {
                 method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
             })
-            .then(function(response) {
-                return response.json();
-            })
+            .then(function(response) { return response.json(); })
             .then(function(data) {
                 if (data.status === 'success') {
                     showNotification(data.message, 'success');
@@ -664,12 +687,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Edit Product Modal Functions
     function openEditProductModal(productId, productName, sellerName, userIsStaff, userIsOwner) {
         currentEditProductId = productId;
         isEditAdminAction = userIsStaff && !userIsOwner;
         
-        // Set modal title
         const editModalTitle = document.getElementById('editModalTitle');
         if (isEditAdminAction) {
             editModalTitle.textContent = '[ADMIN] Edit Product: ' + productName;
@@ -677,21 +698,15 @@ document.addEventListener('DOMContentLoaded', function() {
             editModalTitle.textContent = 'Edit Product: ' + productName;
         }
 
-        // Fetch product data and populate form
         fetch('/shop/' + productId + '/edit/', {
             method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-        .then(function(response) {
-            return response.json();
-        })
+        .then(function(response) { return response.json(); })
         .then(function(data) {
             if (data.status === 'success') {
                 const product = data.product;
                 
-                // Populate form fields
                 document.getElementById('edit_product_name').value = product.name;
                 document.getElementById('edit_product_description').value = product.description;
                 document.getElementById('edit_product_category').value = product.category;
@@ -709,7 +724,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Delete Modal Functions
+    // ============================================
+    // DELETE MODAL FUNCTIONS
+    // ============================================
     window.openDeleteModal = function(productId, productName, sellerName, thumbnailUrl, userIsStaff, userIsOwner) {
         currentProductId = productId;
         isAdminAction = userIsStaff && !userIsOwner;
@@ -762,14 +779,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         fetch('/shop/' + currentProductId + '/delete/', {
             method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'Content-Type': 'application/json',
-            },
+            headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' },
         })
-        .then(function(response) {
-            return response.json();
-        })
+        .then(function(response) { return response.json(); })
         .then(function(data) {
             if (data.status === 'success') {
                 closeDeleteModal();
@@ -779,13 +791,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (productCard) {
                     productCard.style.opacity = '0';
                     productCard.style.transform = 'scale(0.95)';
-                    setTimeout(function() {
+                    setTimeout(function() { 
                         productCard.remove();
+                        // Update count after removal
+                        const remainingCards = document.querySelectorAll('.product-card:not(.hidden)');
+                        const productCountEl = document.getElementById('product-count-display');
+                        if (productCountEl) {
+                            productCountEl.textContent = remainingCards.length;
+                        }
                     }, 300);
                 } else {
-                    setTimeout(function() {
-                        window.location.reload();
-                    }, 1000);
+                    setTimeout(function() { window.location.reload(); }, 1000);
                 }
             } else {
                 showNotification(data.message || 'Terjadi kesalahan saat menghapus produk', 'error');
@@ -800,24 +816,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 
-    // Close modals when clicking outside or pressing Escape
     document.getElementById('deleteModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeDeleteModal();
-        }
+        if (e.target === this) { closeDeleteModal(); }
     });
 
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            if (!document.getElementById('deleteModal').classList.contains('hidden')) {
-                closeDeleteModal();
-            }
-            if (!document.getElementById('editProductModal').classList.contains('hidden')) {
-                closeEditModal();
-            }
-            if (!document.getElementById('addProductModal').classList.contains('hidden')) {
-                closeModal();
-            }
+            if (!document.getElementById('deleteModal').classList.contains('hidden')) { closeDeleteModal(); }
+            if (!document.getElementById('editProductModal').classList.contains('hidden')) { closeEditModal(); }
+            if (!document.getElementById('addProductModal').classList.contains('hidden')) { closeModal(); }
         }
     });
 });
