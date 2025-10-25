@@ -39,44 +39,111 @@ def create_facility_admin_group():
 
    # views.py
 
+from django.shortcuts import render
+from django.db.models import Q, Avg, Count
+from django.contrib.auth.decorators import login_required
+from .models import Place
+import random
+
 def place_list(request):
-    genres_list = ["Swimming Pool", "Running Track", "Bicycle Tracking"]
-    
-    selected_genre = request.GET.get('genre')
-    search_query = request.GET.get('q')
-    filter_type = request.GET.get('filter')
-
-    # --- PERBAIKAN DI SINI ---
-    # Ganti nama variabel lokalnya, misal jadi 'user_is_admin'
-    user_is_admin = is_facility_admin(request.user)
-    # -------------------------
-
+    """
+    View to display and filter places with AJAX support
+    Includes featured places and province statistics
+    """
+    # Get all places with average rating and review count
     places = Place.objects.annotate(
-        avg_rating=Avg('reviews__rating')
-    ).order_by('-created_at')
-
-    # --- DAN GANTI DI SINI ---
-    # Gunakan variabel baru 'user_is_admin'
-    if filter_type == 'my_places' and user_is_admin:
-        places = places.filter(admin=request.user)
-    elif selected_genre:
-        places = places.filter(genre=selected_genre)
-
+        avg_rating=Avg('reviews__rating'),
+        review_count=Count('reviews')
+    ).select_related('admin')
+    
+    # Get filter parameters
+    search_query = request.GET.get('q', '').strip()
+    selected_genre = request.GET.get('genre', '')
+    filter_type = request.GET.get('filter', '')
+    province_filter = request.GET.get('province', '')
+    is_ajax = request.GET.get('ajax', '') == '1' or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
+    # Apply search filter
     if search_query:
-        places = places.filter(name__icontains=search_query) 
-
+        places = places.filter(
+            Q(name__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(city__icontains=search_query) |
+            Q(province__icontains=search_query)
+        )
+    
+    # Apply genre filter
+    if selected_genre:
+        places = places.filter(genre=selected_genre)
+    
+    # Apply province filter (from province statistics cards)
+    if province_filter:
+        places = places.filter(province=province_filter)
+    
+    # Apply "My Places" filter
+    if filter_type == 'my_places' and request.user.is_authenticated:
+        places = places.filter(admin=request.user)
+    
+    # Order by rating and date
+    places = places.order_by('-avg_rating', '-created_at')
+    
+    # Check if user is facility admin
+    is_facility_admin = False
+    if request.user.is_authenticated:
+        if hasattr(request.user, 'profile'):
+            is_facility_admin = request.user.profile.role == 'facility_admin'
+        # Fallback: check if user has created any places
+        elif Place.objects.filter(admin=request.user).exists():
+            is_facility_admin = True
+    
+    # Get all available genres for filter buttons
+    genres = Place.objects.values_list('genre', flat=True).distinct().order_by('genre')
+    
+    # Get featured/recommended places (random selection of top-rated venues)
+    # Only show on main page, not on filtered/AJAX requests
+    featured_places = []
+    if not is_ajax and not search_query and not selected_genre and not filter_type:
+        # Get top-rated places (rating >= 4.0 or new places)
+        top_places = Place.objects.annotate(
+            avg_rating=Avg('reviews__rating')
+        ).filter(
+            Q(avg_rating__gte=4.0) | Q(avg_rating__isnull=True)
+        )[:20]  # Get top 20
+        
+        # Randomly select 3 places
+        top_places_list = list(top_places)
+        if len(top_places_list) >= 3:
+            featured_places = random.sample(top_places_list, 3)
+        else:
+            featured_places = top_places_list
+    
+    # Get province statistics (count of venues per province)
+    province_stats = []
+    if not is_ajax:
+        province_stats = Place.objects.values('province').annotate(
+            count=Count('id')
+        ).filter(
+            province__isnull=False
+        ).exclude(
+            province=''
+        ).order_by('-count')[:10]  # Top 10 provinces
+    
     context = {
         'places': places,
-        # --- DAN GANTI DI SINI ---
-        # Kirim variabel baru ini ke template (template HTML tidak perlu diubah)
-        'is_facility_admin': user_is_admin, 
-        'genres': genres_list,
+        'genres': genres,
         'selected_genre': selected_genre,
         'filter_type': filter_type,
+        'is_facility_admin': is_facility_admin,
+        'featured_places': featured_places,
+        'province_stats': province_stats,
     }
+    
+    # If AJAX request, return only the venue cards partial
+    if is_ajax:
+        return render(request, 'place/partials/venue_cards.html', context)
+    
+    # Otherwise return the full page
     return render(request, 'place/place_list.html', context)
-
-# views.py
 
 @login_required
 def add_place(request):
