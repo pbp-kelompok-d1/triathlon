@@ -15,7 +15,8 @@ from forum.models import ForumPost, ForumReply
 from shop.models import Product, Wishlist
 from place.models import Place
 from ticket.models import Ticket
-from main.views import logout          
+from main.views import logout   
+from django.db.models import Sum       
 
 # ==========================================================
 # DECORATOR (TIDAK BERUBAH)
@@ -150,6 +151,14 @@ def get_dashboard_content(request):
         admin_place_ids = facilities.values_list('id', flat=True)
         tickets = Ticket.objects.filter(place_id__in=admin_place_ids)
 
+        ticket_stats = tickets.aggregate(
+        total_quantity=Sum('ticket_quantity'),  # Menjumlahkan semua 'ticket_quantity'
+        total_revenue=Sum('total_price')        # Menjumlahkan semua 'total_price'
+        )
+
+        total_ticket_quantity = ticket_stats['total_quantity'] or 0
+        total_revenue_amount = ticket_stats['total_revenue'] or 0
+
         # 2. Terapkan filter category
         if category_filter:
             # Map category URL ke genre model
@@ -174,7 +183,9 @@ def get_dashboard_content(request):
         # 3. Update context & render parsial FACILITY_ADMIN
         context.update({ 
             'facilities': facilities,
-            'tickets': tickets
+            'tickets': tickets,
+            'total_ticket_quantity': total_ticket_quantity,
+            'total_revenue_amount': total_revenue_amount,
         })
         return render(request, 'user_profile/_facility_admin_content.html', context)
 

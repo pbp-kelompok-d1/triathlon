@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-12">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-200">
+            <h1 id="form-title" class="text-3xl font-bold text-gray-900 mb-6 border-b border-gray-100 pb-4">
+                {% if is_create %}Book a New Ticket{% else %}Edit Ticket #{{ ticket.id }}{% endif %}
+            </h1>
+            
+            <form id="ticket-form" method="POST" 
+                  action="{% if is_create %}{% url 'ticket:ticket_create' %}{% else %}{% url 'ticket:ticket_update' ticket.pk %}{% endif %}">
+                
+                {% csrf_token %}
+
+                <div id="form-errors" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6"></div>
+
+                <div class="space-y-6">
+                    
+                    {% for field in form %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            {{ field.label }}
+                        </label>
+                        
+                        {{ field }}
+                        
+                        <div id="error-{{ field.name }}" class="text-red-500 text-sm mt-1"></div>
+                    </div>
+                    {% endfor %}
+                    
+                </div>
+                
+                <div class="mt-8 pt-6 border-t border-gray-100 flex justify-end gap-4">
+                    <a href="{% url 'ticket:ticket_list' %}" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors">
+                        Cancel
+                    </a>
+                    
+                    <button id="submit-button" type="submit" class="inline-flex items-center justify-center px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                        <span id="submit-button-text">Submit</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('ticket-form');
+    const formErrorsDiv = document.getElementById('form-errors');
+    const submitButton = document.getElementById('submit-button');
+    const submitButtonText = document.getElementById('submit-button-text');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault(); 
+
+        // Reset UI feedback
+        submitButton.disabled = true;
+        submitButtonText.textContent = 'Submitting...';
+        formErrorsDiv.classList.add('hidden');
+        document.querySelectorAll('[id^=error-]').forEach(el => el.textContent = '');
+
+        const formData = new FormData(form);
+        const url = form.getAttribute('action');
+        const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                alert(data.message); 
+                window.location.href = "{% url 'ticket:ticket_list' %}";
+            } else {
+                if (data.errors) {
+                    for (const field in data.errors) {
+                        const errorEl = document.getElementById(`error-${field}`); 
+                        if (errorEl) {
+                            errorEl.textContent = data.errors[field][0];
+                        }
+                    }
+                    formErrorsDiv.innerHTML = '<strong>Please correct the errors below.</strong>';
+                    formErrorsDiv.classList.remove('hidden');
+                } else {
+                    formErrorsDiv.textContent = data.message || 'An unknown error occurred.';
+                    formErrorsDiv.classList.remove('hidden');
+                }
+            }
+        } catch (error) {
+            console.error('Form submission error:', error);
+            formErrorsDiv.textContent = 'A server error occurred. Please try again later.';
+            formErrorsDiv.classList.remove('hidden');
+        } finally {
+            submitButton.disabled = false;
+            submitButtonText.textContent = 'Submit';
+        }
+    });
+});
+</script>
+{% endblock %}
