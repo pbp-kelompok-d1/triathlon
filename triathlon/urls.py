@@ -28,8 +28,8 @@ urlpatterns = [
     path('profile/', include('user_profile.urls')),
     path('ticket/', include('ticket.urls')),
     path('place/', include('place.urls')),
-    path('activities/',include('activities.urls')),
-    # path('home/', include('main.urls')),
+    #path('activities/',include('activities.urls')),
+    #path('home/', include('main.urls')),
 ]
 
 if settings.DEBUG:
