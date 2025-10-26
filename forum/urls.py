@@ -5,6 +5,8 @@ app_name = 'forum'
 
 urlpatterns = [
     path('', views.show_forums, name='forums'),
+    # Alias for older code/tests that expect the name 'show_forums'
+    path('all/', views.show_forums, name='show_forums'),
     path('<uuid:id>/', views.post_detail, name='post_detail'),
     path('<uuid:post_id>/like/', views.toggle_like, name='toggle_like'),
     path('<uuid:post_id>/reply/', views.add_reply, name='add_reply'),
