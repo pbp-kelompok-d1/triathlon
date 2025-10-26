@@ -3,6 +3,7 @@ from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.decorators import login_required
+from django.db.models import Sum
 # ================================ LIKE/UNLIKE POST ================================
 @require_POST
 @login_required(login_url='/login/')
@@ -26,10 +27,14 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .models import ForumPost, ForumReply
+from ticket.models import Ticket
 from .forms import ForumPostForm
 from place.models import Place
 from shop.models import Product
 import uuid
+from django.contrib.auth.models import User
+from django.core.paginator import Paginator
+from shop.models import Wishlist
 
 
 # ================================ SHOWING FORUM POSTS AND DETAILS AND JSON DATA ================================
@@ -364,3 +369,117 @@ def delete_reply(request, reply_id):
     post.save()
     
     return JsonResponse({'success': True, 'message': 'Reply deleted successfully'})
+
+
+def user_profile_view(request, username):
+    """Public view of a user's profile - reuses user_profile partials for content.
+    This view lives in the forum app so clicking a username from a thread can open it.
+    """
+    user_obj = get_object_or_404(User, username=username)
+
+    # Read view and category filters from GET params (so public page can filter)
+    view = request.GET.get('view', 'all')
+    category = request.GET.get('category', '')
+
+    # Gather forum-related data for this user
+    posts = ForumPost.objects.filter(author=user_obj).order_by('-created_at')
+    replies = ForumReply.objects.filter(author=user_obj).order_by('-created_at')
+
+    # Apply category filter if provided
+    if category:
+        posts = posts.filter(sport_category__icontains=category)
+        replies = replies.filter(post__sport_category__icontains=category)
+
+    # Wishlist may not exist in some projects; attempt to fetch if available
+    wishlist = []
+    try:
+        wishlist = Wishlist.objects.filter(user=user_obj)
+    except Exception:
+        wishlist = []
+
+    context = {
+        'target_user': user_obj,
+        'posts': posts,
+        'replies': replies,
+        'wishlist': wishlist,
+        'view': view,
+        'initial_category': category,
+        'target_user_role': getattr(getattr(user_obj, 'profile', None), 'role', 'USER'),
+    }
+
+    return render(request, 'forum/user_profile_public.html', context)
+
+
+def user_profile_content(request, username):
+    """AJAX endpoint to return the appropriate user_profile partial for a public profile.
+    Returns the same partial templates used by user_profile.get_dashboard_content so the UI is consistent.
+    """
+    user_obj = get_object_or_404(User, username=username)
+    view = request.GET.get('view', 'all')
+    category = request.GET.get('category', '')
+
+    context = {
+        'view': view,
+        'filter_category': category,
+    }
+
+    # USER
+    if getattr(getattr(user_obj, 'profile', None), 'role', 'USER') == 'USER':
+        posts = ForumPost.objects.filter(author=user_obj)
+        replies = ForumReply.objects.filter(author=user_obj)
+        wishlist = []
+        try:
+            wishlist = Wishlist.objects.filter(user=user_obj)
+        except Exception:
+            wishlist = []
+
+        if category:
+            posts = posts.filter(sport_category__icontains=category)
+            replies = replies.filter(post__sport_category__icontains=category)
+
+        context.update({'posts': posts, 'replies': replies, 'wishlist': wishlist})
+        return render(request, 'user_profile/_user_content.html', context)
+
+    # SELLER
+    if getattr(getattr(user_obj, 'profile', None), 'role', 'USER') == 'SELLER':
+        posts = ForumPost.objects.filter(author=user_obj)
+        products = Product.objects.filter(seller=user_obj) if hasattr(Product, 'seller') else Product.objects.none()
+
+        if category:
+            posts = posts.filter(sport_category__icontains=category)
+            products = products.filter(category__icontains=category)
+
+        context.update({'posts': posts, 'products': products})
+        return render(request, 'user_profile/_seller_content.html', context)
+
+    # FACILITY_ADMIN
+    if getattr(getattr(user_obj, 'profile', None), 'role', 'USER') == 'FACILITY_ADMIN':
+        facilities = Place.objects.filter(admin=user_obj)
+        admin_place_ids = facilities.values_list('id', flat=True)
+        tickets = Ticket.objects.filter(place_id__in=admin_place_ids)
+
+        if category:
+            # Map category URL to genre if needed (best-effort)
+            category_map = {
+                'swimming': 'Swimming Pool',
+                'running': 'Running Track',
+                'cycling': 'Bicycle Tracking'
+            }
+            genre_filter = category_map.get(category)
+            if genre_filter:
+                facilities = facilities.filter(genre=genre_filter)
+                admin_place_ids = facilities.values_list('id', flat=True)
+                tickets = tickets.filter(place_id__in=admin_place_ids)
+
+        ticket_stats = tickets.aggregate(total_quantity=Sum('ticket_quantity'), total_revenue=Sum('total_price'))
+        total_ticket_quantity = ticket_stats['total_quantity'] or 0
+        total_revenue_amount = ticket_stats['total_revenue'] or 0
+
+        context.update({'facilities': facilities, 'tickets': tickets, 'total_ticket_quantity': total_ticket_quantity, 'total_revenue_amount': total_revenue_amount})
+        return render(request, 'user_profile/_facility_admin_content.html', context)
+
+    # Fallback: render user partial
+    posts = ForumPost.objects.filter(author=user_obj)
+    replies = ForumReply.objects.filter(author=user_obj)
+    context.update({'posts': posts, 'replies': replies, 'wishlist': []})
+    return render(request, 'user_profile/_user_content.html', context)

@@ -309,3 +309,120 @@ class ForumUnitTests(TestCase):
 		self.assertIsNotNone(entry)
 		self.assertEqual(entry['author_initial'], self.user.username[0].upper())
 		self.assertEqual(entry['author_role'], 'ADMIN')
+
+	def test_user_profile_view_and_content_user_wishlist(self):
+		# Create a public user with posts, replies and a wishlist
+		public = User.objects.create_user(username='public', password='p')
+		post = ForumPost.objects.create(title='PubPost', content='Public content', category='general', sport_category='running', author=public)
+		reply = ForumReply.objects.create(post=post, author=public, content='pubreply')
+		from shop.models import Product, Wishlist
+		prod = Product.objects.create(name='WishProd', description='d', price=4.0, stock=2)
+		# create wishlist and attach product
+		wl = None
+		try:
+			wl = Wishlist.objects.create(user=public)
+			wl.products.add(prod)
+		except Exception:
+			# Some projects may implement wishlist differently; ignore if creation fails
+			wl = None
+
+		# Call public profile view
+		url = reverse('forum:user_profile', args=[public.username])
+		resp = self.client.get(url)
+		self.assertEqual(resp.status_code, 200)
+		self.assertIn('target_user', resp.context)
+		self.assertIn('posts', resp.context)
+		self.assertIn('replies', resp.context)
+		# If wishlist supported, it should be present in context
+		self.assertIn('wishlist', resp.context)
+
+		# Test AJAX content endpoint for USER role returns user partial and includes posts/replies
+		url2 = reverse('forum:user_profile_content', args=[public.username])
+		resp2 = self.client.get(url2)
+		self.assertEqual(resp2.status_code, 200)
+		self.assertIn('posts', resp2.context)
+		self.assertIn('replies', resp2.context)
+
+
+	def test_edit_post_ajax_updates_fields_and_last_edited(self):
+		# author edits own post and sets product and location
+		p = ForumPost.objects.create(title='ToEdit', content='Old', category='general', sport_category='running', author=self.user)
+		from shop.models import Product
+		prod = Product.objects.create(name='EProd', description='d', price=1.0, stock=1)
+		self.client.login(username='testuser', password='testpass')
+		url = reverse('forum:edit_post_ajax', args=[p.id])
+		resp = self.client.post(url, {'title': 'NewTitle', 'content': 'NewContent', 'category': 'general', 'sport_category': 'running', 'product_id': str(prod.id), 'location_id': '99'}, HTTP_X_CSRFTOKEN=self.client.cookies.get('csrftoken',''))
+		self.assertEqual(resp.status_code, 200)
+		p.refresh_from_db()
+		self.assertEqual(p.title, 'NewTitle')
+		self.assertEqual(str(p.product_id), str(prod.id))
+		self.assertEqual(p.location_id, 99)
+		self.assertIsNotNone(p.last_edited)
+
+	def test_delete_post_returns_json_for_author(self):
+		post = ForumPost.objects.create(title='DelMe', content='C', category='general', sport_category='running', author=self.user)
+		self.client.login(username='testuser', password='testpass')
+		url = reverse('forum:delete_post', args=[post.id])
+		resp = self.client.post(url, HTTP_X_CSRFTOKEN=self.client.cookies.get('csrftoken',''), HTTP_ACCEPT='application/json')
+		self.assertEqual(resp.status_code, 200)
+		data = resp.json()
+		self.assertTrue(data.get('success'))
+
+	def test_show_forums_filters_by_category(self):
+		p_run = ForumPost.objects.create(title='R', content='c', category='general', sport_category='running', author=self.user)
+		p_cyc = ForumPost.objects.create(title='C', content='c', category='general', sport_category='cycling', author=self.user)
+		self.client.login(username='testuser', password='testpass')
+		url = reverse('forum:show_forums')
+		resp = self.client.get(url + '?category=cycling')
+		self.assertEqual(resp.status_code, 200)
+		posts = resp.context['posts']
+		self.assertTrue(all(p.sport_category == 'cycling' for p in posts))
+
+	def test_show_json_truncates_content_and_includes_full(self):
+		long_text = 'x' * 300
+		p = ForumPost.objects.create(title='Long', content=long_text, category='general', sport_category='running', author=self.user)
+		url = reverse('forum:show_json')
+		resp = self.client.get(url)
+		self.assertEqual(resp.status_code, 200)
+		data = resp.json()
+		entry = next((e for e in data if e['title'] == 'Long'), None)
+		self.assertIsNotNone(entry)
+		self.assertTrue(len(entry['content']) < len(entry['full_content']))
+
+	def test_user_profile_content_for_seller_and_facility_admin(self):
+		# Seller case: ensure products for seller are included in rendered content
+		seller = User.objects.create_user(username='seller', password='s')
+		# ensure profile exists and set role
+		if hasattr(seller, 'profile'):
+			seller.profile.role = 'SELLER'
+			seller.profile.save()
+		from shop.models import Product
+		prod = Product.objects.create(name='SellProd', description='d', price=2.0, stock=1, seller=seller)
+		url = reverse('forum:user_profile_content', args=[seller.username])
+		resp = self.client.get(url)
+		self.assertEqual(resp.status_code, 200)
+		# products should be in context for seller
+		self.assertIn('products', resp.context)
+		# and our product should be returned in the queryset
+		self.assertTrue(any(p.name == 'SellProd' for p in resp.context['products']))
+
+		# Facility admin case: ensure ticket aggregation works
+		fac = User.objects.create_user(username='fac', password='f')
+		if hasattr(fac, 'profile'):
+			fac.profile.role = 'FACILITY_ADMIN'
+			fac.profile.save()
+		from place.models import Place
+		from ticket.models import Ticket
+		# create a place administered by fac
+		pl = Place.objects.create(name='Pool', price=5.0, admin=fac, genre='Swimming Pool')
+		# create tickets linked to that place
+		Ticket.objects.create(customer_name='C1', place=pl, ticket_quantity=2, total_price=10.0, user=fac)
+		Ticket.objects.create(customer_name='C2', place=pl, ticket_quantity=3, total_price=15.0, user=fac)
+		url2 = reverse('forum:user_profile_content', args=[fac.username])
+		resp2 = self.client.get(url2)
+		self.assertEqual(resp2.status_code, 200)
+		# ticket aggregation values should be present in context
+		self.assertIn('total_ticket_quantity', resp2.context)
+		self.assertIn('total_revenue_amount', resp2.context)
+		self.assertEqual(resp2.context['total_ticket_quantity'], 5)
+		self.assertEqual(float(resp2.context['total_revenue_amount']), 25.0)
