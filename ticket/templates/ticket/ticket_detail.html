@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<<<<<<< HEAD
 <div class="bg-gray-50 min-h-screen py-12">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
@@ -138,6 +139,25 @@
         </div>
         {% endif %}
 
+=======
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-700 to-indigo-600 p-8">
+            <h1 class="text-3xl font-bold text-white">Ticket Details #${{ ticket.id }}</h1>
+            <p class="text-blue-200 mt-1">For venue: {{ ticket.place.name }}</p>
+        </div>
+        <div class="p-8 space-y-4">
+            <div class="grid grid-cols-3 gap-4"><span class="text-slate-500 font-medium">Customer Name</span><span class="col-span-2 text-slate-800 font-semibold">{{ ticket.customer_name }}</span></div>
+            <div class="grid grid-cols-3 gap-4 border-t pt-4"><span class="text-slate-500 font-medium">Booking Date</span><span class="col-span-2 text-slate-800">{{ ticket.booking_date|date:"l, F d, Y" }}</span></div>
+            <div class="grid grid-cols-3 gap-4 border-t pt-4"><span class="text-slate-500 font-medium">Quantity</span><span class="col-span-2 text-slate-800">{{ ticket.quantity }}</span></div>
+            <div class="grid grid-cols-3 gap-4 border-t pt-4"><span class="text-slate-500 font-medium">Total Price</span><span class="col-span-2 text-2xl font-bold text-indigo-600">${{ ticket.total_price|floatformat:2 }}</span></div>
+            <div class="grid grid-cols-3 gap-4 border-t pt-4"><span class="text-slate-500 font-medium">Date Booked</span><span class="col-span-2 text-slate-800">{{ ticket.created_at|date:"F d, Y, P" }}</span></div>
+        </div>
+        <div class="bg-slate-50 p-6 flex justify-end gap-4">
+            <a href="{% url 'ticket:ticket_list' %}" class="bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg">Back to List</a>
+            <a href="{% url 'ticket:ticket_update' ticket.pk %}" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-5 rounded-lg">Edit Ticket</a>
+        </div>
+>>>>>>> 42ebb9da1ff0472f72649184c37860c99609730f
     </div>
 </div>
 {% endblock %}
