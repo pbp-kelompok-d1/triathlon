@@ -61,7 +61,11 @@
               </span>
             </div>
             <h4 class="font-semibold text-gray-900 text-sm">
-              {% if post.author %}{{ post.author.username }}{% else %}Anonymous{% endif %}
+              {% if post.author %}
+                <a href="{% url 'forum:user_profile' post.author.username %}" class="text-blue-600 hover:underline">{{ post.author.username }}</a>
+              {% else %}
+                Anonymous
+              {% endif %}
             </h4>
             {% if post.author and post.author.profile %}
             <p class="text-xs mb-1">
@@ -332,7 +336,9 @@
                     {{ reply.author.username|first|upper }}
                   </span>
                 </div>
-                <h5 class="font-semibold text-gray-900 text-sm">{{ reply.author.username }}</h5>
+                <h5 class="font-semibold text-gray-900 text-sm">
+                  <a href="{% url 'forum:user_profile' reply.author.username %}" class="text-blue-600 hover:underline">{{ reply.author.username }}</a>
+                </h5>
                 {% if reply.author.profile %}
                 <p class="text-xs mb-1">
                   {% if reply.author.profile.role == 'ADMIN' %}

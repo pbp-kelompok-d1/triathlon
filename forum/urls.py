@@ -15,4 +15,7 @@ urlpatterns = [
     path('<uuid:post_id>/edit/', views.edit_post_ajax, name='edit_post_ajax'),
     path('<uuid:post_id>/delete/', views.delete_post, name='delete_post'),
     path('reply/<uuid:reply_id>/delete/', views.delete_reply, name='delete_reply'),
+    # Public user profile view (clickable from forum threads)
+    path('user/<str:username>/', views.user_profile_view, name='user_profile'),
+    path('user/<str:username>/content/', views.user_profile_content, name='user_profile_content'),
 ]
