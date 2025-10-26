@@ -14,4 +14,5 @@ urlpatterns = [
     path('delete/<uuid:actid>',views.delete_activity_ajax,name='delete_activity'),
     path('jsonning',views.show_json,name='activity_json_endpoint'),
     path('stats.json', views.stats_json, name='activity_stats_endpoint'),
+    path('series.json', views.series_json, name='chart_endpoint'),
 ]

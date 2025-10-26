@@ -47,12 +47,21 @@
     <form id="review-form" class="mb-8 pb-8 border-b">
       {% csrf_token %}
 
-      <div class="mb-4">
-          <label class="block mb-2 text-sm font-medium text-gray-700">Beri Rating:</label>
-          <div id="star-rating-input" class="flex items-center space-x-1 cursor-pointer text-2xl">
+          <div class="mb-4">
+            <label class="block mb-2 text-sm font-medium text-gray-700">Beri Rating:</label>
+            <div id="star-rating-input" class="flex items-center space-x-1 cursor-pointer text-2xl">
               {% for i in "12345" %}
               <span class="star text-gray-300 hover:text-yellow-400 transition" data-value="{{ i }}">⭐</span>
               {% endfor %}
+            </div>
+            <input type="hidden" id="review-rating-value" name="rating" value="0">
+            <p id="rating-error" class="text-xs text-red-600 mt-1 hidden">Rating harus dipilih.</p>
+          </div>
+          
+          <div class="mb-4">
+            <label for="review-comment" class="block mb-2 text-sm font-medium text-gray-700">Ulasan Anda:</label>
+            <textarea id="review-comment" name="comment" rows="4" placeholder="Tulis ulasanmu di sini..."
+                      class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"></textarea>
           </div>
           <input type="hidden" id="review-rating-value" name="rating" value="0">
           <p id="rating-error" class="text-xs text-red-600 mt-1 hidden">Rating harus dipilih.</p>
@@ -226,6 +235,40 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Gagal menambahkan review:", responseData);
             alert(`Error: ${responseData.error || 'Gagal mengirim ulasan.'}`);
           }
+
+          const div = document.createElement('div');
+          div.className = "border border-gray-200 rounded-lg p-4 shadow-sm relative hover:shadow-md transition";
+          div.id = `review-${responseData.review_id}`;
+
+          div.innerHTML = `
+            <div class="flex justify-between items-start mb-1">
+              <div>
+                <p class="font-semibold text-gray-800">${responseData.user}</p>
+                <p class="text-xs text-gray-400">${responseData.created_at}</p>
+              </div>
+              <p class="text-yellow-400 text-lg flex-shrink-0 ml-4">
+                ${generateStarsHTML(responseData.rating)}
+              </p>
+            </div>
+            <p class="text-gray-700 mt-2">${responseData.comment.replace(/\n/g, '<br>')}</p>
+            <button onclick="deleteReview('${responseData.review_id}')" title="Hapus ulasan ini"
+                    class="absolute top-2 right-2 text-gray-400 hover:text-red-600 transition p-1 rounded hover:bg-red-50">
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+               </svg>
+            </button>
+          `;
+          container.prepend(div);
+
+          form.reset();
+          selectedRating = 0;
+          ratingInput.value = 0;
+          highlightStars(0);
+
+        } else {
+          console.error("Gagal menambahkan review:", responseData);
+          alert(`Error: ${responseData.error || 'Gagal mengirim ulasan.'}`);
+        }
       } catch (error) {
            console.error("Terjadi kesalahan:", error);
            alert("Terjadi kesalahan saat mengirim ulasan.");
@@ -243,7 +286,8 @@ function generateStarsHTML(rating) {
             starsHTML += '<span class="text-gray-300">⭐</span>';
         }
     }
-    return starsHTML;
+  }
+  return starsHTML;
 }
 
 async function deleteReview(reviewId) {
@@ -273,11 +317,11 @@ async function deleteReview(reviewId) {
       }
       const container = document.getElementById('reviews-container');
       if (container && container.children.length === 0) {
-          const noReviewsP = document.createElement('p');
-          noReviewsP.id = 'no-reviews-yet';
-          noReviewsP.className = 'text-gray-500 text-center py-4';
-          noReviewsP.textContent = 'Belum ada ulasan untuk tempat ini.';
-          container.appendChild(noReviewsP);
+        const noReviewsP = document.createElement('p');
+        noReviewsP.id = 'no-reviews-yet';
+        noReviewsP.className = 'text-gray-500 text-center py-4';
+        noReviewsP.textContent = 'Belum ada ulasan untuk tempat ini.';
+        container.appendChild(noReviewsP);
       }
     } else {
       console.error("Gagal menghapus review:", responseData);
