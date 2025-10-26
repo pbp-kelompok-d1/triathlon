@@ -668,3 +668,55 @@ def load_places_swimming(request):
     messages.info(request, result['message'])
     return redirect('place:place_list')
 
+from django.shortcuts import render, get_object_or_404
+from django.db.models import Avg, Q
+from .models import Place, Review
+import random
+
+def place_detail(request, pk):
+    """
+    View to display place details with reviews and featured places sidebar
+    """
+    # Get the place object
+    place = get_object_or_404(Place, pk=pk)
+    
+    # Get all reviews for this place, ordered by newest first
+    reviews = Review.objects.filter(place=place).select_related('user').order_by('-created_at')
+    
+    # Check if current user is the place owner
+    is_place_owner = request.user.is_authenticated and request.user == place.admin
+    
+    # Get featured places for sidebar (exclude current place)
+    # Get top-rated places or random selection
+    featured_places_qs = Place.objects.exclude(
+        pk=place.pk  # Exclude current place
+    ).annotate(
+        avg_rating=Avg('reviews__rating')
+    ).filter(
+        Q(avg_rating__gte=4.0) | Q(avg_rating__isnull=True)  # Top rated or new
+    )[:20]  # Get top 20
+    
+    # Convert to list and randomly select 3-5 places
+    featured_places_list = list(featured_places_qs)
+    
+    if len(featured_places_list) >= 5:
+        featured_places = random.sample(featured_places_list, 5)
+    elif len(featured_places_list) >= 3:
+        featured_places = random.sample(featured_places_list, 3)
+    else:
+        featured_places = featured_places_list
+    
+    # Optional: Prioritize places from same genre or province
+    # same_genre_places = Place.objects.exclude(pk=place.pk).filter(
+    #     genre=place.genre
+    # ).annotate(avg_rating=Avg('reviews__rating'))[:3]
+    
+    context = {
+        'place': place,
+        'reviews': reviews,
+        'is_place_owner': is_place_owner,
+        'featured_places': featured_places,
+    }
+    
+    return render(request, 'place/place_detail.html', context)
+

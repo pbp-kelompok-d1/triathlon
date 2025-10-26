@@ -2,105 +2,205 @@
 {% load static %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10"> {# Tambah padding standard #}
-
-    <div class="bg-white shadow-xl rounded-2xl overflow-hidden mb-8 border border-gray-100">
-    {% if place.image %}
-      <img src="{{ place.image.url }}" alt="{{ place.name }}" class="w-full h-80 object-cover">
-    {% else %}
-      <div class="w-full h-80 bg-gray-200 flex items-center justify-center text-gray-500"><span>No Image</span></div>
-    {% endif %}
-    <div class="p-6 md:p-8"> {# Tambah padding di layar besar #}
-      <div class="flex flex-col md:flex-row justify-between md:items-start mb-4 gap-4">
-        <div class="flex-grow">
-          <h1 class="text-3xl font-bold text-gray-900">{{ place.name }}</h1>
-          <p class="text-gray-500 text-sm mt-1">{{ place.city }}, {{ place.province }}</p>
-        </div>
-        <div class="text-left md:text-right flex-shrink-0">
-          <p class="text-2xl font-semibold text-green-600">Rp {{ place.price|floatformat:0 }}</p>
-        </div>
-      </div>
-      <p class="text-gray-700 leading-relaxed mb-6">{{ place.description }}</p>
-      <div class="flex items-center gap-3">
-        <a href="#" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg transition font-medium shadow"> Pesan Tiket </a>
-        {# Tombol Edit/Hapus Tempat (jika perlu di detail) #}
-        {% if is_place_owner %}
-          <a href="{% url 'place:edit_place' place.pk %}" class="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2.5 rounded-lg transition font-medium shadow"> Edit Tempat </a>
-          <form action="{% url 'place:delete_place' place.pk %}" method="POST" onsubmit="return confirm('Yakin hapus tempat ini?');" class="inline">
-            {% csrf_token %}
-            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg transition font-medium shadow"> Hapus Tempat </button>
-          </form>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  
+  <!-- Main Container with Grid Layout -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <!-- Left Column: Main Content (2/3 width) -->
+    <div class="lg:col-span-2 space-y-8">
+      
+      <!-- Place Details Card -->
+      <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
+        {% if place.image %}
+          <img src="{{ place.image.url }}" alt="{{ place.name }}" class="w-full h-80 object-cover">
+        {% else %}
+          <div class="w-full h-80 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 flex items-center justify-center text-white">
+            <svg class="w-24 h-24 opacity-80" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
         {% endif %}
-      </div>
-    </div>
-  </div>
+        
+        <div class="p-6 md:p-8">
+          <div class="flex flex-col md:flex-row justify-between md:items-start mb-4 gap-4">
+            <div class="flex-grow">
+              <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ place.name }}</h1>
+              <div class="flex items-center text-gray-600 text-sm mb-2">
+                <svg class="w-5 h-5 mr-2 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                </svg>
+                <span class="font-medium">{{ place.city }}, {{ place.province }}</span>
+              </div>
+              
+              <!-- Genre Badge -->
+              <span class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+                {% if place.genre == 'Swimming Pool' %}🏊{% elif place.genre == 'Bicycle Tracking' %}🚴{% elif place.genre == 'Running Track' %}🏃{% else %}📍{% endif %}
+                {{ place.genre }}
+              </span>
+            </div>
+            
+            <div class="text-left md:text-right flex-shrink-0">
+              <p class="text-sm text-gray-600 mb-1">Price per session</p>
+              <p class="text-3xl font-bold text-green-600">Rp {{ place.price|floatformat:0 }}</p>
+            </div>
+          </div>
+          
+          <p class="text-gray-700 leading-relaxed mb-6">{{ place.description }}</p>
+          
+          <div class="flex flex-wrap items-center gap-3">
+            <a href="#" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+              🎫 Pesan Tiket
+            </a>
+            
+            {% if is_place_owner %}
+              <a href="{% url 'place:edit_place' place.pk %}" class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg transition font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                ✏️ Edit Tempat
+              </a>
+              <form action="{% url 'place:delete_place' place.pk %}" method="POST" onsubmit="return confirm('Yakin hapus tempat ini?');" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                  🗑️ Hapus Tempat
+                </button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      </div>
 
-        <div class="bg-white shadow-xl rounded-2xl p-6 md:p-8 border border-gray-100">
-    <h2 class="text-2xl font-semibold text-gray-800 mb-6 border-b pb-3">Ulasan Pengunjung</h2>
+      <!-- Reviews Section -->
+      <div class="bg-white shadow-xl rounded-2xl p-6 md:p-8 border border-gray-100">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-6 border-b pb-3">💬 Ulasan Pengunjung</h2>
 
-        {% if user.is_authenticated %}
-    <form id="review-form" class="mb-8 pb-8 border-b"> {# Kasih border bawah #}
-      {% csrf_token %}
+        {% if user.is_authenticated %}
+        <form id="review-form" class="mb-8 pb-8 border-b">
+          {% csrf_token %}
 
-      <div class="mb-4">
-          <label class="block mb-2 text-sm font-medium text-gray-700">Beri Rating:</label>
-          <div id="star-rating-input" class="flex items-center space-x-1 cursor-pointer text-2xl">
+          <div class="mb-4">
+            <label class="block mb-2 text-sm font-medium text-gray-700">Beri Rating:</label>
+            <div id="star-rating-input" class="flex items-center space-x-1 cursor-pointer text-2xl">
               {% for i in "12345" %}
               <span class="star text-gray-300 hover:text-yellow-400 transition" data-value="{{ i }}">⭐</span>
               {% endfor %}
+            </div>
+            <input type="hidden" id="review-rating-value" name="rating" value="0">
+            <p id="rating-error" class="text-xs text-red-600 mt-1 hidden">Rating harus dipilih.</p>
           </div>
-          <input type="hidden" id="review-rating-value" name="rating" value="0">
-          <p id="rating-error" class="text-xs text-red-600 mt-1 hidden">Rating harus dipilih.</p>
-      </div>
-            <div class="mb-4"> {# Bungkus textarea + label #}
-        <label for="review-comment" class="block mb-2 text-sm font-medium text-gray-700">Ulasan Anda:</label>
-        <textarea id="review-comment" name="comment" rows="4" placeholder="Tulis ulasanmu di sini..."
-                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"></textarea>
-      </div>
-
-      <button type="submit"
-              class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg transition font-medium shadow">
-        Kirim Ulasan
-      </button>
-    </form>
-    {% else %}
-    <p class="text-gray-500 mb-6 text-center py-4 bg-gray-50 rounded-lg">
-      <a href="{% url 'main:login' %}" class="text-blue-600 font-medium hover:underline">Login</a> untuk menulis ulasan.
-    </p>
-    {% endif %}
-
-        <h3 class="text-xl font-semibold text-gray-800 mb-4">Ulasan yang Sudah Ada</h3>
-    <div id="reviews-container" class="space-y-5">
-      {% for review in reviews %}
-            <div class="border border-gray-200 rounded-lg p-4 shadow-sm relative" id="review-{{ review.id }}">
-        <div class="flex justify-between items-start mb-1"> {# items-start agar rating sejajar atas #}
-          <div>
-            <p class="font-semibold text-gray-800">{{ review.user.username }}</p>
-            <p class="text-xs text-gray-400">{{ review.created_at|date:"d M Y, H:i" }}</p> {# Tampilkan waktu juga #}
+          
+          <div class="mb-4">
+            <label for="review-comment" class="block mb-2 text-sm font-medium text-gray-700">Ulasan Anda:</label>
+            <textarea id="review-comment" name="comment" rows="4" placeholder="Tulis ulasanmu di sini..."
+                      class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"></textarea>
           </div>
-          {# Tampilkan bintang rating yg benar #}
-          <p class="text-yellow-400 text-lg flex-shrink-0 ml-4">
-            {% for i in "12345"|make_list %}
-              {% if i|add:"0" <= review.rating %}⭐{% else %}<span class="text-gray-300">⭐</span>{% endif %}
-            {% endfor %}
-          </p>
-        </div>
-        <p class="text-gray-700 mt-2">{{ review.comment|linebreaksbr }}</p> {# linebreaksbr agar enter tampil #}
 
-        {% if request.user == review.user %}
-        <button onclick="deleteReview('{{ review.id }}')" title="Hapus ulasan ini"
-                class="absolute top-2 right-2 text-gray-400 hover:text-red-600 transition p-1 rounded hover:bg-red-50">
-           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-             <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-           </svg>
-        </button>
+          <button type="submit"
+                  class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg transition font-medium shadow">
+            Kirim Ulasan
+          </button>
+        </form>
+        {% else %}
+        <p class="text-gray-500 mb-6 text-center py-4 bg-gray-50 rounded-lg">
+          <a href="{% url 'main:login' %}" class="text-blue-600 font-medium hover:underline">Login</a> untuk menulis ulasan.
+        </p>
         {% endif %}
-              </div>
-      {% empty %}
-      <p id="no-reviews-yet" class="text-gray-500 text-center py-4">Belum ada ulasan untuk tempat ini.</p>
-      {% endfor %}
-    </div>
-  </div>
+
+        <h3 class="text-xl font-semibold text-gray-800 mb-4">Ulasan yang Sudah Ada</h3>
+        <div id="reviews-container" class="space-y-5">
+          {% for review in reviews %}
+          <div class="border border-gray-200 rounded-lg p-4 shadow-sm relative hover:shadow-md transition" id="review-{{ review.id }}">
+            <div class="flex justify-between items-start mb-1">
+              <div>
+                <p class="font-semibold text-gray-800">{{ review.user.username }}</p>
+                <p class="text-xs text-gray-400">{{ review.created_at|date:"d M Y, H:i" }}</p>
+              </div>
+              <p class="text-yellow-400 text-lg flex-shrink-0 ml-4">
+                {% for i in "12345"|make_list %}
+                  {% if i|add:"0" <= review.rating %}⭐{% else %}<span class="text-gray-300">⭐</span>{% endif %}
+                {% endfor %}
+              </p>
+            </div>
+            <p class="text-gray-700 mt-2">{{ review.comment|linebreaksbr }}</p>
+
+            {% if request.user == review.user %}
+            <button onclick="deleteReview('{{ review.id }}')" title="Hapus ulasan ini"
+                    class="absolute top-2 right-2 text-gray-400 hover:text-red-600 transition p-1 rounded hover:bg-red-50">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+            {% endif %}
+          </div>
+          {% empty %}
+          <p id="no-reviews-yet" class="text-gray-500 text-center py-4">Belum ada ulasan untuk tempat ini.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Featured Places Sidebar (1/3 width) -->
+    <div class="lg:col-span-1">
+      <div class="sticky top-4">
+        {% if featured_places %}
+        <div class="bg-white rounded-2xl p-6 shadow-xl border border-gray-200">
+          <div class="mb-6">
+            <h2 class="text-2xl font-bold mb-2 text-gray-900">✨ Featured Venues</h2>
+            <p class="text-gray-600 text-sm">Hand-picked recommendations for you</p>
+          </div>
+          
+          <div class="space-y-4">
+            {% for featured_place in featured_places %}
+            <a href="{% url 'place:place_detail' featured_place.pk %}" 
+               class="block bg-gradient-to-br from-gray-50 to-blue-50 border-2 border-gray-200 rounded-xl p-4 hover:border-blue-400 hover:shadow-lg transition-all group">
+              <div class="flex items-start gap-3">
+                <div class="text-3xl flex-shrink-0">🏆</div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-bold text-base mb-1 group-hover:text-blue-600 transition text-gray-900 line-clamp-2">
+                    {{ featured_place.name }}
+                  </h3>
+                  <p class="text-gray-600 text-xs mb-2 flex items-center">
+                    <svg class="w-3 h-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {{ featured_place.city|default:"Unknown" }}
+                  </p>
+                  <div class="flex items-center justify-between">
+                    <span class="text-yellow-500 font-semibold text-sm flex items-center">
+                      ⭐ {{ featured_place.avg_rating|floatformat:1|default:"New" }}
+                    </span>
+                    <span class="text-green-600 font-bold text-sm">
+                      Rp {{ featured_place.price|floatformat:0 }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+
+          <!-- View All Button -->
+          <a href="{% url 'place:place_list' %}" 
+             class="mt-6 block text-center bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+            View All Venues →
+          </a>
+        </div>
+        {% endif %}
+
+        <!-- Additional Info Card -->
+        <div class="mt-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 border-2 border-blue-200">
+          <h3 class="font-bold text-gray-900 mb-3 flex items-center">
+            <span class="text-2xl mr-2">💡</span>
+            Quick Tip
+          </h3>
+          <p class="text-gray-700 text-sm leading-relaxed">
+            Book your session in advance to ensure availability during peak hours. Contact the venue directly for group bookings and special rates.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <script>
@@ -108,213 +208,178 @@ document.addEventListener('DOMContentLoaded', () => {
   const starRatingContainer = document.getElementById('star-rating-input');
   const ratingInput = document.getElementById('review-rating-value');
   const stars = starRatingContainer ? starRatingContainer.querySelectorAll('.star') : [];
-  let selectedRating = 0; // Menyimpan rating yg di-klik (awal 0)
+  let selectedRating = 0;
 
-  // Fungsi untuk highlight bintang
   function highlightStars(rating) {
     stars.forEach(star => {
       const starValue = parseInt(star.getAttribute('data-value'));
-      // Warnai bintang KUNING jika nilainya <= rating yg di-hover/klik
-      // Warnai bintang ABU-ABU jika nilainya > rating
       if (starValue <= rating) {
-        star.classList.remove('text-gray-300'); // Hapus abu-abu
-        star.classList.add('text-yellow-400'); // Tambah kuning
+        star.classList.remove('text-gray-300');
+        star.classList.add('text-yellow-400');
       } else {
-        star.classList.remove('text-yellow-400'); // Hapus kuning
-        star.classList.add('text-gray-300'); // Tambah abu-abu
+        star.classList.remove('text-yellow-400');
+        star.classList.add('text-gray-300');
       }
     });
   }
 
-  // Panggil highlightStars(0) saat halaman load untuk memastikan abu-abu
   highlightStars(selectedRating);
 
-  // Event listener untuk interaksi bintang (jika ada)
   if (starRatingContainer) {
-      // Saat mouse masuk ke area bintang
-      starRatingContainer.addEventListener('mouseover', (e) => {
-        // Cek apakah elemen yg di-hover adalah bintang
-        if (e.target.classList.contains('star')) {
-          const hoverValue = parseInt(e.target.getAttribute('data-value'));
-          highlightStars(hoverValue); // Highlight sampai bintang yg di-hover
-        }
-      });
+    starRatingContainer.addEventListener('mouseover', (e) => {
+      if (e.target.classList.contains('star')) {
+        const hoverValue = parseInt(e.target.getAttribute('data-value'));
+        highlightStars(hoverValue);
+      }
+    });
 
-      // Saat mouse keluar dari area bintang
-      starRatingContainer.addEventListener('mouseout', () => {
-        highlightStars(selectedRating); // Kembalikan highlight ke rating yg terakhir di-klik
-      });
+    starRatingContainer.addEventListener('mouseout', () => {
+      highlightStars(selectedRating);
+    });
 
-      // Saat bintang di-klik
-      starRatingContainer.addEventListener('click', (e) => {
-        // Cek apakah elemen yg diklik adalah bintang
-        if (e.target.classList.contains('star')) {
-          selectedRating = parseInt(e.target.getAttribute('data-value')); // Simpan rating yg dipilih
-          ratingInput.value = selectedRating; // Update nilai input hidden
-          highlightStars(selectedRating); // Set highlight permanen sesuai yg diklik
-          document.getElementById('rating-error').classList.add('hidden'); // Sembunyikan pesan error rating
-          console.log("Rating dipilih:", selectedRating);
-        }
-      });
+    starRatingContainer.addEventListener('click', (e) => {
+      if (e.target.classList.contains('star')) {
+        selectedRating = parseInt(e.target.getAttribute('data-value'));
+        ratingInput.value = selectedRating;
+        highlightStars(selectedRating);
+        document.getElementById('rating-error').classList.add('hidden');
+        console.log("Rating dipilih:", selectedRating);
+      }
+    });
   }
 
-  // --- AJAX UNTUK TAMBAH REVIEW ---
   const form = document.getElementById('review-form');
   if (form) {
     form.addEventListener('submit', async (e) => {
-      e.preventDefault(); // Mencegah submit form bawaan
+      e.preventDefault();
 
-      // Ambil rating DARI HIDDEN INPUT
       const rating = ratingInput ? ratingInput.value : 0;
-      const comment = document.getElementById('review-comment').value.trim(); // Ambil komentar & hapus spasi awal/akhir
-      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value; // Ambil CSRF token
-      const ratingErrorP = document.getElementById('rating-error'); // Elemen pesan error rating
+      const comment = document.getElementById('review-comment').value.trim();
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      const ratingErrorP = document.getElementById('rating-error');
 
-      // Validasi: Rating harus sudah dipilih (tidak 0)
       if (rating === '0' || rating === 0) {
-          ratingErrorP.classList.remove('hidden'); // Tampilkan pesan error
-          return; // Hentikan proses submit
+        ratingErrorP.classList.remove('hidden');
+        return;
       } else {
-          ratingErrorP.classList.add('hidden'); // Sembunyikan pesan error
+        ratingErrorP.classList.add('hidden');
       }
 
-      console.log("Mengirim data:", { rating, comment }); // Debugging
+      console.log("Mengirim data:", { rating, comment });
 
       try {
-          // Kirim data ke backend
-          const response = await fetch("{% url 'place:add_review' place.pk %}", { // Gunakan place.pk
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json", // Kita kirim JSON
-              "X-CSRFToken": csrfToken,           // Sertakan CSRF token
-              "Accept": "application/json",       // Kita mau terima JSON
-            },
-            body: JSON.stringify({ rating: parseInt(rating), comment }), // Kirim rating sbg angka
-          });
+        const response = await fetch("{% url 'place:add_review' place.pk %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({ rating: parseInt(rating), comment }),
+        });
 
-          const responseData = await response.json(); // Baca respons dari backend
+        const responseData = await response.json();
 
-          // Cek jika request berhasil (status 2xx)
-          if (response.ok) {
-            console.log("Review berhasil ditambahkan:", responseData);
-            const container = document.getElementById('reviews-container');
-            const noReviewsP = document.getElementById('no-reviews-yet');
+        if (response.ok) {
+          console.log("Review berhasil ditambahkan:", responseData);
+          const container = document.getElementById('reviews-container');
+          const noReviewsP = document.getElementById('no-reviews-yet');
 
-            // Hapus pesan "belum ada ulasan" jika ada
-            if (noReviewsP) {
-              noReviewsP.remove();
-            }
-
-            // Buat elemen HTML untuk review baru
-            const div = document.createElement('div');
-            div.className = "border border-gray-200 rounded-lg p-4 shadow-sm relative"; // Style review
-            div.id = `review-${responseData.review_id}`; // Beri ID unik
-
-            // Isi HTML review baru (termasuk tombol hapus)
-            div.innerHTML = `
-              <div class="flex justify-between items-start mb-1">
-                <div>
-                  <p class="font-semibold text-gray-800">${responseData.user}</p>
-                  <p class="text-xs text-gray-400">${responseData.created_at}</p>
-                </div>
-                <p class="text-yellow-400 text-lg flex-shrink-0 ml-4">
-                  ${generateStarsHTML(responseData.rating)} {# Panggil fungsi helper #}
-                </p>
-              </div>
-              <p class="text-gray-700 mt-2">${responseData.comment.replace(/\n/g, '<br>')}</p> {# Tampilkan line breaks #}
-              <button onclick="deleteReview('${responseData.review_id}')" title="Hapus ulasan ini"
-                      class="absolute top-2 right-2 text-gray-400 hover:text-red-600 transition p-1 rounded hover:bg-red-50">
-                 {# SVG ikon tong sampah #}
-                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                 </svg>
-              </button>
-            `;
-            container.prepend(div); // Tambahkan review baru di paling atas
-
-            // Reset form setelah sukses
-            form.reset();
-            selectedRating = 0; // Reset variabel rating
-            ratingInput.value = 0; // Reset input hidden
-            highlightStars(0); // Kembalikan bintang ke abu-abu
-
-          } else {
-            // Jika backend mengembalikan error (status non-2xx)
-            console.error("Gagal menambahkan review:", responseData);
-            alert(`Error: ${responseData.error || 'Gagal mengirim ulasan.'}`);
+          if (noReviewsP) {
+            noReviewsP.remove();
           }
-      } catch (error) {
-           // Jika terjadi error jaringan atau parsing JSON
-           console.error("Terjadi kesalahan:", error);
-           alert("Terjadi kesalahan saat mengirim ulasan.");
-      }
-    }); // Akhir event listener submit
-  } // Akhir if(form)
-}); // Akhir DOMContentLoaded
 
-// --- FUNGSI HELPER UNTUK GENERATE BINTANG ---
-function generateStarsHTML(rating) {
-    let starsHTML = '';
-    for (let i = 1; i <= 5; i++) {
-        // Tambah bintang kuning jika i <= rating
-        if (i <= rating) {
-            starsHTML += '⭐';
+          const div = document.createElement('div');
+          div.className = "border border-gray-200 rounded-lg p-4 shadow-sm relative hover:shadow-md transition";
+          div.id = `review-${responseData.review_id}`;
+
+          div.innerHTML = `
+            <div class="flex justify-between items-start mb-1">
+              <div>
+                <p class="font-semibold text-gray-800">${responseData.user}</p>
+                <p class="text-xs text-gray-400">${responseData.created_at}</p>
+              </div>
+              <p class="text-yellow-400 text-lg flex-shrink-0 ml-4">
+                ${generateStarsHTML(responseData.rating)}
+              </p>
+            </div>
+            <p class="text-gray-700 mt-2">${responseData.comment.replace(/\n/g, '<br>')}</p>
+            <button onclick="deleteReview('${responseData.review_id}')" title="Hapus ulasan ini"
+                    class="absolute top-2 right-2 text-gray-400 hover:text-red-600 transition p-1 rounded hover:bg-red-50">
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+               </svg>
+            </button>
+          `;
+          container.prepend(div);
+
+          form.reset();
+          selectedRating = 0;
+          ratingInput.value = 0;
+          highlightStars(0);
+
         } else {
-            // Tambah bintang abu-abu jika i > rating
-            starsHTML += '<span class="text-gray-300">⭐</span>';
+          console.error("Gagal menambahkan review:", responseData);
+          alert(`Error: ${responseData.error || 'Gagal mengirim ulasan.'}`);
         }
+      } catch (error) {
+        console.error("Terjadi kesalahan:", error);
+        alert("Terjadi kesalahan saat mengirim ulasan.");
+      }
+    });
+  }
+});
+
+function generateStarsHTML(rating) {
+  let starsHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    if (i <= rating) {
+      starsHTML += '⭐';
+    } else {
+      starsHTML += '<span class="text-gray-300">⭐</span>';
     }
-    return starsHTML;
+  }
+  return starsHTML;
 }
 
-// --- AJAX UNTUK HAPUS REVIEW ---
 async function deleteReview(reviewId) {
-  // Minta konfirmasi
   if (!confirm("Apakah Anda yakin ingin menghapus ulasan ini?")) {
-    return; // Batalkan jika user klik Cancel
+    return;
   }
 
   const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-  // Pastikan URL name 'delete_review' ada dan menerima reviewId
-  // Ganti URL ini jika path di urls.py berbeda
-  const url = `/place/review/${reviewId}/delete/`; 
+  const url = `/place/review/${reviewId}/delete/`;
 
   try {
-    // Kirim request POST untuk hapus
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'X-CSRFToken': csrfToken,      // Sertakan CSRF token
-        'Accept': 'application/json', // Kita mau terima JSON
+        'X-CSRFToken': csrfToken,
+        'Accept': 'application/json',
       },
     });
 
-    const responseData = await response.json(); // Baca respons
+    const responseData = await response.json();
 
-    // Cek jika backend konfirmasi sukses
     if (response.ok && responseData.success) {
       console.log("Review berhasil dihapus");
-      // Hapus elemen review dari halaman
       const reviewElement = document.getElementById(`review-${reviewId}`);
       if (reviewElement) {
         reviewElement.remove();
       }
-      // Jika tidak ada review lagi, tampilkan pesan "belum ada ulasan"
       const container = document.getElementById('reviews-container');
       if (container && container.children.length === 0) {
-          const noReviewsP = document.createElement('p');
-          noReviewsP.id = 'no-reviews-yet';
-          noReviewsP.className = 'text-gray-500 text-center py-4';
-          noReviewsP.textContent = 'Belum ada ulasan untuk tempat ini.';
-          container.appendChild(noReviewsP);
+        const noReviewsP = document.createElement('p');
+        noReviewsP.id = 'no-reviews-yet';
+        noReviewsP.className = 'text-gray-500 text-center py-4';
+        noReviewsP.textContent = 'Belum ada ulasan untuk tempat ini.';
+        container.appendChild(noReviewsP);
       }
     } else {
-      // Jika backend mengembalikan error
       console.error("Gagal menghapus review:", responseData);
       alert(`Error: ${responseData.error || 'Gagal menghapus ulasan.'}`);
     }
   } catch (error) {
-    // Jika terjadi error jaringan
     console.error("Terjadi kesalahan saat menghapus:", error);
     alert("Terjadi kesalahan saat menghapus ulasan.");
   }
