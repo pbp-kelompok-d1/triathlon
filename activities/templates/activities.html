@@ -20,56 +20,74 @@
   </div>
 </div>
 
-<!-- Stats -->
-<div id="statsPanel" class="mb-8">
-  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-    <!-- 1) Total calories -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Total calories burned</div>
-      <div id="stat-total-cal" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+<!-- Stats strip -->
+<div class="mb-6">
+  <div class="max-w-6xl mx-auto">
+  <div class="flex flex-wrap items-center gap-3 text-sm">
+    <!-- total calories -->
+    <div class="inline-flex items-baseline gap-2 rounded-md bg-white border border-gray-200 px-3 py-2 shadow-sm">
+      <span class="text-[10px] uppercase tracking-wide text-gray-500">Total calories</span>
+      <span id="stat-total-cal" class="font-semibold text-gray-900">—</span>
     </div>
 
-    <!-- 2) Count -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Exercises</div>
-      <div id="stat-count" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    <!-- exercises -->
+    <div class="inline-flex items-baseline gap-2 rounded-md bg-white border border-gray-200 px-3 py-2 shadow-sm">
+      <span class="text-[10px] uppercase tracking-wide text-gray-500">Exercises</span>
+      <span id="stat-count" class="font-semibold text-gray-900">—</span>
     </div>
 
-    <!-- 3) Avg kcal / hour -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Avg calories / hour</div>
-      <div id="stat-avg-cals-hour" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    <!-- avg kcal/h -->
+    <div class="inline-flex items-baseline gap-2 rounded-md bg-white border border-gray-200 px-3 py-2 shadow-sm">
+      <span class="text-[10px] uppercase tracking-wide text-gray-500">Avg kcal/h</span>
+      <span id="stat-avg-cals-hour" class="font-semibold text-gray-900">—</span>
     </div>
 
-    <!-- 4) Avg distance by sport -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Avg distance (Running)</div>
-      <div id="stat-avg-dist-running" class="mt-1 text-2xl font-bold text-gray-900">—</div>
-    </div>
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Avg distance (Cycling)</div>
-      <div id="stat-avg-dist-cycling" class="mt-1 text-2xl font-bold text-gray-900">—</div>
-    </div>
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Avg distance (Swimming)</div>
-      <div id="stat-avg-dist-swimming" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    <!-- avg distance (grouped) -->
+    <div class="inline-flex items-baseline gap-2 rounded-md bg-white border border-gray-200 px-3 py-2 shadow-sm">
+      <span class="text-[10px] uppercase tracking-wide text-gray-500">Avg distance</span>
+      <span class="font-semibold text-gray-900">
+        Run <span id="stat-avg-dist-running">—</span> •
+        Cyc <span id="stat-avg-dist-cycling">—</span> •
+        Swim <span id="stat-avg-dist-swimming">—</span>
+      </span>
     </div>
 
-    <!-- 5) Avg duration by sport -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Avg duration (Running)</div>
-      <div id="stat-avg-dur-running" class="mt-1 text-2xl font-bold text-gray-900">—</div>
-    </div>
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Avg duration (Cycling)</div>
-      <div id="stat-avg-dur-cycling" class="mt-1 text-2xl font-bold text-gray-900">—</div>
-    </div>
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Avg duration (Swimming)</div>
-      <div id="stat-avg-dur-swimming" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    <!-- avg duration (grouped) -->
+    <div class="inline-flex items-baseline gap-2 rounded-md bg-white border border-gray-200 px-3 py-2 shadow-sm">
+      <span class="text-[10px] uppercase tracking-wide text-gray-500">Avg duration</span>
+      <span class="font-semibold text-gray-900">
+        Run <span id="stat-avg-dur-running">—</span> •
+        Cyc <span id="stat-avg-dur-cycling">—</span> •
+        Swim <span id="stat-avg-dur-swimming">—</span>
+      </span>
     </div>
   </div>
+  </div>
 </div>
+
+<!-- Chart -->
+<div id="chartsArea" class="mb-8 max-w-6xl mx-auto">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="text-xs uppercase tracking-wide text-gray-500 mb-1">Avg distance (m)</div>
+      <canvas id="chartAvgDistance"></canvas>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="text-xs uppercase tracking-wide text-gray-500 mb-1">Avg duration (min)</div>
+      <canvas id="chartAvgDuration"></canvas>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="text-xs uppercase tracking-wide text-gray-500 mb-1">Exercises by sport</div>
+      <canvas id="chartSportShare"></canvas>
+    </div>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mt-4">
+    <div class="text-xs uppercase tracking-wide text-gray-500 mb-1">Calories over time</div>
+    <canvas id="chartCaloriesLine"></canvas>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- Action bar -->
 <div class="bg-gray-50 min-h-screen">
@@ -201,7 +219,7 @@
   const LIST_JSON_URL = "{% url 'activities:activity_json_endpoint' %}";
   const editUrl = (id) => EDIT_URL_TEMPLATE.replace('00000000-0000-0000-0000-000000000000', id);
   const deleteUrl = (id) => DELETE_URL_TEMPLATE.replace('00000000-0000-0000-0000-000000000000', id);
-
+  
   // ---------- Duration formatting (no template tags) ----------
   function parseDurationToHM(str) {
     // supports "1 day, 2:03:00" and "02:03:00"
