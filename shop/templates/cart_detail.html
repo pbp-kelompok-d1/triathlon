@@ -6,48 +6,14 @@
 {% block content %}
 <div class="min-h-screen bg-white py-8">
     <div class="container mx-auto px-4">
-        <!-- Header with Breadcrumb -->
-        <div class="mb-8">
-            <nav class="flex mb-4" aria-label="Breadcrumb">
-                <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                    <li class="inline-flex items-center">
-                        <a href="{% url 'shop:shop' %}" class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors">
-                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
-                            </svg>
-                            <span class="text-sm font-medium">Shop</span>
-                        </a>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                            <span class="text-sm font-medium text-gray-500">Shopping Cart</span>
-                        </div>
-                    </li>
-                </ol>
-            </nav>
-            <h1 class="text-4xl font-bold text-gray-900 flex items-center">
-                <svg class="w-10 h-10 mr-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5-6m0 0L4 5M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"></path>
-                </svg>
-                Shopping Cart
-            </h1>
-        </div>
 
         {% csrf_token %}
 
-        <!-- Notification Area -->
-        <div id="notification-area" class="fixed top-5 right-5 z-50 space-y-2"></div>
-
         {% if cart_items %}
-        <!-- Cart Items -->
         <div class="bg-gray-50 rounded-2xl shadow-xl overflow-hidden mb-8 border border-gray-200">
-            <!-- Desktop View -->
             <div class="hidden lg:block">
                 <table class="w-full">
-                    <thead class="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
+                    <thead class="bg-blue-600 text-white">
                         <tr>
                             <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Product</th>
                             <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Price</th>
@@ -58,25 +24,34 @@
                     </thead>
                     <tbody class="bg-gray-50 divide-y divide-gray-200">
                         {% for item in cart_items %}
-                        <tr class="cart-item-row hover:bg-gray-50 transition-colors" data-item-id="{{ item.id }}" data-product-id="{{ item.product.id }}">
+                        <tr class="cart-item-row hover:bg-gray-50 transition-colors" data-item-id="{{ item.id }}"
+                            data-product-id="{{ item.product.id }}">
                             <td class="px-6 py-6">
                                 <div class="flex items-center">
                                     {% if item.product.thumbnail %}
-                                    <img src="{{ item.product.thumbnail }}" alt="{{ item.product.name }}" class="w-20 h-20 object-cover rounded-lg shadow-md mr-4">
+                                    <img src="{{ item.product.thumbnail }}" alt="{{ item.product.name }}"
+                                        class="w-20 h-20 object-cover rounded-lg shadow-md mr-4">
                                     {% else %}
-                                    <div class="w-20 h-20 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-lg mr-4 flex items-center justify-center shadow-md">
+                                    <div
+                                        class="w-20 h-20 bg-blue-100 rounded-lg mr-4 flex items-center justify-center shadow-md">
                                         <svg class="w-8 h-8 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+                                            <path fill-rule="evenodd"
+                                                d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                                                clip-rule="evenodd"></path>
                                         </svg>
                                     </div>
                                     {% endif %}
                                     <div>
-                                        <a href="{% url 'shop:product_detail' item.product.id %}" class="text-blue-600 hover:text-blue-800 font-semibold text-lg transition-colors">
+                                        <a href="{% url 'shop:product_detail' item.product.id %}"
+                                            class="text-blue-600 hover:text-blue-800 font-semibold text-lg transition-colors">
                                             {{ item.product.name }}
                                         </a>
                                         <p class="text-sm text-gray-500 mt-1 flex items-center">
-                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4">
+                                                </path>
                                             </svg>
                                             Stock: {{ item.product.stock }}
                                         </p>
@@ -84,46 +59,46 @@
                                 </div>
                             </td>
                             <td class="px-6 py-6">
-                                <span class="text-lg font-semibold text-gray-900">Rp {{ item.product.price|floatformat:0 }}</span>
+                                <span class="text-lg font-semibold text-gray-900">Rp {{ item.product.price }}</span>
                             </td>
                             <td class="px-6 py-6">
                                 <div class="flex items-center space-x-3 bg-gray-100 rounded-lg p-2">
-                                    <button type="button" 
-                                            class="decrease-quantity w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors"
-                                            data-item-id="{{ item.id }}">
+                                    <button type="button"
+                                        class="decrease-quantity w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors"
+                                        data-item-id="{{ item.id }}">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M20 12H4"></path>
                                         </svg>
                                     </button>
-                                    <input type="number" 
-                                           class="quantity-input w-16 text-center font-semibold bg-transparent border-0 text-gray-900" 
-                                           value="{{ item.quantity }}" 
-                                           min="1" 
-                                           max="{{ item.product.stock }}"
-                                           data-item-id="{{ item.id }}"
-                                           data-price="{{ item.product.price }}"
-                                           readonly>
-                                    <button type="button" 
-                                            class="increase-quantity w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors"
-                                            data-item-id="{{ item.id }}"
-                                            data-max-stock="{{ item.product.stock }}"
-                                            data-price="{{ item.product.price }}">
+                                    <input type="number"
+                                        class="quantity-input w-16 text-center font-semibold bg-transparent border-0 text-gray-900"
+                                        value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}"
+                                        data-item-id="{{ item.id }}" data-price="{{ item.product.price }}" readonly>
+                                    <button type="button"
+                                        class="increase-quantity w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors"
+                                        data-item-id="{{ item.id }}" data-max-stock="{{ item.product.stock }}"
+                                        data-price="{{ item.product.price }}">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                         </svg>
                                     </button>
                                 </div>
                             </td>
                             <td class="px-6 py-6">
-                                <span class="subtotal-price text-xl font-bold text-blue-600" data-item-id="{{ item.id }}">Rp {{ item.subtotal|floatformat:0 }}</span>
+                                <span class="subtotal-price text-xl font-bold text-blue-600"
+                                    data-item-id="{{ item.id }}">Rp {{ item.subtotal|floatformat:0 }}</span>
                             </td>
                             <td class="px-6 py-6">
-                                <button type="button" 
-                                        class="remove-from-cart-btn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center"
-                                        data-product-id="{{ item.product.id }}"
-                                        data-product-name="{{ item.product.name }}">
+                                <button type="button"
+                                    class="remove-from-cart-btn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center"
+                                    data-product-id="{{ item.product.id }}"
+                                    data-product-name="{{ item.product.name }}">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                        </path>
                                     </svg>
                                     Remove
                                 </button>
@@ -134,68 +109,73 @@
                 </table>
             </div>
 
-            <!-- Mobile View -->
             <div class="lg:hidden p-6 space-y-6 bg-white">
                 {% for item in cart_items %}
-                <div class="cart-item-row bg-gray-100 rounded-xl p-6 shadow-sm border border-gray-200" data-item-id="{{ item.id }}" data-product-id="{{ item.product.id }}">
+                <div class="cart-item-row bg-gray-100 rounded-xl p-6 shadow-sm border border-gray-200"
+                    data-item-id="{{ item.id }}" data-product-id="{{ item.product.id }}">
                     <div class="flex items-start space-x-4 mb-4">
                         {% if item.product.thumbnail %}
-                        <img src="{{ item.product.thumbnail }}" alt="{{ item.product.name }}" class="w-20 h-20 object-cover rounded-lg shadow-md">
+                        <img src="{{ item.product.thumbnail }}" alt="{{ item.product.name }}"
+                            class="w-20 h-20 object-cover rounded-lg shadow-md">
                         {% else %}
-                        <div class="w-20 h-20 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-lg flex items-center justify-center shadow-md">
+                        <div
+                            class="w-20 h-20 bg-blue-100 rounded-lg flex items-center justify-center shadow-md">
                             <svg class="w-8 h-8 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+                                <path fill-rule="evenodd"
+                                    d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                                    clip-rule="evenodd"></path>
                             </svg>
                         </div>
                         {% endif %}
                         <div class="flex-1">
-                            <a href="{% url 'shop:product_detail' item.product.id %}" class="text-blue-600 hover:text-blue-800 font-semibold text-lg transition-colors block">
+                            <a href="{% url 'shop:product_detail' item.product.id %}"
+                                class="text-blue-600 hover:text-blue-800 font-semibold text-lg transition-colors block">
                                 {{ item.product.name }}
                             </a>
                             <p class="text-sm text-gray-500 mt-1">Stock: {{ item.product.stock }}</p>
-                            <p class="text-lg font-semibold text-gray-900 mt-2">Rp {{ item.product.price|floatformat:0 }}</p>
+                            <p class="text-lg font-semibold text-gray-900 mt-2">Rp {{ item.product.price|floatformat:0
+                                }}</p>
                         </div>
                     </div>
 
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3 bg-white rounded-lg p-2 border border-gray-200">
-                            <button type="button" 
-                                    class="decrease-quantity w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors"
-                                    data-item-id="{{ item.id }}">
+                            <button type="button"
+                                class="decrease-quantity w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors"
+                                data-item-id="{{ item.id }}">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M20 12H4"></path>
                                 </svg>
                             </button>
-                            <input type="number" 
-                                   class="quantity-input w-16 text-center font-semibold bg-transparent border-0 text-gray-900" 
-                                   value="{{ item.quantity }}" 
-                                   min="1" 
-                                   max="{{ item.product.stock }}"
-                                   data-item-id="{{ item.id }}"
-                                   data-price="{{ item.product.price }}"
-                                   readonly>
-                            <button type="button" 
-                                    class="increase-quantity w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors"
-                                    data-item-id="{{ item.id }}"
-                                    data-max-stock="{{ item.product.stock }}"
-                                    data-price="{{ item.product.price }}">
+                            <input type="number"
+                                class="quantity-input w-16 text-center font-semibold bg-transparent border-0 text-gray-900"
+                                value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}"
+                                data-item-id="{{ item.id }}" data-price="{{ item.product.price }}" readonly>
+                            <button type="button"
+                                class="increase-quantity w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors"
+                                data-item-id="{{ item.id }}" data-max-stock="{{ item.product.stock }}"
+                                data-price="{{ item.product.price }}">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                 </svg>
                             </button>
                         </div>
                         <div class="text-right">
                             <p class="text-sm text-gray-500">Subtotal</p>
-                            <p class="subtotal-price text-xl font-bold text-blue-600" data-item-id="{{ item.id }}">Rp {{ item.subtotal|floatformat:0 }}</p>
+                            <p class="subtotal-price text-xl font-bold text-blue-600" data-item-id="{{ item.id }}">Rp
+                                {{ item.subtotal|floatformat:0 }}</p>
                         </div>
                     </div>
 
-                    <button type="button" 
-                            class="remove-from-cart-btn w-full mt-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center"
-                            data-product-id="{{ item.product.id }}"
-                            data-product-name="{{ item.product.name }}">
+                    <button type="button"
+                        class="remove-from-cart-btn w-full mt-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center"
+                        data-product-id="{{ item.product.id }}" data-product-name="{{ item.product.name }}">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                            </path>
                         </svg>
                         Remove from Cart
                     </button>
@@ -204,26 +184,30 @@
             </div>
         </div>
 
-        <!-- Cart Summary -->
         <div class="bg-gray-50 rounded-2xl shadow-xl p-8 border border-gray-200">
             <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-6 lg:space-y-0">
                 <div>
-                    <a href="{% url 'shop:shop' %}" class="inline-flex items-center bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg transition-colors duration-200">
+                    <a href="{% url 'shop:shop' %}"
+                        class="inline-flex items-center bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg transition-colors duration-200">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                         </svg>
                         Continue Shopping
                     </a>
                 </div>
-                
+
                 <div class="text-right">
                     <div class="bg-white border border-gray-200 rounded-xl p-6 mb-4 shadow-md">
                         <p class="text-sm text-gray-600 mb-2">Total Amount</p>
                         <p class="text-3xl font-bold text-blue-600" id="cart-total">Rp {{ total|floatformat:0 }}</p>
                     </div>
-                    <a href="{% url 'shop:checkout' %}" class="inline-flex items-center bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                    <a href="{% url 'shop:checkout' %}"
+                        class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
                         </svg>
                         Proceed to Checkout
                     </a>
@@ -232,18 +216,20 @@
         </div>
 
         {% else %}
-        <!-- Empty Cart -->
         <div class="bg-gray-50 rounded-2xl shadow-xl p-12 text-center border border-gray-200">
             <div class="max-w-md mx-auto">
-                <div class="w-32 h-32 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div class="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
                     <svg class="w-16 h-16 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                     </svg>
                 </div>
                 <h2 class="text-2xl font-bold text-gray-900 mb-4">Your cart is empty</h2>
-                <a href="{% url 'shop:shop' %}" class="inline-flex items-center bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-8 py-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                <a href="{% url 'shop:shop' %}"
+                    class="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white px-8 py-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                     Browse Products
                 </a>
@@ -253,99 +239,118 @@
     </div>
 </div>
 
+<div id="toast-component"
+    class="fixed bottom-5 right-5 z-[100] w-[28rem] max-w-[90vw] pointer-events-auto
+           flex items-start gap-3 px-4 py-3 rounded-xl border shadow-2xl bg-white
+           opacity-0 translate-y-64 transition-all duration-300">
+    <div id="toast-icon" class="mt-0.5 text-gray-500">●</div>
+    <div class="flex-1">
+        <div id="toast-title" class="font-semibold text-gray-800">Notice</div>
+        <div id="toast-message" class="text-sm text-gray-600">Message</div>
+    </div>
+    <button type="button" aria-label="Close"
+        class="text-gray-400 hover:text-gray-600"
+        onclick="(function(){const t=document.getElementById('toast-component');t.classList.remove('opacity-100','translate-y-0');t.classList.add('opacity-0','translate-y-64');})();">×</button>
+</div>
+
+<script src="{% static 'js/toast.js' %}"></script>
+
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-document.addEventListener('DOMContentLoaded', function() {
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    const notificationArea = document.getElementById('notification-area');
+        // Wrapper to use toast.js only
+        function showNotification(message, type = 'success') {
+            const title = type === 'error' ? 'Error' : type === 'info' ? 'Info' : 'Success';
+            if (typeof showToast === 'function') showToast(title, message, type, 5000);
+        }
 
-    function showNotification(message, type) {
-        const notification = document.createElement('div');
-        notification.className = `transform transition-all duration-300 ease-in-out translate-x-full`;
-        
-        const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-        notification.innerHTML = `
-            <div class="${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-center justify-between max-w-md">
-                <div class="flex items-center">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        ${type === 'success' 
-                            ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
-                            : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z"></path>'
-                        }
-                    </svg>
-                    <span class="font-medium">${message}</span>
-                </div>
-                <button class="ml-4 text-white hover:text-gray-200 transition-colors" onclick="this.closest('.transform').remove()">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-        `;
-        
-        notificationArea.appendChild(notification);
-        
-        // Animate in
-        setTimeout(() => notification.classList.remove('translate-x-full'), 10);
-        
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            notification.classList.add('translate-x-full');
-            setTimeout(() => notification.remove(), 300);
-        }, 5000);
-    }
+        function formatRupiah(number) {
+            return 'Rp ' + Math.floor(number).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
 
-    function formatRupiah(number) {
-        return 'Rp ' + Math.floor(number).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
-
-    function updateCartQuantity(itemId, newQuantity) {
-        return fetch('/shop/cart/update/' + itemId + '/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                'quantity': newQuantity
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                // Update subtotal di UI
-                const subtotalElements = document.querySelectorAll('.subtotal-price[data-item-id="' + itemId + '"]');
-                subtotalElements.forEach(el => {
-                    el.textContent = formatRupiah(data.subtotal);
+        function updateCartQuantity(itemId, newQuantity) {
+            return fetch('/shop/cart/update/' + itemId + '/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        quantity: newQuantity
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Update subtotal
+                        const subtotalElements = document.querySelectorAll('.subtotal-price[data-item-id="' + itemId + '"]');
+                        subtotalElements.forEach(el => {
+                            el.textContent = formatRupiah(data.subtotal);
+                        });
+                        // Update total
+                        document.getElementById('cart-total').textContent = formatRupiah(data.total);
+                        showNotification(data.message || 'Quantity updated', 'success');
+                    } else {
+                        showNotification(data.message || 'Failed to update quantity', 'error');
+                    }
+                    return data;
+                })
+                .catch(error => {
+                    showNotification('Error updating quantity', 'error');
+                    throw error;
                 });
-                
-                // Update total di UI
-                document.getElementById('cart-total').textContent = formatRupiah(data.total);
-                
-                showNotification(data.message, 'success');
+        }
+
+        // Function untuk show empty cart state
+        function showEmptyCartState() {
+            // Hide cart table dan cart summary
+            const cartTable = document.querySelector('.bg-gray-50.rounded-2xl.shadow-xl.overflow-hidden.mb-8');
+            const cartSummary = document.querySelector('.bg-gray-50.rounded-2xl.shadow-xl.p-8.border');
+            if (cartTable) cartTable.style.display = 'none';
+            if (cartSummary) cartSummary.style.display = 'none';
+
+            // Buat empty state HTML
+            const emptyCartHTML = `
+            <div class="bg-gray-50 rounded-2xl shadow-xl p-12 text-center border border-gray-200">
+                <div class="max-w-md mx-auto">
+                    <div class="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-16 h-16 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Your cart is empty</h2>
+                    <a href="{% url 'shop:shop' %}" class="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white px-8 py-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        Browse Products
+                    </a>
+                </div>
+            </div>`;
+
+            // Insert empty state setelah container utama jika ada, atau tambahkan ke body
+            const container = document.querySelector('.container.mx-auto.px-4');
+            if (container) {
+                container.innerHTML = emptyCartHTML; // Mengganti seluruh isi container
             } else {
-                showNotification(data.message || 'Failed to update quantity', 'error');
+                document.body.insertAdjacentHTML('beforeend', emptyCartHTML);
             }
-            return data;
-        })
-        .catch(error => {
-            showNotification('Error updating quantity', 'error');
-            throw error;
-        });
-    }
+        }
 
-    // Remove from cart
-    document.querySelectorAll('.remove-from-cart-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const productId = this.getAttribute('data-product-id');
-            const productName = this.getAttribute('data-product-name');
-            const row = this.closest('.cart-item-row');
+        // Remove from cart - LANGSUNG SHOW EMPTY STATE
+        document.querySelectorAll('.remove-from-cart-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const btnEl = this;
+                const originalHTML = btnEl.innerHTML;
+                const productId = btnEl.getAttribute('data-product-id');
+                const productName = btnEl.getAttribute('data-product-name');
+                const row = btnEl.closest('.cart-item-row');
 
-            if (confirm('Remove ' + productName + ' from cart?')) {
-                // Add loading state
-                this.disabled = true;
-                this.innerHTML = `
+                // LANGSUNG PROSES tanpa confirm dialog
+                btnEl.disabled = true;
+                btnEl.innerHTML = `
                     <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -354,93 +359,96 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
 
                 fetch('/shop/cart/remove/' + productId + '/', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(function(response) {
-                    return response.json();
-                })
-                .then(function(data) {
-                    if (data.status === 'success') {
-                        showNotification(data.message, 'success');
-                        
-                        // Animate removal
-                        row.style.transform = 'scale(0.95)';
-                        row.style.opacity = '0';
-                        setTimeout(function() {
-                            row.remove();
-                            
-                            const remainingItems = document.querySelectorAll('.cart-item-row');
-                            if (remainingItems.length === 0) {
-                                setTimeout(() => window.location.reload(), 1000);
-                            }
-                        }, 300);
-                    } else {
-                        showNotification(data.message || 'Failed to remove item', 'error');
-                        this.disabled = false;
-                        this.innerHTML = `
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
-                            Remove
-                        `;
-                    }
-                })
-                .catch(function(error) {
-                    showNotification('Error removing item from cart', 'error');
-                });
-            }
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            // TOAST SUCCESS: Produk berhasil dihapus
+                            showNotification(`${productName} removed from cart!`, 'success');
+
+                            // Animate removal
+                            row.style.transition = 'opacity 0.3s, transform 0.3s';
+                            row.style.transform = 'scale(0.95)';
+                            row.style.opacity = '0';
+
+                            setTimeout(function() {
+                                row.remove();
+                                const remainingItems = document.querySelectorAll('.cart-item-row');
+
+                                // CEK: Jika tidak ada item lagi, LANGSUNG show empty state
+                                if (remainingItems.length === 0) {
+                                    showNotification('Cart is now empty!', 'info');
+                                    // LANGSUNG show empty cart tanpa reload
+                                    setTimeout(() => {
+                                        showEmptyCartState();
+                                    }, 500);
+                                } else {
+                                    // Update total jika masih ada item
+                                    if (data.total !== undefined) {
+                                        document.getElementById('cart-total').textContent = formatRupiah(data.total);
+                                    }
+                                }
+                            }, 300);
+                        } else {
+                            // TOAST ERROR: Gagal hapus
+                            showNotification(data.message || 'Failed to remove item', 'error');
+                            btnEl.disabled = false;
+                            btnEl.innerHTML = originalHTML;
+                        }
+                    })
+                    .catch(() => {
+                        // TOAST ERROR: Network error
+                        showNotification('Network error. Please try again.', 'error');
+                        btnEl.disabled = false;
+                        btnEl.innerHTML = originalHTML;
+                    });
+            });
+        });
+
+        // Increase quantity
+        document.querySelectorAll('.increase-quantity').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const itemId = this.getAttribute('data-item-id');
+                const maxStock = parseInt(this.getAttribute('data-max-stock'));
+                const inputs = document.querySelectorAll('.quantity-input[data-item-id="' + itemId + '"]');
+                const currentQuantity = parseInt(inputs[0].value);
+
+                if (currentQuantity < maxStock) {
+                    const newQuantity = currentQuantity + 1;
+                    updateCartQuantity(itemId, newQuantity)
+                        .then(data => {
+                            if (data.status === 'success') inputs.forEach(input => input.value = newQuantity);
+                        });
+                } else {
+                    showNotification('Maximum stock reached', 'error');
+                }
+            });
+        });
+
+        // Decrease quantity
+        document.querySelectorAll('.decrease-quantity').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const itemId = this.getAttribute('data-item-id');
+                const inputs = document.querySelectorAll('.quantity-input[data-item-id="' + itemId + '"]');
+                const currentQuantity = parseInt(inputs[0].value);
+
+                if (currentQuantity > 1) {
+                    const newQuantity = currentQuantity - 1;
+                    updateCartQuantity(itemId, newQuantity)
+                        .then(data => {
+                            if (data.status === 'success') inputs.forEach(input => input.value = newQuantity);
+                        });
+                } else {
+                    showNotification('Minimum quantity is 1', 'error');
+                }
+            });
         });
     });
-
-    // Increase quantity
-    document.querySelectorAll('.increase-quantity').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const itemId = this.getAttribute('data-item-id');
-            const maxStock = parseInt(this.getAttribute('data-max-stock'));
-            const inputs = document.querySelectorAll('.quantity-input[data-item-id="' + itemId + '"]');
-            const currentQuantity = parseInt(inputs[0].value);
-
-            if (currentQuantity < maxStock) {
-                const newQuantity = currentQuantity + 1;
-                
-                updateCartQuantity(itemId, newQuantity)
-                .then(data => {
-                    if (data.status === 'success') {
-                        inputs.forEach(input => input.value = newQuantity);
-                    }
-                });
-            } else {
-                showNotification('Maximum stock reached', 'error');
-            }
-        });
-    });
-
-    // Decrease quantity
-    document.querySelectorAll('.decrease-quantity').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const itemId = this.getAttribute('data-item-id');
-            const inputs = document.querySelectorAll('.quantity-input[data-item-id="' + itemId + '"]');
-            const currentQuantity = parseInt(inputs[0].value);
-
-            if (currentQuantity > 1) {
-                const newQuantity = currentQuantity - 1;
-                
-                updateCartQuantity(itemId, newQuantity)
-                .then(data => {
-                    if (data.status === 'success') {
-                        inputs.forEach(input => input.value = newQuantity);
-                    }
-                });
-            } else {
-                showNotification('Minimum quantity is 1', 'error');
-            }
-        });
-    });
-});
 </script>
 {% endblock %}

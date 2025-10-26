@@ -244,8 +244,9 @@ def show_product(request):
 def product_detail(request, id):
     product = get_object_or_404(Product, pk=id)
 
+    in_wishlist = False
+
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        in_wishlist = False
         if request.user.is_authenticated:
             try:
                 wishlist = Wishlist.objects.filter(user=request.user).first()
@@ -276,7 +277,11 @@ def product_detail(request, id):
         
         return JsonResponse({'status': 'success', 'product': data})
 
-    return render(request, "product_detail.html", {'product_id': product.id})
+    return render(request, 'product_detail.html', {
+        'product': product,
+        'product_id': product.id,
+        'in_wishlist': in_wishlist,
+    })
 
 @login_required
 def delete_product(request, id):
