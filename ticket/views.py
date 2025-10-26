@@ -8,6 +8,7 @@ from .forms import TicketForm
 from django.contrib.auth.decorators import login_required
 from place.models import Place
 from django.core.exceptions import PermissionDenied
+from django.views.decorators.http import require_POST
 
 @login_required
 def ticket_list(request):
@@ -208,6 +209,7 @@ def ticket_update(request, id):
     return render(request, 'ticket/ticket_form.html', context)
 
 @login_required
+@require_POST
 def ticket_delete(request, id):  
     ticket = get_object_or_404(Ticket, pk=id)
     
@@ -298,3 +300,4 @@ def place_list_api(request):
         places = Place.objects.all().values('id', 'name', 'price')
         return JsonResponse({'places': list(places)})
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
