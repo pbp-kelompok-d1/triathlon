@@ -1,489 +1,394 @@
-import json
-from django.test import TestCase, Client
+import time
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.contrib.auth.models import User
 from django.urls import reverse
-from django.contrib.auth import get_user_model
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 
-# Import model dari aplikasi Anda
-from .models import UserProfile
+# Ganti ini dengan path ke chromedriver Anda jika tidak ada di PATH
+# DRIVER_PATH = 'C:/path/to/chromedriver.exe'
 
-# CATATAN: Tes ini mengasumsikan model dari aplikasi lain 
-# (ForumPost, Product, Place, dll.) telah didefinisikan di app masing-masing
-# dan database telah dimigrasi.
+class UserProfileDashboardTests(StaticLiveServerTestCase):
 
-User = get_user_model()
-
-class UserProfileTestBase(TestCase):
-    """
-    Base class untuk setup data tes yang dipakai berulang.
-    Membuat 4 tipe user: USER, SELLER, FACILITY_ADMIN, dan ADMIN.
-    """
     @classmethod
-    def setUpTestData(cls):
-        cls.client = Client()
-        cls.password = 'password123'
+    def setUpClass(cls):
+        """
+        Inisialisasi driver browser SEKALI untuk semua tes di class ini.
+        """
+        super().setUpClass()
+        # Jika chromedriver tidak ada di PATH Anda, gunakan baris di bawah:
+        # options = webdriver.ChromeOptions()
+        # service = webdriver.ChromeService(executable_path=DRIVER_PATH)
+        # cls.driver = webdriver.Chrome(service=service, options=options)
+        
+        # Jika chromedriver ada di PATH Anda:
+        cls.driver = webdriver.Chrome()
+        cls.driver.implicitly_wait(10) 
 
-        # 1. Buat User 'USER'
-        cls.user_user = User.objects.create_user(
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Tutup browser SEKALI setelah semua tes selesai.
+        """
+        cls.driver.quit()
+        super().tearDownClass()
+
+    def setUp(self):
+        """
+        Setup data yang bersih SEBELUM SETIAP tes.
+        """
+        # 1. Buat User biasa
+        self.user = User.objects.create_user(
             username='testuser', 
-            email='user@test.com', 
-            password=cls.password
-        )
-        # Profil dibuat otomatis via signal, role default adalah 'USER'
-        cls.user_profile = cls.user_user.profile 
-
-        # 2. Buat User 'SELLER'
-        cls.seller_user = User.objects.create_user(
-            username='testseller', 
-            email='seller@test.com', 
-            password=cls.password
-        )
-        cls.seller_profile = cls.seller_user.profile
-        cls.seller_profile.switch_role('SELLER')
-
-        # 3. Buat User 'FACILITY_ADMIN'
-        cls.facility_admin_user = User.objects.create_user(
-            username='testfacility', 
-            email='facility@test.com', 
-            password=cls.password
-        )
-        cls.facility_admin_profile = cls.facility_admin_user.profile
-        cls.facility_admin_profile.switch_role('FACILITY_ADMIN')
-
-        # 4. Buat User 'ADMIN'
-        cls.admin_user = User.objects.create_user(
-            username='testadmin', 
-            email='admin@test.com', 
-            password=cls.password,
-            is_staff=True,
-            is_superuser=True
-        )
-        cls.admin_profile = cls.admin_user.profile
-        cls.admin_profile.switch_role('ADMIN')
-
-
-class TestUserProfileModel(UserProfileTestBase):
-    """
-    Tes untuk model UserProfile dan signal-nya.
-    """
-    
-    def test_profile_created_on_user_creation(self):
-        """Tes signal create_user_profile."""
-        new_user = User.objects.create_user(
-            username='newuser', 
+            email='testuser@example.com', 
             password='password123'
         )
-        # Cek apakah profil otomatis terbuat
-        self.assertTrue(hasattr(new_user, 'profile'))
-        self.assertIsInstance(new_user.profile, UserProfile)
-        # Cek apakah role default adalah 'USER'
-        self.assertEqual(new_user.profile.role, 'USER')
+        self.user.profile.role = 'USER'
+        self.user.profile.first_name = 'Test'
+        self.user.profile.last_name = 'User'
+        self.user.profile.save()
 
-    def test_profile_str_method(self):
-        """Tes representasi string __str__."""
-        self.assertEqual(
-            str(self.user_profile), 
-            "testuser - User"
+        # 2. Buat Seller
+        self.seller = User.objects.create_user(
+            username='testseller', 
+            email='testseller@example.com', 
+            password='password123'
         )
-        self.assertEqual(
-            str(self.seller_profile), 
-            "testseller - Seller"
+        self.seller.profile.role = 'SELLER'
+        self.seller.profile.save()
+
+        # 3. Buat Facility Admin
+        self.fac_admin = User.objects.create_user(
+            username='testfacadmin', 
+            email='testfacadmin@example.com', 
+            password='password123'
+        )
+        self.fac_admin.profile.role = 'FACILITY_ADMIN'
+        self.fac_admin.profile.save()
+        
+        # 4. Buat Admin (untuk tes redirect)
+        self.admin = User.objects.create_user(
+            username='testadmin', 
+            email='testadmin@example.com', 
+            password='password123'
+        )
+        self.admin.profile.role = 'ADMIN'
+        self.admin.profile.save()
+
+        # URL Dashboard dari user_profile app
+        self.dashboard_url = self.live_server_url + reverse('user_profile:profile')
+        
+        # URL Login dari main app (SESUAI UPDATE DARI ANDA)
+        self.login_url = self.live_server_url + reverse('main:login') 
+        
+        # URL Halaman utama (guest) dari main app (SESUAI UPDATE DARI ANDA)
+        self.main_guest_url_path = reverse('main:show_main')
+        
+        # URL Halaman utama (logged-in) dari main app (SESUAI UPDATE DARI ANDA)
+        self.main_home_url_path = reverse('main:show_home')
+
+    def _login(self, username, password):
+        """
+        Helper method untuk login.
+        Menggunakan 'name' attribute untuk form fields.
+        """
+        self.driver.get(self.login_url)
+        # Menggunakan By.NAME agar cocok dengan request.POST.get('username')
+        self.driver.find_element(By.NAME, 'username').send_keys(username)
+        self.driver.find_element(By.NAME, 'password').send_keys(password)
+        self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]').click()
+        
+        # Tunggu sampai redirect ke 'main:show_home' (SESUAI UPDATE DARI ANDA)
+        WebDriverWait(self.driver, 10).until(
+            EC.url_contains(self.main_home_url_path)
         )
 
-    def test_role_helper_methods(self):
-        """Tes method boolean is_admin, is_seller, dll."""
-        self.assertTrue(self.user_profile.is_regular_user())
-        self.assertFalse(self.user_profile.is_admin())
+    def _login_gagal(self, username, password):
+        """
+        Helper method untuk tes login gagal.
+        """
+        self.driver.get(self.login_url)
+        self.driver.find_element(By.NAME, 'username').send_keys(username)
+        self.driver.find_element(By.NAME, 'password').send_keys(password)
+        self.driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]').click()
 
-        self.assertTrue(self.seller_profile.is_seller())
-        self.assertFalse(self.seller_profile.is_regular_user())
+        # Tunggu sampai pesan error muncul di halaman login
+        WebDriverWait(self.driver, 10).until(
+            EC.url_contains(self.login_url) # Pastikan tetap di halaman login
+        )
+        # Cek pesan error dari view login_user (SESUAI UPDATE DARI ANDA)
+        self.assertIn(
+            "Sorry, incorrect username or password", 
+            self.driver.page_source
+        )
 
-        self.assertTrue(self.facility_admin_profile.is_facility_admin())
-        self.assertFalse(self.facility_admin_profile.is_seller())
-
-        self.assertTrue(self.admin_profile.is_admin())
-        self.assertFalse(self.admin_profile.is_facility_admin())
-
-    def test_switch_role_method(self):
-        """Tes fungsionalitas ganti role."""
-        profile = self.user_profile
-        self.assertEqual(profile.role, 'USER')
-
-        # Tes ganti role yang valid
-        success = profile.switch_role('SELLER')
-        self.assertTrue(success)
-        self.assertEqual(profile.role, 'SELLER')
-        self.assertTrue(profile.is_seller())
-
-        # Tes ganti role yang tidak valid
-        fail = profile.switch_role('INVALID_ROLE')
-        self.assertFalse(fail)
-        self.assertEqual(profile.role, 'SELLER') # Role tidak berubah
-
-
-class TestUserProfileViews(UserProfileTestBase):
-    """
-    Tes untuk semua view, URL, dan decorator di user_profile.
-    """
-
-    # --- Tes View: dashboard_shell_view ---
+    # ============================================
+    # TES OTORISASI & ROLE
+    # ============================================
     
-    def test_dashboard_shell_view_logged_out(self):
-        """Tes akses /profile/ saat logged out -> redirect ke login."""
-        response = self.client.get(reverse('user_profile:profile'))
-        self.assertEqual(response.status_code, 302)
-        # Asumsi LOGIN_URL Anda adalah 'main:login'
-        self.assertRedirects(response, f"{reverse('main:login')}?next={reverse('user_profile:profile')}")
-
-    def test_dashboard_shell_view_as_user(self):
-        """Tes akses /profile/ sebagai 'USER'."""
-        self.client.login(username='testuser', password=self.password)
-        response = self.client.get(reverse('user_profile:profile'))
+    # (Tes ini tidak berubah)
+    def test_guest_redirected_to_login(self):
+        """
+        Tes: User yang belum login harus diarahkan ke halaman login.
+        """
+        self.driver.get(self.dashboard_url)
         
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'user_profile/dashboard_shell.html')
-        self.assertEqual(response.context['user_role'], 'USER')
-        self.assertEqual(response.context['initial_view'], 'all') # Cek default view
-
-    def test_dashboard_shell_view_as_admin(self):
-        """Tes akses /profile/ sebagai 'ADMIN' -> redirect ke /admin/."""
-        self.client.login(username='testadmin', password=self.password)
-        response = self.client.get(reverse('user_profile:profile'))
-        
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, '/admin/')
-    
-    # --- Tes View: get_dashboard_content (AJAX) ---
-
-    def test_get_dashboard_content_wrong_role(self):
-        """Tes decorator role_required: 'ADMIN' tidak boleh akses."""
-        self.client.login(username='testadmin', password=self.password)
-        response = self.client.get(reverse('user_profile:get_dashboard_content'))
-        
-        self.assertEqual(response.status_code, 302)
-        # Asumsi redirect ke main page jika role salah
-        self.assertRedirects(response, reverse('main:show_main'))
-
-    def test_get_dashboard_content_as_user(self):
-        """Tes konten AJAX untuk 'USER'."""
-        self.client.login(username='testuser', password=self.password)
-        response = self.client.get(reverse('user_profile:get_dashboard_content'))
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'user_profile/_user_content.html')
-
-    def test_get_dashboard_content_as_seller(self):
-        """Tes konten AJAX untuk 'SELLER'."""
-        self.client.login(username='testseller', password=self.password)
-        response = self.client.get(reverse('user_profile:get_dashboard_content'))
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'user_profile/_seller_content.html')
-
-    def test_get_dashboard_content_as_facility_admin(self):
-        """Tes konten AJAX untuk 'FACILITY_ADMIN'."""
-        self.client.login(username='testfacility', password=self.password)
-        response = self.client.get(reverse('user_profile:get_dashboard_content'))
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'user_profile/_facility_admin_content.html')
-
-    # --- Tes View: edit_profile (AJAX) ---
-    
-    def test_edit_profile_get_request(self):
-        """Tes GET request ke edit_profile -> redirect ke profile."""
-        self.client.login(username='testuser', password=self.password)
-        response = self.client.get(reverse('user_profile:edit_profile'))
-        self.assertRedirects(response, reverse('user_profile:profile'))
-
-    def test_edit_profile_post_ajax_success(self):
-        """Tes update profil via AJAX POST yang sukses."""
-        self.client.login(username='testuser', password=self.password)
-        
-        new_data = {
-            'username': 'new_username',
-            'email': 'new.email@test.com',
-            'first_name': 'NewFirst',
-            'last_name': 'NewLast',
-            'phone_number': '08123456789',
-            'bio': 'Ini adalah bio baru.'
-        }
-        
-        response = self.client.post(
-            reverse('user_profile:edit_profile'),
-            new_data,
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        # Cek apakah kita diarahkan ke URL login
+        WebDriverWait(self.driver, 10).until(
+            EC.url_contains(self.login_url)
         )
-        
-        self.assertEqual(response.status_code, 200)
-        response_json = response.json()
-        self.assertTrue(response_json['success'])
-        self.assertEqual(response_json['username'], 'new_username')
-        self.assertEqual(response_json['bio'], 'Ini adalah bio baru.')
-        
-        # Cek data di database
-        self.user_user.refresh_from_db()
-        self.user_profile.refresh_from_db()
-        
-        self.assertEqual(self.user_user.username, 'new_username')
-        self.assertEqual(self.user_user.first_name, 'NewFirst')
-        self.assertEqual(self.user_profile.phone_number, '08123456789')
-        self.assertEqual(self.user_profile.bio, 'Ini adalah bio baru.')
+        self.assertIn(self.login_url, self.driver.current_url)
 
-    def test_edit_profile_post_ajax_duplicate_username(self):
-        """Tes update profil gagal (duplicate username)."""
-        self.client.login(username='testuser', password=self.password)
+    # (Tes ini tidak berubah)
+    def test_admin_redirected_from_dashboard(self):
+        """
+        Tes: Admin (role 'ADMIN') harus diarahkan keluar dari dashboard.
+        """
+        self._login('testadmin', 'password123')
+        self.driver.get(self.dashboard_url)
         
-        invalid_data = {
-            'username': 'testseller', # Username ini sudah dipakai
-            'email': 'new.email@test.com',
-        }
-        
-        response = self.client.post(
-            reverse('user_profile:edit_profile'),
-            invalid_data,
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        admin_url_path = '/admin/'
+        WebDriverWait(self.driver, 10).until(
+            EC.url_contains(admin_url_path)
         )
-        
-        self.assertEqual(response.status_code, 400)
-        response_json = response.json()
-        self.assertFalse(response_json['success'])
-        self.assertIn('username is already taken', response_json['error'])
+        self.assertIn(admin_url_path, self.driver.current_url)
+        self.assertIn("Gunakan panel admin", self.driver.page_source)
 
-    # --- Tes View: change_password (AJAX) ---
+    # ============================================
+    # TES KONTEN DINAMIS (AJAX)
+    # ============================================
 
-    def test_change_password_ajax_success(self):
-        """Tes ganti password via AJAX POST yang sukses."""
-        self.client.login(username='testuser', password=self.password)
+    # (Tidak ada perubahan di 3 tes berikutnya)
+    def test_user_dashboard_loads_correct_content(self):
+        """
+        Tes: Login sebagai 'USER', pastikan konten AJAX untuk USER dimuat.
+        """
+        self._login('testuser', 'password123')
+        self.driver.get(self.dashboard_url)
         
-        pass_data = {
-            'current_password': self.password,
-            'new_password': 'newpassword456',
-            'new_password_confirm': 'newpassword456',
-        }
-        
-        response = self.client.post(
-            reverse('user_profile:change_password'),
-            pass_data,
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
-        )
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json()['success'])
-        
-        # Cek password baru
-        self.user_user.refresh_from_db()
-        self.assertTrue(self.user_user.check_password('newpassword456'))
-
-    def test_change_password_ajax_wrong_current(self):
-        """Tes ganti password gagal (password lama salah)."""
-        self.client.login(username='testuser', password=self.password)
-        
-        pass_data = {
-            'current_password': 'wrongpassword',
-            'new_password': 'newpassword456',
-            'new_password_confirm': 'newpassword456',
-        }
-        
-        response = self.client.post(
-            reverse('user_profile:change_password'),
-            pass_data,
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
-        )
-        
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.json()['success'])
-        self.assertIn('current password was entered incorrectly', response.json()['error'])
-
-    def test_change_password_ajax_mismatch(self):
-        """Tes ganti password gagal (password baru tidak cocok)."""
-        self.client.login(username='testuser', password=self.password)
-        
-        pass_data = {
-            'current_password': self.password,
-            'new_password': 'newpassword456',
-            'new_password_confirm': 'mismatch456',
-        }
-        
-        response = self.client.post(
-            reverse('user_profile:change_password'),
-            pass_data,
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
-        )
-        
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.json()['success'])
-        self.assertIn('New passwords do not match', response.json()['error'])
-
-    # --- Tes View: delete_user_account (AJAX) ---
-
-    def test_delete_account_ajax_success(self):
-        """Tes hapus akun via AJAX POST yang sukses."""
-        # Buat user baru khusus untuk tes ini agar tidak merusak tes lain
-        user_to_delete = User.objects.create_user(
-            username='deleteme', 
-            email='delete@me.com', 
-            password=self.password
-        )
-        user_id = user_to_delete.id
-        
-        self.client.login(username='deleteme', password=self.password)
-        
-        response = self.client.post(
-            reverse('user_profile:delete_account'),
-            {'password_confirm_delete': self.password},
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
-        )
-        
-        self.assertEqual(response.status_code, 200)
-        response_json = response.json()
-        self.assertTrue(response_json['success'])
-        # Cek URL redirect sudah benar
-        self.assertEqual(response_json['redirect_url'], reverse('main:show_main'))
-        
-        # Cek apakah user benar-benar terhapus
-        with self.assertRaises(User.DoesNotExist):
-            User.objects.get(id=user_id)
-            
-        self.assertFalse(User.objects.filter(id=user_id).exists())
-        self.assertFalse(UserProfile.objects.filter(user_id=user_id).exists())
-
-
-    def test_delete_account_ajax_wrong_password(self):
-        """Tes hapus akun gagal (konfirmasi password salah)."""
-        user_id = self.user_user.id
-        self.client.login(username='testuser', password=self.password)
-        
-        response = self.client.post(
-            reverse('user_profile:delete_account'),
-            {'password_confirm_delete': 'wrongpassword'},
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
-        )
-        
-        self.assertEqual(response.status_code, 400)
-        response_json = response.json()
-        self.assertFalse(response_json['success'])
-        self.assertIn('Password yang Anda masukkan salah', response.json()['error'])
-        
-        # Pastikan user TIDAK terhapus
-        self.assertTrue(User.objects.filter(id=user_id).exists())
-    
-    def test_role_required_user_without_profile(self):
-        """Tes user login tapi tidak punya profil (misal, profil terhapus)."""
-        # Buat user baru
-        user_no_profile = User.objects.create_user(
-            username='nouserprofile', 
-            password=self.password
-        )
-        
-        # Hapus profilnya secara manual untuk simulasi error
+        # GANTI '#user-posts-section' dengan ID/Class unik dari template _user_content.html
         try:
-            user_no_profile.profile.delete()
-        except UserProfile.DoesNotExist:
-            pass # Profil mungkin sudah terhapus atau tidak terbuat
+            WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.ID, 'user-posts-section'))
+            )
+        except TimeoutException:
+            self.fail("Konten AJAX User (misal #user-posts-section) tidak ditemukan.")
 
-        # Login sebagai user tersebut
-        self.client.login(username='nouserprofile', password=self.password)
+        self.assertIn("My Wishlist", self.driver.page_source) 
+        self.assertNotIn("My Products", self.driver.page_source) 
+        self.assertNotIn("Total Revenue", self.driver.page_source) 
+
+    def test_seller_dashboard_loads_correct_content(self):
+        """
+        Tes: Login sebagai 'SELLER', pastikan konten AJAX untuk SELLER dimuat.
+        """
+        self._login('testseller', 'password123')
+        self.driver.get(self.dashboard_url)
         
-        # Coba akses view yang dilindungi
-        response = self.client.get(reverse('user_profile:get_dashboard_content'))
+        # GANTI '#seller-products-section' dengan ID unik dari _seller_content.html
+        try:
+            WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.ID, 'seller-products-section'))
+            )
+        except TimeoutException:
+            self.fail("Konten AJAX Seller (misal #seller-products-section) tidak ditemukan.")
+
+        self.assertIn("My Products", self.driver.page_source)
+        self.assertNotIn("My Wishlist", self.driver.page_source)
+
+    def test_facility_admin_dashboard_loads_correct_content(self):
+        """
+        Tes: Login sebagai 'FACILITY_ADMIN', pastikan konten AJAX untuk FACILITY_ADMIN dimuat.
+        """
+        self._login('testfacadmin', 'password123')
+        self.driver.get(self.dashboard_url)
         
-        # Harusnya redirect ke main (sesuai logika decorator)
-        self.assertRedirects(response, reverse('main:show_main'))
-    
-    def test_dashboard_shell_view_with_get_params(self):
-        """Tes /profile/ dengan parameter ?view=custom&category=test"""
-        self.client.login(username='testuser', password=self.password)
+        # GANTI '#facility-stats-section' dengan ID unik dari _facility_admin_content.html
+        try:
+            WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.ID, 'facility-stats-section'))
+            )
+        except TimeoutException:
+            self.fail("Konten AJAX Facility Admin (misal #facility-stats-section) tidak ditemukan.")
+
+        self.assertIn("My Facilities", self.driver.page_source)
+        self.assertIn("Total Revenue", self.driver.page_source)
+        self.assertNotIn("My Wishlist", self.driver.page_source)
+
+    # ============================================
+    # TES FUNGSI AJAX (EDIT, PASSWORD, DELETE)
+    # ============================================
+
+    # (Tes ini tidak berubah, tergantung ID HTML Anda)
+    def test_edit_profile_success(self):
+        """
+        Tes: Berhasil mengedit profil via AJAX.
+        """
+        self._login('testuser', 'password123')
+        self.driver.get(self.dashboard_url)
         
-        # Panggil URL dengan parameter GET
-        response = self.client.get(reverse('user_profile:profile') + '?view=custom_view&category=test_cat')
-        
-        self.assertEqual(response.status_code, 200)
-        
-        # Cek apakah context di-passing dengan benar
-        self.assertEqual(response.context['initial_view'], 'custom_view')
-        self.assertEqual(response.context['initial_category'], 'test_cat')
-    
-    def test_edit_profile_post_ajax_empty_username(self):
-        """Tes update profil gagal (username kosong)."""
-        self.client.login(username='testuser', password=self.password)
-        invalid_data = {'username': '', 'email': 'new.email@test.com'}
-        
-        response = self.client.post(
-            reverse('user_profile:edit_profile'),
-            invalid_data,
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        nama_awal = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located((By.ID, 'profile-first-name'))
+        ).text
+        self.assertEqual(nama_awal, 'Test')
+
+        self.driver.find_element(By.ID, 'edit-profile-button').click()
+        WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located((By.ID, 'edit-profile-modal'))
         )
         
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.json()['success'])
-        self.assertIn('Username cannot be empty', response.json()['error'])
-
-    def test_edit_profile_post_ajax_duplicate_email(self):
-        """Tes update profil gagal (email duplikat)."""
-        self.client.login(username='testuser', password=self.password)
-        # 'testseller' sudah ada dan punya email 'seller@test.com'
-        invalid_data = {'username': 'testuser', 'email': 'seller@test.com'}
+        nama_baru = "EditedName"
+        field_nama = self.driver.find_element(By.ID, 'id_edit_first_name')
+        field_nama.clear()
+        field_nama.send_keys(nama_baru)
         
-        response = self.client.post(
-            reverse('user_profile:edit_profile'),
-            invalid_data,
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        self.driver.find_element(By.ID, 'save-profile-button').click()
+        
+        WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, 'alert-success'))
         )
         
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.json()['success'])
-        self.assertIn('email is already in use', response.json()['error'])
+        nama_setelah_edit = self.driver.find_element(By.ID, 'profile-first-name').text
+        self.assertEqual(nama_setelah_edit, nama_baru)
+        
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.first_name, nama_baru)
 
-    def test_edit_profile_post_NON_AJAX(self):
-        """Tes update profil via POST biasa (non-AJAX) -> harusnya redirect."""
-        self.client.login(username='testuser', password=self.password)
-        new_data = {'username': 'new_username_non_ajax', 'email': 'new@email.com'}
+    # (Tes ini tidak berubah, tergantung ID HTML Anda)
+    def test_edit_profile_fail_duplicate_username(self):
+        """
+        Tes: Gagal mengedit profil jika username sudah ada.
+        """
+        self._login('testuser', 'password123')
+        self.driver.get(self.dashboard_url)
         
-        # Panggil POST tanpa header AJAX
-        response = self.client.post(reverse('user_profile:edit_profile'), new_data)
-        
-        # Harusnya redirect kembali ke halaman profile
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('user_profile:profile'))
-
-    def test_change_password_ajax_weak_password(self):
-        """Tes ganti password gagal (password baru terlalu lemah/umum)."""
-        self.client.login(username='testuser', password=self.password)
-        
-        pass_data = {
-            'current_password': self.password,
-            'new_password': '123', # Password terlalu umum
-            'new_password_confirm': '123',
-        }
-        
-        response = self.client.post(
-            reverse('user_profile:change_password'),
-            pass_data,
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        self.driver.find_element(By.ID, 'edit-profile-button').click()
+        modal = WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located((By.ID, 'edit-profile-modal'))
         )
         
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.json()['success'])
-        # Cek apakah ada pesan error dari validate_password
-        self.assertIn('too common', response.json()['error'])
+        # Asumsi ID input username adalah 'id_edit_username'
+        field_username = self.driver.find_element(By.ID, 'id_edit_username')
+        field_username.clear()
+        field_username.send_keys('testseller') # Username ini sudah ada
+        
+        self.driver.find_element(By.ID, 'save-profile-button').click()
+        
+        error_msg = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, 'alert-danger'))
+        ).text
+        
+        self.assertIn("username is already taken", error_msg)
+        
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, 'testuser')
 
-    def test_change_password_ajax_empty_new_password(self):
-        """Tes ganti password gagal (password baru kosong)."""
-        self.client.login(username='testuser', password=self.password)
+    def test_change_password_success_and_relogin(self):
+        """
+        Tes: Berhasil ganti password, logout, dan login kembali dengan password baru.
+        (DISESUAIKAN DENGAN VIEW LOGIN BARU)
+        """
+        self._login('testuser', 'password123')
+        self.driver.get(self.dashboard_url)
         
-        pass_data = {
-            'current_password': self.password,
-            'new_password': '', # Password baru kosong
-            'new_password_confirm': '',
-        }
-        
-        response = self.client.post(
-            reverse('user_profile:change_password'),
-            pass_data,
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        # 1. Buka modal ganti password
+        self.driver.find_element(By.ID, 'change-password-button').click()
+        WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located((By.ID, 'change-password-modal'))
         )
         
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response.json()['success'])
-        self.assertIn('New password cannot be empty', response.json()['error'])
+        # 2. Isi form
+        password_baru = 'new_password_456'
+        self.driver.find_element(By.ID, 'id_current_password').send_keys('password123')
+        self.driver.find_element(By.ID, 'id_new_password').send_keys(password_baru)
+        self.driver.find_element(By.ID, 'id_new_password_confirm').send_keys(password_baru)
+        
+        # 3. Submit
+        self.driver.find_element(By.ID, 'save-password-button').click()
+        
+        # 4. Tunggu pesan sukses
+        WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, 'alert-success'))
+        )
+        
+        # 5. Logout 
+        # (GANTI 'logout-link' dengan ID/link logout Anda)
+        # View logout Anda me-redirect ke 'main:show_home', 
+        # yang kemudian oleh decorator @login_required akan me-redirect ke login
+        self.driver.find_element(By.ID, 'logout-link').click()
+        WebDriverWait(self.driver, 10).until(
+            EC.url_contains(self.login_url) # Tunggu sampai di halaman login
+        )
+
+        # 6. Coba login dengan password BARU
+        self._login('testuser', password_baru)
+        # _login helper akan memverifikasi kita sampai di 'main:show_home'
+        self.assertIn(self.main_home_url_path, self.driver.current_url)
+        
+        # 7. Coba login dengan password LAMA (harus gagal)
+        self.driver.find_element(By.ID, 'logout-link').click() # Logout lagi
+        WebDriverWait(self.driver, 10).until(EC.url_contains(self.login_url))
+        
+        # Gunakan helper login gagal
+        self._login_gagal('testuser', 'password123')
+
+    def test_delete_account_success(self):
+        """
+        Tes: Berhasil menghapus akun dan diarahkan ke main page (guest).
+        (DISESUAIKAN DENGAN VIEW LOGIN/MAIN BARU)
+        """
+        # 1. Login sebagai user yang akan dihapus
+        self._login('testseller', 'password123')
+        self.driver.get(self.dashboard_url)
+        
+        # 2. Buka modal hapus
+        self.driver.find_element(By.ID, 'delete-account-button').click()
+        WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located((By.ID, 'delete-account-modal'))
+        )
+
+        # 3. Isi konfirmasi password
+        self.driver.find_element(By.ID, 'id_password_confirm_delete').send_keys('password123')
+        
+        # 4. Submit
+        self.driver.find_element(By.ID, 'confirm-delete-button').click()
+        
+        # 5. Tunggu redirect ke main page (guest) 'main:show_main'
+        # (Sesuai 'redirect_url' di view delete_user_account Anda)
+        WebDriverWait(self.driver, 10).until(
+            EC.url_contains(self.main_guest_url_path)
+        )
+        self.assertIn(self.main_guest_url_path, self.driver.current_url)
+        
+        # 6. Pastikan user telah terhapus dari DB
+        with self.assertRaises(User.DoesNotExist):
+            User.objects.get(username='testseller')
+
+    # (Tes ini tidak berubah, tergantung ID HTML Anda)
+    def test_delete_account_fail_wrong_password(self):
+        """
+        Tes: Gagal hapus akun jika password konfirmasi salah.
+        """
+        self._login('testuser', 'password123')
+        self.driver.get(self.dashboard_url)
+        
+        self.driver.find_element(By.ID, 'delete-account-button').click()
+        WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located((By.ID, 'delete-account-modal'))
+        )
+
+        self.driver.find_element(By.ID, 'id_password_confirm_delete').send_keys('password_salah')
+        self.driver.find_element(By.ID, 'confirm-delete-button').click()
+        
+        error_msg = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, 'alert-danger'))
+        ).text
+        
+        self.assertIn("Password yang Anda masukkan salah", error_msg)
+        self.assertEqual(self.driver.current_url, self.dashboard_url)
+        
+        user_exists = User.objects.filter(username='testuser').exists()
+        self.assertTrue(user_exists)

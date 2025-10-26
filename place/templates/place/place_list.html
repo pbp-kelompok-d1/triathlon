@@ -11,8 +11,7 @@
 
 <section
   
-  class="relative text-center p-4 md:p-8 bg-cover bg-center py-16" {# <-- UBAH CLASS DI SINI #}
-  style="background-image: url('{% static 'img/hero-background2.png' %}');"> 
+  class="relative py-16 flex items-center justify-center text-center p-4 md:p-8 bg-cover bg-center hero-bg-image"> 
   
   <div class="absolute inset-0 bg-black opacity-50 z-0"></div> {# Overlay tetap #}
 
@@ -55,16 +54,65 @@
   {% endif %}
 </section>
 
-<div class="max-w-7xl mx-auto py-10 px-4"> {# Ini div utama untuk semua konten di bawah hero #}
+  {% if province_stats %}
+  <div class="mt-16 mb-8">
+    <div class="text-center mb-8">
+      <h1 class="text-6xl font-bold text-gray-900 mb-2">Explore by Province</h2>
+      <p class="text-gray-600">Discover venues across Indonesia</p>
+    </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+      {% for stat in province_stats %}
+      <a href="?province={{ stat.province|urlencode }}"
+  class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 h-40">
 
-  {% if is_facility_admin %}
+  <div class="absolute inset-0">
+    <img 
+      src="{% static 'img/provinces/' %}{{ stat.province|slugify }}.jpg" 
+      alt="{{ stat.province }}" 
+      class="w-full h-full object-cover"
+    >
+  </div>
+
+  <div class="absolute inset-0 bg-black bg-opacity-50 group-hover:bg-opacity-60 transition"></div>
+
+        <div class="absolute top-3 right-3 text-4xl opacity-20 group-hover:opacity-30 transition">
+          {% if 'Bali' in stat.province %}🏝️{% elif 'Jakarta' in stat.province %}🏙️{% elif 'Jawa' in stat.province %}🌋{% elif 'Sumatra' in stat.province %}🌴{% elif 'Kalimantan' in stat.province %}🌲{% elif 'Sulawesi' in stat.province %}🦜{% else %}🗺️{% endif %}
+        </div>
+
+            <div class="relative h-full p-5 flex flex-col justify-between text-white z-10">
+            <div>
+              <h3 class="font-bold text-lg mb-1 group-hover:scale-105 transition">{{ stat.province }}</h3>
+            </div>
+            <div>
+              <div class="flex items-end justify-between">
+                <div>
+                  <p class="text-3xl font-black">{{ stat.count }}</p>
+                  <p class="text-xs text-white/80 font-medium">venue{{ stat.count|pluralize }}</p>
+                </div>
+                <div class="text-white/80 group-hover:translate-x-1 transition">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  <div class="max-w-7xl mx-auto py-10 px-4"> {# Ini div utama untuk semua konten di bawah hero #}
+
+  {% if is_facility_admin or is_admin %}
   <div class="mb-6 flex justify-end gap-3">
     <a href="{% url 'place:add_place' %}" class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
       <span class="text-lg">+</span> Tambah Tempat
     </a>
   </div>
   <div class="mb-6 p-5 border-2 border-dashed border-gray-300 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100">
-    <h3 class="font-bold text-lg mb-3 text-gray-800">⚙️ Load Data Awal (Admin Only)</h3>
+    <h3 class="font-bold text-lg mb-3 text-gray-800">⚙️ Load Data Awal</h3>
     <div class="flex flex-wrap gap-3">
       <a href="{% url 'place:load_cycling' %}" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
         🚴 Load Cycling Places
@@ -79,8 +127,7 @@
   </div>
   {% endif %}
 
-
-  <div class="mb-8 bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+    <div class="mb-8 bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
     <form id="searchForm" method="GET">
       <div class="relative mb-6">
         <span class="absolute inset-y-0 left-0 flex items-center pl-5">
@@ -116,7 +163,7 @@
         </button>
         {% endfor %}
 
-        {% if is_facility_admin %}
+        {% if is_facility_admin  %}
         <button type="button" data-filter="my_places" class="filter-btn flex-shrink-0 px-5 py-2.5 rounded-full text-sm font-bold transition-all {% if filter_type == 'my_places' %}bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg scale-105{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105{% endif %}">
           👤 My Places
         </button>
@@ -124,6 +171,7 @@
       </div>
     </form>
   </div>
+
 
   <div id="loadingSpinner" class="hidden text-center py-16">
     <div class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent"></div>
@@ -134,47 +182,7 @@
     {% include 'place/partials/venue_cards.html' %}
   </div>
 
-  {% if province_stats %}
-  <div class="mt-16 mb-8">
-    <div class="text-center mb-8">
-      <h2 class="text-3xl font-bold text-gray-900 mb-2">📍 Explore by Province</h2>
-      <p class="text-gray-600">Discover venues across Indonesia</p>
-    </div>
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-      {% for stat in province_stats %}
-      <a href="?province={{ stat.province|urlencode }}"
-          class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 h-40">
-        <div class="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 opacity-90 group-hover:opacity-100 transition"></div>
-
-        <div class="absolute top-3 right-3 text-4xl opacity-20 group-hover:opacity-30 transition">
-          {% if 'Bali' in stat.province %}🏝️{% elif 'Jakarta' in stat.province %}🏙️{% elif 'Jawa' in stat.province %}🌋{% elif 'Sumatra' in stat.province %}🌴{% elif 'Kalimantan' in stat.province %}🌲{% elif 'Sulawesi' in stat.province %}🦜{% else %}🗺️{% endif %}
-        </div>
-
-        <div class="relative h-full p-5 flex flex-col justify-between text-white">
-          <div>
-            <h3 class="font-bold text-lg mb-1 group-hover:scale-105 transition">{{ stat.province }}</h3>
-          </div>
-          <div>
-            <div class="flex items-end justify-between">
-              <div>
-                <p class="text-3xl font-black">{{ stat.count }}</p>
-                <p class="text-xs text-white/80 font-medium">venue{{ stat.count|pluralize }}</p>
-              </div>
-              <div class="text-white/80 group-hover:translate-x-1 transition">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-      </a>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-</div>
-
+  
 <style>
 /* ... (Bagian <style> tidak berubah, kecuali jika ada penyesuaian baru untuk Featured card) ... */
 

@@ -56,7 +56,7 @@
                             <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-gray-50 divide-y divide-gray-200">
+                    <tbody class="bg-white divide-y divide-gray-200">
                         {% for item in cart_items %}
                         <tr class="cart-item-row hover:bg-gray-50 transition-colors" data-item-id="{{ item.id }}" data-product-id="{{ item.product.id }}">
                             <td class="px-6 py-6">
@@ -254,7 +254,7 @@
 </div>
 
 <script>
-
+// ...existing code... (JavaScript tetap sama)
 document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     const notificationArea = document.getElementById('notification-area');
