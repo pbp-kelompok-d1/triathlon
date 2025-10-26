@@ -53,7 +53,7 @@ def dashboard_shell_view(request):
     # Handle role yang tidak punya dashboard
     if role == 'ADMIN':
         messages.info(request, "Gunakan panel admin untuk mengelola sistem.")
-        return redirect('/admin/')
+        return redirect('user_profile:admin_dashboard')
     if role not in ['USER', 'SELLER', 'FACILITY_ADMIN']:
         messages.warning(request, "Role tidak dikenali.")
         return redirect('main:show_main')
@@ -252,6 +252,17 @@ def edit_profile(request):
             # 4. Simpan ke model UserProfile
             profile.phone_number = phone_number
             profile.bio = bio
+            if 'profile_picture' in request.FILES:
+                new_picture = request.FILES['profile_picture']
+                
+                # Opsional: Hapus foto lama jika ada & bukan default
+                if profile.profile_picture and profile.profile_picture.name != 'img/default_profile.png':
+                    try:
+                        profile.profile_picture.delete(save=False) # Hapus file lama dari storage
+                    except Exception as e:
+                        print(f"Error deleting old profile pic: {e}")
+                
+                profile.profile_picture = new_picture
             profile.save() # Simpan perubahan Profile
             
             if is_ajax:
@@ -265,6 +276,7 @@ def edit_profile(request):
                     'last_name': user.last_name,
                     'phone_number': profile.phone_number,
                     'bio': profile.bio,
+                    'profile_picture_url': profile.profile_picture.url
                 })
             else:
                 messages.success(request, "Profil berhasil diperbarui.")
@@ -381,3 +393,160 @@ def delete_user_account(request):
     except Exception as e:
         # Tangkap error server lainnya
         return JsonResponse({'success': False, 'error': f'Terjadi kesalahan: {str(e)}'}, status=500)
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.models import User
+from .models import UserProfile
+from django.http import JsonResponse
+from django.db import IntegrityError
+from django.views.decorators.http import require_POST
+import json
+
+
+# --- VIEWS HALAMAN UTAMA ---
+
+@login_required
+@role_required(['ADMIN'])
+def admin_dashboard_view(request):
+    """
+    Menampilkan halaman utama Admin Dashboard.
+    Data tabel akan di-load via AJAX.
+    """
+    # Kirim role choices ke template untuk mengisi dropdown filter
+    role_choices = UserProfile.ROLE_CHOICES
+    context = {
+        'user_role': request.user.profile.role, # Untuk sidebar
+        'role_choices': role_choices
+    }
+    return render(request, 'user_profile/admin_dashboard.html', context)
+
+
+# --- AJAX VIEWS (Dipanggil oleh JavaScript) ---
+
+@login_required
+@role_required(['ADMIN'])
+def get_admin_user_list(request):
+    """
+    [AJAX GET] Mengambil daftar user (dalam bentuk partial HTML)
+    untuk ditampilkan di tabel.
+    """
+    role_filter = request.GET.get('role', '')
+    
+    # Ambil semua profile, join dengan user
+    users_list = UserProfile.objects.select_related('user').all().order_by('user__username')
+    
+    if role_filter:
+        users_list = users_list.filter(role=role_filter)
+        
+    context = {
+        'users_list': users_list,
+        'current_admin_id': request.user.id # Untuk disable tombol delete diri sendiri
+    }
+    return render(request, 'user_profile/admin_user_list_partial.html', context)
+
+
+@login_required
+@role_required(['ADMIN'])
+@require_POST
+def admin_update_user_view(request):
+    """
+    [AJAX POST] Meng-update detail user dari modal edit admin.
+    """
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Bad request.'}, status=400)
+
+    try:
+        data = json.loads(request.body)
+        user_id = data.get('user_id')
+        
+        user_to_edit = User.objects.get(id=user_id)
+        profile_to_edit = user_to_edit.profile
+
+        # Validasi data
+        new_username = data.get('username')
+        new_email = data.get('email')
+        new_role = data.get('role')
+
+        if not all([user_id, new_username, new_email, new_role]):
+             return JsonResponse({'success': False, 'error': 'Missing required fields.'}, status=400)
+
+        # Cek duplikat username
+        if User.objects.filter(username=new_username).exclude(id=user_id).exists():
+            return JsonResponse({'success': False, 'error': 'Username already taken.'}, status=400)
+        
+        # Cek duplikat email
+        if User.objects.filter(email=new_email).exclude(id=user_id).exists():
+            return JsonResponse({'success': False, 'error': 'Email already registered.'}, status=400)
+
+        # Update User model
+        user_to_edit.username = new_username
+        user_to_edit.email = new_email
+        user_to_edit.first_name = data.get('first_name', '')
+        user_to_edit.last_name = data.get('last_name', '')
+        user_to_edit.save()
+
+        # Update UserProfile model
+        profile_to_edit.role = new_role
+        profile_to_edit.first_name = data.get('first_name', '') # Sinkronkan juga di profile
+        profile_to_edit.last_name = data.get('last_name', '')  # Sinkronkan juga di profile
+        profile_to_edit.phone_number = data.get('phone_number', '')
+        profile_to_edit.bio = data.get('bio', '')
+        profile_to_edit.save()
+
+        # Siapkan data untuk dikirim kembali ke JS
+        user_data = {
+            'id': user_to_edit.id,
+            'username': user_to_edit.username,
+            'email': user_to_edit.email,
+            'first_name': user_to_edit.first_name,
+            'last_name': user_to_edit.last_name,
+            'role_value': profile_to_edit.role,
+            'role_display': profile_to_edit.get_role_display(),
+            'phone_number': profile_to_edit.phone_number,
+            'bio': profile_to_edit.bio,
+            'created_at': profile_to_edit.created_at.strftime('%b %d, %Y'),
+        }
+
+        return JsonResponse({'success': True, 'message': f'Successfully updated user @{user_to_edit.username}', 'user_data': user_data})
+
+    except User.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'User not found.'}, status=404)
+    except IntegrityError as e:
+         return JsonResponse({'success': False, 'error': f'Database error: {str(e)}'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'An unexpected error occurred: {str(e)}'}, status=500)
+
+
+@login_required
+@role_required(['ADMIN'])
+@require_POST
+def admin_delete_user_view(request):
+    """
+    [AJAX POST] Menghapus user dari modal delete admin.
+    """
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Bad request.'}, status=400)
+
+    try:
+        data = json.loads(request.body)
+        user_id = data.get('user_id')
+
+        if not user_id:
+            return JsonResponse({'success': False, 'error': 'User ID is required.'}, status=400)
+
+        user_to_delete = User.objects.get(id=user_id)
+
+        # Larang admin menghapus dirinya sendiri
+        if user_to_delete.id == request.user.id:
+            return JsonResponse({'success': False, 'error': 'You cannot delete your own account from the admin panel.'}, status=403)
+
+        username = user_to_delete.username
+        user_to_delete.delete()
+        
+        return JsonResponse({'success': True, 'message': f'User @{username} has been permanently deleted.'})
+
+    except User.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'User not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'An unexpected error occurred: {str(e)}'}, status=500)
