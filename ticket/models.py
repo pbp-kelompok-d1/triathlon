@@ -1,5 +1,5 @@
 from django.db import models
-<<<<<<< HEAD
+
 from django.utils import timezone
 from place.models import Place
 from user_profile.models import UserProfile  # pastikan path benar
@@ -50,7 +50,6 @@ class Ticket(models.Model):
     def ticket_number(self):
         return f"TK-{str(self.id).zfill(6)}"
 
-=======
 from django.contrib.auth.models import User
 from django.utils import timezone
 from place.models import Place
@@ -112,7 +111,6 @@ class Ticket(models.Model):
     def ticket_number(self):
         return f"TK-{str(self.id).zfill(6)}"
 
->>>>>>> 42ebb9da1ff0472f72649184c37860c99609730f
     @property
     def status(self):
         from datetime import date
@@ -140,8 +138,4 @@ class Ticket(models.Model):
             'today': 'success',
             'upcoming': 'primary'
         }
-<<<<<<< HEAD
         return status_class.get(self.status, 'secondary')
-=======
-        return status_class.get(self.status, 'secondary')
->>>>>>> 42ebb9da1ff0472f72649184c37860c99609730f
