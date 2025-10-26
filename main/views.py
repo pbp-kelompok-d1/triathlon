@@ -17,6 +17,7 @@ from activities.models import ExerciseActivity
 from django.db.models import Count, Sum, Avg
 from django.utils import timezone
 from datetime import timedelta
+from forum.models import ForumPost
 
 @login_required(login_url='/login/')
 def show_home(request):
@@ -71,6 +72,8 @@ def show_home(request):
         'recommended_places': recommended_places,
         'recent_activities': recent_activities,
         'activity_summary': activity_summary,
+        # top 5 popular forum posts by views
+        'popular_forum_posts': ForumPost.objects.order_by('-post_views')[:5],
     }
     return render(request, 'home.html', context)
 
