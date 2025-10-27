@@ -1,10 +1,108 @@
-{% extends 'base.html' %}
-{% block content %}
-<h2>Tambah Ulasan untuk {{ place.name }}</h2>
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Kirim Ulasan</button>
-</form>
-<a href="{% url 'place:place_detail' place.pk %}">Kembali</a>
-{% endblock %}
+# place/views.py
+
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import Place, Review
+import json
+
+@csrf_exempt  # TEMPORARY - untuk testing
+@require_POST
+def add_review(request, pk):
+    """Add a review for a place"""
+    
+    # Check authentication
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'success': False,
+            'error': 'Anda harus login terlebih dahulu.'
+        }, status=401)
+    
+    # Get place
+    try:
+        place = get_object_or_404(Place, pk=pk)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Tempat tidak ditemukan: {str(e)}'
+        }, status=404)
+    
+    # Parse JSON body
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Invalid JSON: {str(e)}'
+        }, status=400)
+    
+    # Get and validate rating
+    rating_value = data.get('rating')
+    
+    if rating_value is None:
+        return JsonResponse({
+            'success': False,
+            'error': 'Rating tidak boleh kosong.'
+        }, status=400)
+    
+    # Convert to integer
+    try:
+        rating = int(rating_value)
+    except (ValueError, TypeError) as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Rating harus berupa angka: {str(e)}'
+        }, status=400)
+    
+    # Validate rating range
+    if not 1 <= rating <= 5:
+        return JsonResponse({
+            'success': False,
+            'error': 'Rating harus antara 1 dan 5.'
+        }, status=400)
+    
+    # Get comment
+    comment = data.get('comment', '').strip()
+    
+    # Check if user already reviewed
+    existing_review = Review.objects.filter(
+        place=place, 
+        user=request.user
+    ).first()
+    
+    if existing_review:
+        return JsonResponse({
+            'success': False,
+            'error': 'Anda sudah memberikan ulasan untuk tempat ini.'
+        }, status=400)
+    
+    # Create review
+    try:
+        review = Review.objects.create(
+            place=place,
+            user=request.user,
+            rating=rating,
+            comment=comment
+        )
+        
+        # Return success response
+        return JsonResponse({
+            'success': True,
+            'review_id': review.id,
+            'user': request.user.username,
+            'rating': review.rating,
+            'comment': review.comment,
+            'created_at': review.created_at.strftime('%d %b %Y, %H:%M')
+        }, status=201)
+        
+    except Exception as e:
+        # Log the full error
+        import traceback
+        traceback.print_exc()
+        
+        return JsonResponse({
+            'success': False,
+            'error': f'Gagal membuat review: {str(e)}'
+        }, status=500)

@@ -242,6 +242,7 @@ def show_product(request):
     return render(request, "shop.html", context)
 
 def product_detail(request, id):
+    """Show individual product detail (AJAX-enabled)"""
     product = get_object_or_404(Product, pk=id)
 
     in_wishlist = False
@@ -272,9 +273,7 @@ def product_detail(request, id):
             'can_edit': (request.user.is_authenticated and (request.user == getattr(product, 'seller', None) or request.user.is_staff)),
             'edit_url': reverse('shop:edit_product', args=[product.id]),
             'delete_url': reverse('shop:delete_product', args=[product.id]),
-            'in_wishlist': in_wishlist, 
         }
-        
         return JsonResponse({'status': 'success', 'product': data})
 
     return render(request, 'product_detail.html', {

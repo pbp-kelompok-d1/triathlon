@@ -7,6 +7,8 @@ from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from .models import ExerciseActivity, User
 from .forms import ExerciseActivityForm
+from django.db.models import Sum, Count
+from django.core.paginator import Paginator
 
 CALORY_STANDARDS = {
     'cycling' : 0.04,
@@ -48,9 +50,13 @@ def show_activities(request):
         min_m = None
     
     activity = activity.select_related('author', 'place').order_by('-duration')
+    paginator = Paginator(activity, 30)  
+    page_number = request.GET.get('page') or 1
+    page_obj = paginator.get_page(page_number)
 
     context = {
-        'activities': activity,
+        'activities': page_obj.object_list,  
+        'page_obj': page_obj,                
         'user': request.user,
         'filters': {
             'category': category_filter or '',
@@ -83,29 +89,59 @@ def create_activity_ajax(request):
 
 # Show activity list through AJAX
 def show_json(request):
-    if is_admin(request.user):
-        activityList = ExerciseActivity.objects.all().order_by('-duration')
-    else:
-        activityList = ExerciseActivity.objects.filter(author=request.user).order_by('-duration')
+    qs = ExerciseActivity.objects.all().order_by('-duration') if is_admin(request.user) else ExerciseActivity.objects.filter(author=request.user).order_by('-duration')
 
-    data = []
-    for act in activityList:
-        data.append({
+    category = request.GET.get("category")
+    if category:
+        qs = qs.filter(sport_category=category)
+    def to_int(x):
+        try: return int(x)
+        except (TypeError, ValueError): return None
+    min_m = to_int(request.GET.get('distance_min'))
+    max_m = to_int(request.GET.get('distance_max'))
+    if min_m is not None and max_m is not None and min_m > max_m:
+        min_m, max_m = max_m, min_m
+    if min_m is not None:
+        qs = qs.filter(distance__gte=min_m)
+    if max_m is not None:
+        qs = qs.filter(distance__lte=max_m)
+
+    qs = qs.select_related('author','place')
+
+    # pagination
+    page = to_int(request.GET.get('page')) or 1
+    page_size = to_int(request.GET.get('page_size')) or 30
+    paginator = Paginator(qs, page_size)
+    page_obj = paginator.get_page(page)
+
+    results = []
+    for act in page_obj.object_list:
+        results.append({
             "id": str(act.id),
             "title": act.title,
             "duration": str(act.duration),
             "distance": act.distance,
             "notes_short": (act.notes[:100] + '...') if act.notes and len(act.notes) > 100 else (act.notes or ''),
+            "notes_full": act.notes or "",                    
             "sport_category": act.sport_category,
             "sport_label": act.get_sport_category_display(),
             "calories_burned": float(act.calories_burned or 0),
             "done_at_iso": act.done_at.strftime("%Y-%m-%d") if act.done_at else "",
             "done_at_display": act.done_at.strftime("%b %d, %Y") if act.done_at else "",
-            # Place
             "place_id": act.place_id,
             "place_name": act.place.name if act.place else None,
+            "creator_username": act.author.username,         
         })
-    return JsonResponse(data, safe=False)
+
+    return JsonResponse({
+        "results": results,
+        "page": page_obj.number,
+        "page_size": page_obj.paginator.per_page,
+        "total_pages": paginator.num_pages,
+        "total_items": paginator.count,
+        "has_next": page_obj.has_next(),
+        "has_prev": page_obj.has_previous(),
+    }, status=200)
 
 # Edit activity through AJAX
 @require_POST
@@ -200,3 +236,58 @@ def stats_json(request):
         "avg_calories_per_hour": round(avg_cal_per_hour, 2),
     }, status=200)
 
+@login_required(login_url='/login/')
+def series_json(request):
+    qs = ExerciseActivity.objects.all() if is_admin(request.user) else ExerciseActivity.objects.filter(author=request.user)
+
+    # keep your existing filters
+    category = request.GET.get("category")
+    if category:
+        qs = qs.filter(sport_category=category)
+
+    def to_int(x):
+        try: return int(x)
+        except (TypeError, ValueError): return None
+
+    min_m = to_int(request.GET.get('distance_min'))
+    max_m = to_int(request.GET.get('distance_max'))
+    if min_m is not None and max_m is not None and min_m > max_m:
+        min_m, max_m = max_m, min_m
+    if min_m is not None:
+        qs = qs.filter(distance__gte=min_m)
+    if max_m is not None:
+        qs = qs.filter(distance__lte=max_m)
+
+    qs_for_counts = qs
+
+    # last 30 days ONLY for the line chart
+    today = timezone.localdate()
+    start = today - timedelta(days=29)
+    qs_30d = qs.filter(done_at__gte=start, done_at__lte=today)
+
+    # per-day calories + counts (line)
+    rows = (qs_30d.values('done_at')
+                  .annotate(cal=Sum('calories_burned'), cnt=Count('id'))
+                  .order_by('done_at'))
+
+    by_date = {r['done_at']: r for r in rows}
+    dates, calories, counts = [], [], []
+    d = start
+    while d <= today:
+        r = by_date.get(d, {'cal': 0, 'cnt': 0})
+        dates.append(d.isoformat())
+        calories.append(round(float(r['cal'] or 0), 2))
+        counts.append(int(r['cnt'] or 0))
+        d += timedelta(days=1)
+
+    sc = qs_for_counts.values('sport_category').annotate(n=Count('id'))
+    sport_counts = {'running': 0, 'cycling': 0, 'swimming': 0}
+    for r in sc:
+        sport_counts[r['sport_category']] = int(r['n'])
+
+    return JsonResponse({
+        'dates': dates,
+        'calories': calories,
+        'counts': counts,
+        'sport_counts': sport_counts,   
+    }, status=200)

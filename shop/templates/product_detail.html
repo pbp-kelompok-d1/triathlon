@@ -4,10 +4,10 @@
 {% block title %}Product Detail - Triathlon Store{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-white py-8">
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 py-8">
     <div class="container mx-auto px-4">
 
-        <div id="product-root" data-product-id="{{ product_id }}" class="bg-gray-50 rounded-2xl shadow-xl overflow-hidden">
+        <div id="product-root" data-product-id="{{ product_id }}" class="bg-white rounded-2xl shadow-xl overflow-hidden">
             <!-- Loading State -->
             <div id="loading-state" class="flex items-center justify-center p-12">
                 <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
@@ -47,11 +47,11 @@
                         <!-- Product Details -->
                         <div class="space-y-4">
                             <div class="grid grid-cols-1 gap-4">
-                                <div class="bg-white rounded-lg p-4 shadow-sm">
+                                <div class="bg-gray-50 rounded-lg p-4">
                                     <h3 class="font-semibold text-gray-900 mb-2">Category</h3>
                                     <span id="p-cat" class="text-gray-600">-</span>
                                 </div>
-                                <div class="bg-white rounded-lg p-4 shadow-sm">
+                                <div class="bg-gray-50 rounded-lg p-4">
                                     <h3 class="font-semibold text-gray-900 mb-2">Seller</h3>
                                     <span id="p-seller" class="text-gray-600">-</span>
                                 </div>
@@ -59,12 +59,12 @@
                         </div>
 
                         <!-- Description -->
-                        <div class="bg-white rounded-lg p-4 shadow-sm">
+                        <div class="bg-gray-50 rounded-lg p-4">
                             <h3 class="font-semibold text-gray-900 mb-2">Description</h3>
                             <div id="p-desc" class="text-gray-600 leading-relaxed">-</div>
                         </div>
 
-                       <!-- Actions -->
+                        <!-- Actions -->
                         <div class="space-y-4">
                             <!-- User Actions -->
                             <div class="flex flex-col sm:flex-row gap-3">
@@ -74,19 +74,11 @@
                                     </svg>
                                     Add to Cart
                                 </button>
-                                <!-- Add to Wishlist Button -->
-                                <button id="btn-toggle-wishlist" class="flex-1 bg-transparent border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                                <button id="btn-toggle-wishlist" class="flex-1 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center">
                                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                                     </svg>
                                     Add to Wishlist
-                                </button>
-                                <!-- Remove from Wishlist Button -->
-                                <button id="btn-remove-wishlist" class="flex-1 bg-red-500 border-2 border-red-500 hover:bg-red-600 hover:border-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center" style="display: none;">
-                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                                    </svg>
-                                    Remove from Wishlist
                                 </button>
                             </div>
 
@@ -415,7 +407,6 @@
     }
 
     function loadDetail() {
-        console.log('Loading product detail for ID:', productId);
         loadingState.style.display = 'flex';
         productContent.style.display = 'none';
         
@@ -423,15 +414,10 @@
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
         .then(r => {
-            console.log('Response status:', r.status);
             if (!r.ok) throw new Error(`HTTP ${r.status}`);
             return r.json();
         })
         .then(data => {
-            console.log('=== FULL RESPONSE DATA ===');
-            console.log(JSON.stringify(data, null, 2));
-            console.log('=== END FULL RESPONSE DATA ===');
-            
             if (data.status !== 'success') throw new Error('Failed to load product');
             const p = data.product;
             currentProductData = p;
@@ -474,10 +460,6 @@
             root.dataset.cartUrl = p.cart_url;
             root.dataset.wishlistUrl = p.wishlist_url;
 
-            // IMPORTANT: Update wishlist button based on status from server
-            console.log('About to update wishlist button with:', p.in_wishlist);
-            updateWishlistButton(p.in_wishlist);
-
             // Show/hide owner actions
             if (p.can_edit) {
                 el.ownerActions.style.display = 'flex';
@@ -486,7 +468,6 @@
             }
         })
         .catch(err => {
-            console.error('Load error:', err);
             loadingState.style.display = 'none';
             showToast('Load Error', 'Failed to load product details. Please try again.', 'error');
         });
@@ -545,6 +526,7 @@
             this.disabled = true;
             this.textContent = 'Deleting...';
             
+            // Use the correct delete URL pattern from views.py
             const deleteUrl = `/shop/${productId}/delete/`;
             
             fetch(deleteUrl, {
@@ -568,6 +550,7 @@
                     el.deleteModal.style.display = 'none';
                     showToast('Success', data.message || 'Product deleted successfully!', 'success');
                     
+                    // Redirect to shop after 2 seconds
                     setTimeout(() => {
                         window.location.href = "{% url 'shop:shop' %}";
                     }, 2000);
@@ -672,16 +655,33 @@
     // Add to wishlist button
     if (el.btnWish) {
         el.btnWish.addEventListener('click', function() {
-            console.log('ADD to wishlist button clicked');
-            handleWishlistToggle(this);
-        });
-    }
-
-    // Remove from wishlist button
-    if (el.btnRemoveWish) {
-        el.btnRemoveWish.addEventListener('click', function() {
-            console.log('REMOVE from wishlist button clicked');
-            handleWishlistToggle(this);
+            const url = root.dataset.wishlistUrl;
+            if (!url) return;
+            
+            this.disabled = true;
+            const originalContent = this.innerHTML;
+            this.innerHTML = '<svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Processing...';
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.status === 'success') {
+                    setMsg(d.message || 'Wishlist updated successfully!', 'success');
+                } else {
+                    setMsg(d.message || 'Failed to update wishlist', 'error');
+                }
+            })
+            .catch(() => setMsg('Network error occurred', 'error'))
+            .finally(() => {
+                this.disabled = false;
+                this.innerHTML = originalContent;
+            });
         });
     }
 

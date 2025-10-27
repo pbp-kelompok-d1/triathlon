@@ -20,56 +20,74 @@
   </div>
 </div>
 
-<!-- Stats -->
-<div id="statsPanel" class="mb-8">
-  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-    <!-- 1) Total calories -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Total calories burned</div>
-      <div id="stat-total-cal" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+<!-- Stats strip -->
+<div class="mb-6">
+  <div class="max-w-6xl mx-auto">
+  <div class="flex flex-wrap justify-center items-center gap-3 text-sm">
+    <!-- total calories -->
+    <div class="inline-flex items-baseline gap-2 rounded-md bg-white border border-gray-200 px-3 py-2 shadow-sm">
+      <span class="text-[10px] uppercase tracking-wide text-gray-500">Total calories</span>
+      <span id="stat-total-cal" class="font-semibold text-gray-900">—</span>
     </div>
 
-    <!-- 2) Count -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Exercises</div>
-      <div id="stat-count" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    <!-- exercises -->
+    <div class="inline-flex items-baseline gap-2 rounded-md bg-white border border-gray-200 px-3 py-2 shadow-sm">
+      <span class="text-[10px] uppercase tracking-wide text-gray-500">Exercises</span>
+      <span id="stat-count" class="font-semibold text-gray-900">—</span>
     </div>
 
-    <!-- 3) Avg kcal / hour -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Avg calories / hour</div>
-      <div id="stat-avg-cals-hour" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    <!-- avg kcal/h -->
+    <div class="inline-flex items-baseline gap-2 rounded-md bg-white border border-gray-200 px-3 py-2 shadow-sm">
+      <span class="text-[10px] uppercase tracking-wide text-gray-500">Avg kcal/h</span>
+      <span id="stat-avg-cals-hour" class="font-semibold text-gray-900">—</span>
     </div>
 
-    <!-- 4) Avg distance by sport -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Avg distance (Running)</div>
-      <div id="stat-avg-dist-running" class="mt-1 text-2xl font-bold text-gray-900">—</div>
-    </div>
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Avg distance (Cycling)</div>
-      <div id="stat-avg-dist-cycling" class="mt-1 text-2xl font-bold text-gray-900">—</div>
-    </div>
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Avg distance (Swimming)</div>
-      <div id="stat-avg-dist-swimming" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    <!-- avg distance (grouped) -->
+    <div class="inline-flex items-baseline gap-2 rounded-md bg-white border border-gray-200 px-3 py-2 shadow-sm">
+      <span class="text-[10px] uppercase tracking-wide text-gray-500">Avg distance</span>
+      <span class="font-semibold text-gray-900">
+        Run <span id="stat-avg-dist-running">—</span> •
+        Cyc <span id="stat-avg-dist-cycling">—</span> •
+        Swim <span id="stat-avg-dist-swimming">—</span>
+      </span>
     </div>
 
-    <!-- 5) Avg duration by sport -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Avg duration (Running)</div>
-      <div id="stat-avg-dur-running" class="mt-1 text-2xl font-bold text-gray-900">—</div>
-    </div>
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Avg duration (Cycling)</div>
-      <div id="stat-avg-dur-cycling" class="mt-1 text-2xl font-bold text-gray-900">—</div>
-    </div>
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500">Avg duration (Swimming)</div>
-      <div id="stat-avg-dur-swimming" class="mt-1 text-2xl font-bold text-gray-900">—</div>
+    <!-- avg duration (grouped) -->
+    <div class="inline-flex items-baseline gap-2 rounded-md bg-white border border-gray-200 px-3 py-2 shadow-sm">
+      <span class="text-[10px] uppercase tracking-wide text-gray-500">Avg duration</span>
+      <span class="font-semibold text-gray-900">
+        Run <span id="stat-avg-dur-running">—</span> •
+        Cyc <span id="stat-avg-dur-cycling">—</span> •
+        Swim <span id="stat-avg-dur-swimming">—</span>
+      </span>
     </div>
   </div>
+  </div>
 </div>
+
+<!-- Chart -->
+<div id="chartsArea" class="mb-8 max-w-6xl mx-auto">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="text-xs uppercase tracking-wide text-gray-500 mb-1">Avg distance (m)</div>
+      <canvas id="chartAvgDistance"></canvas>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="text-xs uppercase tracking-wide text-gray-500 mb-1">Avg duration (min)</div>
+      <canvas id="chartAvgDuration"></canvas>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="text-xs uppercase tracking-wide text-gray-500 mb-1">Exercises by sport</div>
+      <canvas id="chartSportShare"></canvas>
+    </div>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mt-4">
+    <div class="text-xs uppercase tracking-wide text-gray-500 mb-1">Calories over time</div>
+    <canvas id="chartCaloriesLine"></canvas>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- Action bar -->
 <div class="bg-gray-50 min-h-screen">
@@ -117,79 +135,16 @@
 
     <!-- Cards -->
     <div id="activitiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {% for act in activities %}
-      <div id="card-{{ act.id }}" class="bg-white rounded-xl shadow border border-gray-200 p-5 flex flex-col">
-        <div class="flex items-start justify-between">
-          <div>
-            {% if user.profile.role == 'ADMIN' %}
-            <p class="text-xs text-gray-500">@{{ act.author.username }}</p>
-            {% endif %}
-            {% if act.place %}
-            <p class="text-xs text-gray-500">{{ act.place.name }}</p>
-            {% endif %}
-            <h3 class="text-lg font-semibold text-gray-900">{{ act.title }}</h3>
-            <p class="text-sm text-gray-500">
-              {{ act.get_sport_category_display }} • {{ act.done_at|date:"M d, Y" }}
-            </p>
-          </div>
-          <span class="px-2 py-1 text-xs rounded bg-blue-50 text-blue-700">
-            {{ act.calories_burned|floatformat:0 }} kcal
-          </span>
-        </div>
-
-        <div class="mt-4 grid grid-cols-3 gap-3 text-sm">
-          <div class="p-3 bg-gray-50 rounded">
-            <div class="font-medium">Duration</div>
-            <!-- mark for client-side formatting -->
-            <div class="text-gray-700 js-duration" data-dur="{{ act.duration }}">{{ act.duration }}</div>
-          </div>
-          <div class="p-3 bg-gray-50 rounded">
-            <div class="font-medium">Distance</div>
-            <div class="text-gray-700">{{ act.distance }} m</div>
-          </div>
-          <div class="p-3 bg-gray-50 rounded">
-            <div class="font-medium">Sport</div>
-            <div class="text-gray-700">{{ act.sport_category|title }}</div>
-          </div>
-        </div>
-
-        {% if act.notes %}
-        <p class="mt-4 text-gray-700">{{ act.notes }}</p>
-        {% endif %}
-
-        <div class="mt-5 flex gap-3">
-          <button type="button"
-                  class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded font-semibold"
-                  onclick="openEditActivityModal(this)"
-                  data-id="{{ act.id }}"
-                  data-title="{{ act.title|escape }}"
-                  data-duration="{{ act.duration }}"
-                  data-distance="{{ act.distance }}"
-                  data-sport="{{ act.sport_category }}"
-                  data-date="{{ act.done_at|date:'Y-m-d' }}"
-                  data-notes="{{ act.notes|default_if_none:''|escape }}"
-                  data-place-id="{{ act.place_id|default_if_none:'' }}">
-            Edit
-          </button>
-          <button type="button"
-                  class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold"
-                  onclick="openDeleteActivityModal('{{ act.id }}', '{{ act.title|escapejs }}')">
-            Delete
-          </button>
-        </div>
-      </div>
-      {% empty %}
-      <div class="text-gray-600">No activities yet. Click “Add Activity”.</div>
-      {% endfor %}
     </div>
-  </div>
-</div>
+
+<div id="paginationBar" class="mt-6 flex items-center justify-center gap-2"></div>
 
 <!-- Include modals -->
 {% include 'add_activities_modal.html' %}
 {% include 'edit_activity_modal.html' %}
 {% include 'delete_activity_modal.html' %}
 {% include 'filter_activities_modal.html' %}
+{% include 'view_activity_modal.html' %}
 
 <script>
   const CSRF = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -201,7 +156,7 @@
   const LIST_JSON_URL = "{% url 'activities:activity_json_endpoint' %}";
   const editUrl = (id) => EDIT_URL_TEMPLATE.replace('00000000-0000-0000-0000-000000000000', id);
   const deleteUrl = (id) => DELETE_URL_TEMPLATE.replace('00000000-0000-0000-0000-000000000000', id);
-
+  
   // ---------- Duration formatting (no template tags) ----------
   function parseDurationToHM(str) {
     // supports "1 day, 2:03:00" and "02:03:00"
@@ -226,6 +181,10 @@
     document.querySelectorAll('.js-duration').forEach(el => {
       el.textContent = displayHM(el.dataset.dur);
     });
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    reloadActivities();
   });
 
   // ---------- Edit modal ----------
@@ -400,6 +359,22 @@
         ${a.notes_short ? `<p class="mt-4 text-gray-700">${escapeHtml(a.notes_short)}</p>` : ''}
 
         <div class="mt-5 flex gap-3">
+
+          <button type="button"
+                  class="bg-gray-200 hover:bg-gray-300 text-gray-900 px-4 py-2 rounded font-semibold"
+                  onclick="openViewActivityModal(this)"
+                  data-title="${escapeAttr(a.title)}"
+                  data-sport="${escapeAttr(a.sport_label || a.sport_category || '')}"
+                  data-date="${escapeAttr(a.done_at_display || a.done_at || '')}"
+                  data-duration="${escapeAttr(String(a.duration))}"
+                  data-distance="${a.distance}"
+                  data-calories="${Math.round(a.calories_burned || 0)}"
+                  data-notes="${escapeAttr(a.notes_full || a.notes_short || '')}"
+                  ${a.place_name ? `data-place="${escapeAttr(a.place_name)}"` : ''}
+                  ${a.creator_username ? `data-owner="@${escapeAttr(a.creator_username)}"` : ''}>
+            View
+          </button>
+
           <button type="button"
                   class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded font-semibold"
                   onclick="openEditActivityModal(this)"
@@ -410,7 +385,7 @@
                   data-sport="${escapeAttr(a.sport_category)}"
                   data-date="${escapeAttr(a.done_at_iso || '')}"
                   data-notes="${escapeAttr(a.notes_short || '')}"
-                  data-place-id="{{ act.place_id|default_if_none:'' }}">
+                  data-place-id="${a.place_id || ''}">
             Edit
           </button>
           <button type="button"
@@ -423,31 +398,68 @@
   }
 
   async function reloadActivities() {
-    const container = document.getElementById('activitiesGrid');
+  const container = document.getElementById('activitiesGrid');
 
-    await reloadStats();
+  await reloadStats();
 
-    if (!container) return;
+  if (!container) return;
 
-    const btn = document.getElementById('refreshActivitiesBtn');
-    const icon = document.getElementById('refreshIcon');
-    btn?.classList.add('opacity-75'); if (btn) btn.disabled = true;
-    icon?.classList.add('animate-spin');
+  const btn = document.getElementById('refreshActivitiesBtn');
+  const icon = document.getElementById('refreshIcon');
+  btn?.classList.add('opacity-75'); if (btn) btn.disabled = true;
+  icon?.classList.add('animate-spin');
 
-    try {
-      // keep current filters by forwarding ?query params
-      const res = await fetch(LIST_JSON_URL + window.location.search, {credentials: 'same-origin'});
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      container.innerHTML = data.map(cardHTML).join('');
-    } catch (e) {
-      console.error(e);
-      alert('Could not refresh activities.');
-    } finally {
-      if (btn) { btn.disabled = false; btn.classList.remove('opacity-75'); }
-      icon?.classList.remove('animate-spin');
+  try {
+    const res = await fetch(LIST_JSON_URL + window.location.search, {credentials: 'same-origin'});
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    const list = Array.isArray(data) ? data : (data.results || []);
+    if (list.length === 0) {
+      container.innerHTML = '<div class="text-gray-600">No activities yet. Click “Add Activity”.</div>';
+      renderPagination({page:1,total_pages:1,has_prev:false,has_next:false});
+      return;
     }
+    container.innerHTML = list.map(cardHTML).join('');
+
+    // render pager if meta present
+    if (data && typeof data === 'object' && 'total_pages' in data) {
+      renderPagination({
+        page: data.page,
+        total_pages: data.total_pages,
+        has_prev: data.has_prev,
+        has_next: data.has_next
+      });
+    }
+  } catch (e) {
+    console.error(e);
+    alert('Could not refresh activities.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.classList.remove('opacity-75'); }
+    icon?.classList.remove('animate-spin');
   }
+}
+
+  function hideViewActivityModal(){
+  document.getElementById('viewActivityModal').classList.add('hidden');
+}
+
+function openViewActivityModal(btn){
+  const dur = displayHM(btn.dataset.duration || '0:00:00');
+  const place = btn.dataset.place ? `${btn.dataset.place} • ` : '';
+  const owner = btn.dataset.owner ? `${btn.dataset.owner} • ` : '';
+
+  document.getElementById('view_title').textContent = btn.dataset.title || 'Activity';
+  document.getElementById('view_meta').textContent =
+    `${owner}${place}${btn.dataset.sport || ''}${btn.dataset.date ? ' • ' + btn.dataset.date : ''}`;
+  document.getElementById('view_duration').textContent = dur;
+  document.getElementById('view_distance').textContent = `${btn.dataset.distance || 0} m`;
+  document.getElementById('view_calories').textContent = `${btn.dataset.calories || 0} kcal`;
+  document.getElementById('view_notes').textContent = btn.dataset.notes || '';
+
+  document.getElementById('viewActivityModal').classList.remove('hidden');
+}
+
 
 // =========================== STATS ==========================
 const STATS_JSON_URL = "{% url 'activities:activity_stats_endpoint' %}";
@@ -467,27 +479,152 @@ function secondsToHM(sec){
 // FETCH
 async function reloadStats(){
   try{
-    const res = await fetch(STATS_JSON_URL + window.location.search, {credentials:'same-origin'});
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const s = await res.json();
+    // 1) headline stats
+    const statsRes = await fetch("{% url 'activities:activity_stats_endpoint' %}" + window.location.search, {credentials:'same-origin'});
+    if(!statsRes.ok) throw new Error(`HTTP ${statsRes.status}`);
+    const s = await statsRes.json();
 
-    // headline stats
+    // update the strip (unchanged logic)
+    const nInt   = (n)=> (n ?? 0).toLocaleString();
+    const nFixed = (n,d=0)=> (n ?? 0).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
+    const secondsToHM = (sec)=>{ const t=+sec||0,h=Math.floor(t/3600),m=Math.floor((t%3600)/60); return h?`${h}h ${String(m).padStart(2,'0')}m`:`${m}m`; };
+
     document.getElementById('stat-total-cal')?.replaceChildren(document.createTextNode(`${nFixed(s.total_calories,0)} kcal`));
     document.getElementById('stat-count')?.replaceChildren(document.createTextNode(nInt(s.count_exercises)));
     document.getElementById('stat-avg-cals-hour')?.replaceChildren(document.createTextNode(`${nFixed(s.avg_calories_per_hour,0)} kcal/h`));
-
-    // avg distance
     document.getElementById('stat-avg-dist-running')?.replaceChildren(document.createTextNode(`${nInt(s.avg_distance?.running || 0)} m`));
     document.getElementById('stat-avg-dist-cycling')?.replaceChildren(document.createTextNode(`${nInt(s.avg_distance?.cycling || 0)} m`));
     document.getElementById('stat-avg-dist-swimming')?.replaceChildren(document.createTextNode(`${nInt(s.avg_distance?.swimming || 0)} m`));
-
-    // avg duration
     document.getElementById('stat-avg-dur-running')?.replaceChildren(document.createTextNode(secondsToHM(s.avg_duration_seconds?.running || 0)));
     document.getElementById('stat-avg-dur-cycling')?.replaceChildren(document.createTextNode(secondsToHM(s.avg_duration_seconds?.cycling || 0)));
     document.getElementById('stat-avg-dur-swimming')?.replaceChildren(document.createTextNode(secondsToHM(s.avg_duration_seconds?.swimming || 0)));
+
+    // 2) series for charts
+    const seriesRes = await fetch(SERIES_JSON_URL + window.location.search, {credentials:'same-origin'});
+    if(!seriesRes.ok) throw new Error(`HTTP ${seriesRes.status}`);
+    const series = await seriesRes.json();
+
+    renderChartsFrom(s, series);
   }catch(e){
-    console.error('stats refresh failed:', e);
+    console.error('stats/charts refresh failed:', e);
   }
+}
+
+  // T==== the thing
+  const SERIES_JSON_URL = "{% url 'activities:chart_endpoint' %}";
+
+  // ===== CHARTS =====
+const charts = {}; // store chart instances so we can update/destroy
+
+function upsertChart(key, ctx, cfg) {
+  if (charts[key]) charts[key].destroy();
+  charts[key] = new Chart(ctx, cfg);
+}
+
+function mmFromSeconds(s){ return Math.round((s || 0) / 60); }
+
+// Build/refresh all charts from stats + time-series
+function renderChartsFrom(stats, series) {
+  const dist = stats.avg_distance || {};
+  const durS = stats.avg_duration_seconds || {};
+  const sportCounts = series.sport_counts || {};
+
+  // 1) Avg distance by sport (meters)
+  upsertChart('avgDist', document.getElementById('chartAvgDistance'), {
+    type: 'bar',
+    data: {
+      labels: ["Run","Cyc","Swim"],
+      datasets: [{ label: 'meters', data: [
+        dist.running || 0, dist.cycling || 0, dist.swimming || 0
+      ]}]
+    },
+    options: { responsive:true, plugins:{ legend:{ display:false }}, scales:{ y:{ beginAtZero:true }}}
+  });
+
+  // 2) Avg duration by sport (minutes)
+  upsertChart('avgDur', document.getElementById('chartAvgDuration'), {
+    type: 'bar',
+    data: {
+      labels: ["Run","Cyc","Swim"],
+      datasets: [{ label: 'minutes', data: [
+        mmFromSeconds(durS.running), mmFromSeconds(durS.cycling), mmFromSeconds(durS.swimming)
+      ]}]
+    },
+    options: { responsive:true, plugins:{ legend:{ display:false }}, scales:{ y:{ beginAtZero:true }}}
+  });
+
+  // 3) Share of exercises (doughnut)
+  upsertChart('sportShare', document.getElementById('chartSportShare'), {
+    type: 'doughnut',
+    data: {
+      labels: ["Running","Cycling","Swimming"],
+      datasets: [{ data: [
+        sportCounts.running || 0, sportCounts.cycling || 0, sportCounts.swimming || 0
+      ]}]
+    },
+    options: { responsive:true, plugins:{ legend:{ position:'bottom' }}}
+  });
+
+  // 4) Calories over time (last 30d)
+  upsertChart('calLine', document.getElementById('chartCaloriesLine'), {
+    type: 'line',
+    data: {
+      labels: series.dates || [],
+      datasets: [{ label: 'Calories', data: series.calories || [], tension: 0.3 }]
+    },
+    options: {
+      responsive:true,
+      scales:{ y:{ beginAtZero:true, title:{ display:true, text:'kcal' }}},
+      plugins:{ legend:{ position:'bottom' }}
+    }
+  });
+}
+
+function getCurrentPage(){
+  const p = parseInt(new URLSearchParams(window.location.search).get('page') || '1', 10);
+  return Number.isNaN(p) || p < 1 ? 1 : p;
+}
+function setCurrentPage(page){
+  const params = new URLSearchParams(window.location.search);
+  params.set('page', String(page));
+  history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+}
+function renderPagination(meta){
+  const bar = document.getElementById('paginationBar');
+  if (!bar) return;
+  const { page, total_pages, has_prev, has_next } = meta;
+
+  const btn = (label, disabled, targetPage) =>
+    `<button ${disabled?'disabled':''}
+       class="px-3 py-1 rounded border ${disabled?'text-gray-400 border-gray-200 bg-gray-50':'text-gray-700 border-gray-300 bg-white hover:bg-gray-100'}"
+       data-page="${targetPage}">
+       ${label}
+     </button>`;
+
+  
+  const windowSize = 5;
+  const start = Math.max(1, page - Math.floor(windowSize/2));
+  const end = Math.min(total_pages, start + windowSize - 1);
+
+  let html = '';
+  html += btn('« Prev', !has_prev, page-1);
+  for (let p = start; p <= end; p++){
+    const active = p === page;
+    html += `<button data-page="${p}" class="px-3 py-1 rounded border ${active?'bg-indigo-600 text-white border-indigo-600':'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}">${p}</button>`;
+  }
+  html += btn('Next »', !has_next, page+1);
+
+  bar.innerHTML = html;
+
+  bar.querySelectorAll('button[data-page]').forEach(b => {
+    b.addEventListener('click', async (e) => {
+      const target = parseInt(e.currentTarget.getAttribute('data-page'), 10);
+      if (Number.isNaN(target) || target < 1 || target > total_pages) return;
+      setCurrentPage(target);
+      await reloadActivities(); // fetch the new page
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
 }
 </script>
 {% endblock content %}
