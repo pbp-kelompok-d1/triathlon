@@ -12,4 +12,5 @@ urlpatterns = [
     
     # API endpoints
     path('api/place-price/<int:place_id>/', views.get_place_price, name='get_place_price'),
+    path('api/places/', views.place_list_api, name='place_list_api'),
 ]
