@@ -1,38 +1,78 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<div class="container mx-auto px-4 py-6">
-    <!-- Header Section -->
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold mb-2">Triathlon Shop</h1>
-        <div class="flex items-center justify-between">
-            <div>
-                {% if user.is_authenticated %}
-                <p class="text-gray-600">Welcome, {{ user.username }}</p>
-                {% else %}
-                <p class="text-gray-600">Welcome, Guest!</p>
-                {% endif %}
-            </div>
-            <div class="flex gap-3">
-                <button type="button" id="openModalBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-md transition">
-                    + Add New Product
-                </button>
-                <a href="{% url 'shop:view_cart' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-md transition">View Cart</a>
-                <a href="{% url 'shop:view_wishlist' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-md transition">View Wishlist</a>
+
+<div id="shop-hero"
+     class="relative bg-cover bg-center bg-no-repeat text-white mb-10"
+     style="background-image: url('image/hero-cycling.jpg');">
+  <div class="absolute inset-0 bg-gradient-to-br from-black/70 via-blue-900/60 to-indigo-800/50"></div>
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+    <div class="text-center">
+      <h1 class="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight drop-shadow-lg">
+        TRIATHLON SHOP
+      </h1>
+      <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto leading-relaxed drop-shadow-md">
+        Discover, manage, and shop triathlon gears with a clean experience.
+      </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="min-h-screen bg-white py-8">
+    <div class="container mx-auto px-4">
+        <!-- Header (breadcrumbs removed) -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <h1 class="text-4xl font-bold text-gray-900 flex items-center">
+                    <div class="w-12 h-12 rounded-xl bg-green-600 text-white flex items-center justify-center mr-4 shadow-lg">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                        </svg>
+                    </div>
+                    Triathlon Shop
+                </h1>
+                <div class="flex gap-3">
+                    <button type="button" id="openModalBtn"
+                            class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-3 rounded-lg transition-colors shadow-md">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m6-6H6"></path>
+                        </svg>
+                        Add Product
+                    </button>
+                    <a href="{% url 'shop:view_cart' %}"
+                       class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-3 rounded-lg transition-colors shadow-md">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                        View Cart
+                    </a>
+                    <a href="{% url 'shop:view_wishlist' %}"
+                       class="inline-flex items-center bg-rose-600 hover:bg-rose-700 text-white font-semibold px-5 py-3 rounded-lg transition-colors shadow-md">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                        </svg>
+                        View Wishlist
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
-    {% csrf_token %}
-    <div id="notification-area" class="fixed top-5 right-5 z-50 space-y-2"></div>
+        {% csrf_token %}
 
-    <!-- MODAL ADD PRODUCT -->
-    <div id="addProductModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div class="sticky top-0 bg-white border-b px-8 py-6 rounded-t-2xl">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-900">Add New Product</h2>
-                        <p class="text-sm text-gray-500 mt-1">Share your product with the triathlon community</p>
+        <!-- MODAL ADD PRODUCT -->
+        <div id="addProductModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-gray-200">
+                <div class="sticky top-0 bg-white border-b px-8 py-6 rounded-t-2xl">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">Add New Product</h2>
+                            <p class="text-sm text-gray-500 mt-1">Share your product with the triathlon community</p>
+                        </div>
+                        <button type="button" id="closeModalBtn" class="text-gray-400 hover:text-gray-600 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
                     </div>
                     <button type="button" id="closeModalBtn" class="text-gray-400 hover:text-gray-600 transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,131 +158,26 @@
         </div>
     </div>
 
-    <!-- MODAL EDIT PRODUCT -->
-    <div id="editProductModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-                <h5 class="text-xl font-semibold" id="editModalTitle">Edit Product</h5>
-                <button type="button" id="closeEditModalBtn" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">&times;</button>
-            </div>
-            
-            <div class="p-6">
-                <div id="edit-modal-form-messages" class="mb-4"></div>
-                
-                <form id="edit-product-modal-form">
-                    {% csrf_token %}
-                    
-                    <div class="mb-4">
-                        <label for="edit_product_name" class="block text-sm font-medium text-gray-700 mb-2">Product Name:</label>
-                        <input type="text" id="edit_product_name" name="name" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_name"></div>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="edit_product_description" class="block text-sm font-medium text-gray-700 mb-2">Description:</label>
-                        <textarea id="edit_product_description" name="description" rows="4" required
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                        <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_description"></div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="edit_product_category" class="block text-sm font-medium text-gray-700 mb-2">Category:</label>
-                        <select id="edit_product_category" name="category" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Select a category</option>
-                            <option value="running">Running</option>
-                            <option value="cycling">Cycling</option>
-                            <option value="swimming">Swimming</option>
-                        </select>
-                        <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_category"></div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="edit_product_price" class="block text-sm font-medium text-gray-700 mb-2">Price (Rp):</label>
-                        <input type="number" id="edit_product_price" name="price" step="0.01" min="0" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_price"></div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="edit_product_stock" class="block text-sm font-medium text-gray-700 mb-2">Stock Quantity:</label>
-                        <input type="number" id="edit_product_stock" name="stock" min="0" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_stock"></div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="edit_product_thumbnail" class="block text-sm font-medium text-gray-700 mb-2">Thumbnail URL:</label>
-                        <input type="url" id="edit_product_thumbnail" name="thumbnail" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_thumbnail"></div>
-                    </div>
-                </form>
-            </div>
-            
-            <div class="border-t px-6 py-4 flex justify-end gap-3">
-                <button type="button" id="cancelEditModalBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition">Cancel</button>
-                <button type="button" id="submit-edit-product-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition">Update Product</button>
-            </div>
+        <!-- Main Content Panel -->
+         <div class="bg-gray-50 rounded-2xl shadow-xl border border-gray-200">
+      <div class="border-b border-gray-200 px-6 py-4">
+        <div class="text-sm text-gray-600">
+          Showing <span id="product-count-display">{{ products|length }}</span> results for <strong id="current-category-display">"All"</strong>
         </div>
-    </div>
+      </div>
 
-    <!-- Main Content -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-        <!-- Tabs Header -->
-        <div class="border-b border-gray-200">
-            <div class="flex items-center px-6 py-3">
-                <button class="px-6 py-3 border-b-2 border-green-600 text-green-600 font-semibold flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                    </svg>
-                    Produk
-                </button>
+      <div class="grid grid-cols-12 gap-8 p-6">
+        <div class="col-span-12 lg:col-span-3">
+          <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm sticky top-8">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Filter by Category</h3>
+            <div class="space-y-2" id="filter-container">
+              <button class="w-full text-left px-4 py-2.5 rounded-full bg-gray-900 text-white font-medium transition filter-btn" data-category="">All Products</button>
+              <button class="w-full text-left px-4 py-2.5 rounded-full border border-gray-300 text-gray-800 hover:bg-gray-900 hover:text-white font-medium transition filter-btn" data-category="running">Running</button>
+              <button class="w-full text-left px-4 py-2.5 rounded-full border border-gray-300 text-gray-800 hover:bg-gray-900 hover:text-white font-medium transition filter-btn" data-category="cycling">Cycling</button>
+              <button class="w-full text-left px-4 py-2.5 rounded-full border border-gray-300 text-gray-800 hover:bg-gray-900 hover:text-white font-medium transition filter-btn" data-category="swimming">Swimming</button>
             </div>
+          </div>
         </div>
-
-        <div class="grid grid-cols-12 gap-6 p-6">
-            <!-- Left Sidebar - Filter -->
-            <div class="col-span-12 lg:col-span-3">
-                <div class="space-y-6">
-                    <div>
-                        <h3 class="text-lg font-bold text-gray-900 mb-4">Filter</h3>
-                    </div>
-
-                    <div class="border-b border-gray-200 pb-4">
-                        <button class="flex items-center justify-between w-full text-left font-semibold text-gray-900 mb-3">
-                            <span>Jenis Kategori</span>
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-                            </svg>
-                        </button>
-                        
-                        <div class="space-y-2" id="filter-container">
-                            <button class="w-full text-left px-4 py-2 rounded-md bg-gray-800 text-white transition filter-btn" data-category="">
-                                All Products
-                            </button>
-                            <button class="w-full text-left px-4 py-2 rounded-md border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white transition filter-btn" data-category="running">
-                                Running
-                            </button>
-                            <button class="w-full text-left px-4 py-2 rounded-md border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white transition filter-btn" data-category="cycling">
-                                Cycling
-                            </button>
-                            <button class="w-full text-left px-4 py-2 rounded-md border border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white transition filter-btn" data-category="swimming">
-                                Swimming
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Side - Products -->
-            <div class="col-span-12 lg:col-span-9">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="text-sm text-gray-600">
-                        Showing <span id="product-count-display">{{ products|length }}</span> results for <strong id="current-category-display">"All"</strong>
-                    </div>
-                </div>
 
                 <!-- Product Grid -->
                 <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4" id="product-list-container">
@@ -316,18 +251,16 @@
                                     <span class="mx-1">•</span>
                                     <span>Stock: {{ product.stock }}</span>
                                 </div>
-
-                                <div class="space-y-2">
-                                    <a href="{% url 'shop:add_to_cart' product.id %}" 
-                                       class="block w-full bg-green-600 hover:bg-green-700 text-white text-center px-3 py-2 rounded-md text-sm transition ajax-action-btn"
-                                       data-action="add-to-cart">
-                                        Add to Cart
-                                    </a>
-                                    <a href="{% url 'shop:toggle_wishlist' product.id %}" 
-                                       class="block w-full border border-red-600 text-red-600 hover:bg-red-600 hover:text-white text-center px-3 py-2 rounded-md text-sm transition ajax-action-btn"
-                                       data-action="toggle-wishlist">
-                                        Wishlist
-                                    </a>
+                                <div class="mt-auto">
+                                    <div class="text-2xl font-bold text-blue-600 mb-4">Rp {{ product.price|floatformat:0 }}</div>
+                                    <div class="space-y-2">
+                                    <a href="{% url 'shop:add_to_cart' product.id %}"
+                                       class="block w-full bg-green-600 hover:bg-green-700 text-white text-center px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-md ajax-action-btn"
+                                       data-action="add-to-cart">Add to Cart</a>
+                                    <a href="{% url 'shop:toggle_wishlist' product.id %}"
+                                       class="block w-full bg-rose-600 hover:bg-rose-700 text-white text-center px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-md ajax-action-btn"
+                                       data-action="toggle-wishlist">Wishlist</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -393,11 +326,28 @@
     </div>
 </div>
 
+<!-- Toast component (dipakai oleh toast.js) -->
+<div id="toast-component"
+     class="fixed bottom-5 right-5 z-[100] w-[28rem] max-w-[90vw] pointer-events-auto
+            flex items-start gap-3 px-4 py-3 rounded-xl border shadow-2xl bg-white
+            opacity-0 translate-y-64 transition-all duration-300">
+  <div id="toast-icon" class="mt-0.5 text-gray-500">●</div>
+  <div class="flex-1">
+    <div id="toast-title" class="font-semibold text-gray-800">Notice</div>
+    <div id="toast-message" class="text-sm text-gray-600">Message</div>
+  </div>
+  <button type="button" aria-label="Close"
+          class="text-gray-400 hover:text-gray-600"
+          onclick="(function(){const t=document.getElementById('toast-component');t.classList.remove('opacity-100','translate-y-0');t.classList.add('opacity-0','translate-y-64');})();">×</button>
+</div>
+
+<!-- Pakai toast.js -->
+<script src="{% static 'js/toast.js' %}"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     const productContainer = document.getElementById('product-list-container');
-    const notificationArea = document.getElementById('notification-area');
     
     const modal = document.getElementById('addProductModal');
     const openModalBtn = document.getElementById('openModalBtn');
@@ -413,13 +363,34 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentEditProductId = null;
     let isEditAdminAction = false;
 
-    function showNotification(message, type) {
-        const bgColor = (type === 'success') ? 'bg-green-500' : 'bg-red-500';
-        const notification = document.createElement('div');
-        notification.className = bgColor + ' text-white px-6 py-3 rounded-md shadow-lg flex items-center justify-between max-w-md';
-        notification.innerHTML = '<span>' + message + '</span><button class="ml-4 text-white hover:text-gray-200 font-bold text-xl" onclick="this.parentElement.remove()">&times;</button>';
-        notificationArea.appendChild(notification);
-        setTimeout(function() { notification.remove(); }, 4000);
+    const hero = document.getElementById('shop-hero');
+    const heroImages = [
+    'image/hero-cycling.jpg',
+    'image/hero-running.jpeg',
+    'image/hero-swimming.jpg',
+  ];
+  // Filter gambar yang benar-benar ada (optional)
+  const preload = url => new Promise(res => { const i=new Image(); i.onload=()=>res(url); i.onerror=()=>res(null); i.src=url; });
+  Promise.all(heroImages.map(preload)).then(list => {
+    const imgs = list.filter(Boolean);
+    if (!hero || imgs.length === 0) return;
+    let idx = 0;
+    hero.style.backgroundImage = `url('${imgs[0]}')`;
+    setInterval(() => {
+      idx = (idx + 1) % imgs.length;
+      hero.style.backgroundImage = `url('${imgs[idx]}')`;
+    }, 6000);
+  });
+
+    // Hanya wrapper ke toast.js
+    function showNotification(message, type = 'success') {
+        const title = type === 'error' ? 'Error' : type === 'info' ? 'Info' : 'Success';
+        if (typeof showToast === 'function') showToast(title, message, type, 5000);
+    }
+
+    function openModal() {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
     }
 
     // ============================================
@@ -559,14 +530,13 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(function(data) {
                 if (data.status === 'success') {
                     closeModal();
-                    showNotification(data.message, 'success');
-                    setTimeout(function() { window.location.reload(); }, 1500);
+                    showNotification(data.message || 'Produk berhasil ditambahkan.', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
                 }
             })
             .catch(function(errorData) {
                 if (errorData.status === 'error' && errorData.errors) {
-                    modalFormMessages.innerHTML = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Harap perbaiki kesalahan di bawah ini.</div>';
-                    
+                    showNotification('Silakan perbaiki kesalahan pada formulir.', 'error');
                     for (const fieldName in errorData.errors) {
                         const errorField = document.getElementById('modal_error_' + fieldName);
                         if (errorField) {

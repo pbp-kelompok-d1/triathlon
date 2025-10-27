@@ -5,166 +5,279 @@
 
 {% block content %}
 <div class="min-h-screen bg-white py-8">
-    <div class="container mx-auto px-4">
-        <!-- Header with Breadcrumb -->
-        <div class="mb-8">
-            <nav class="flex mb-4" aria-label="Breadcrumb">
-                <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                    <li class="inline-flex items-center">
-                        <a href="{% url 'shop:shop' %}" class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors">
-                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
-                            </svg>
-                            <span class="text-sm font-medium">Shop</span>
-                        </a>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                            </svg>
-                            <span class="text-sm font-medium text-gray-500">Wishlist</span>
-                        </div>
-                    </li>
-                </ol>
-            </nav>
-            <h1 class="text-4xl font-bold text-gray-900 flex items-center">
-                <svg class="w-10 h-10 mr-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                </svg>
-                My Wishlist
-            </h1>
-        </div>
+  <div class="container mx-auto px-4" id="wishlist-page">
 
-        {% if not products %}
-        <!-- Empty Wishlist -->
-        <div class="bg-gray-50 rounded-2xl shadow-xl p-12 text-center border border-gray-200">
-            <div class="max-w-md mx-auto">
-                <div class="w-32 h-32 bg-gradient-to-br from-red-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg class="w-16 h-16 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                    </svg>
-                </div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-4">Your wishlist is empty</h2>
-                <a href="{% url 'shop:shop' %}" class="inline-flex items-center bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-8 py-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                    Browse Products
-                </a>
-            </div>
-        </div>
-        {% else %}
-        <!-- Wishlist Summary -->
-        <div class="bg-gray-50 rounded-2xl shadow-xl p-6 mb-8 border border-gray-200">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <div class="bg-gradient-to-r from-red-100 to-pink-100 rounded-lg p-3 mr-4">
-                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-gray-600">Total Products in Wishlist</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ products|length }} item{{ products|length|pluralize }}</p>
-                    </div>
-                </div>
-                <a href="{% url 'shop:shop' %}" class="inline-flex items-center bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg transition-colors duration-200">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
-                    Continue Shopping
-                </a>
-            </div>
-        </div>
-
-        <!-- Wishlist Items -->
-        <div class="bg-gray-50 rounded-2xl shadow-xl p-6 border border-gray-200">
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-                {% for product in products %}
-                <div class="bg-white rounded-xl border border-gray-300 hover:shadow-xl transition-all duration-300 group overflow-hidden">
-                    <!-- Product Image -->
-                    <div class="relative aspect-square overflow-hidden">
-                        {% if product.thumbnail %}
-                        <img src="{{ product.thumbnail }}" alt="{{ product.name }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                        {% else %}
-                        <div class="w-full h-full bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center">
-                            <svg class="w-16 h-16 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        {% endif %}
-                        
-                        <!-- Wishlist Badge -->
-                        <div class="absolute top-3 right-3">
-                            <div class="bg-red-500 text-white rounded-full p-2 shadow-lg">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Product Info -->
-                    <div class="p-6 space-y-4">
-                        <div>
-                            <a href="{% url 'shop:product_detail' product.id %}" class="block group-hover:text-blue-600 transition-colors">
-                                <h3 class="text-lg font-semibold text-gray-900 line-clamp-2 min-h-[3rem]">
-                                    {{ product.name }}
-                                </h3>
-                            </a>
-                            {% if product.category %}
-                            <p class="text-sm text-gray-500 mt-1 flex items-center">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                                </svg>
-                                {{ product.category }}
-                            </p>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="flex items-center justify-between">
-                            <div class="text-2xl font-bold text-blue-600">
-                                Rp {{ product.price|floatformat:0 }}
-                            </div>
-                            {% if product.stock %}
-                            <div class="text-sm text-gray-500 flex items-center">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                                </svg>
-                                Stock: {{ product.stock }}
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <!-- Action Buttons -->
-                        <div class="space-y-3 pt-4 border-t border-gray-200">
-                            <a href="{% url 'shop:product_detail' product.id %}" 
-                               class="block w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white text-center px-4 py-3 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105">
-                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                </svg>
-                                View Details
-                            </a>
-                            
-                            <form method="post" action="{% url 'shop:toggle_wishlist' product.id %}" class="w-full">
-                                {% csrf_token %}
-                                <button type="submit" 
-                                        class="w-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-4 py-3 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 flex items-center justify-center">
-                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                    </svg>
-                                    Remove from Wishlist
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-4xl font-bold text-gray-900 flex items-center">
+        <svg class="w-10 h-10 mr-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+        </svg>
+        My Wishlist
+      </h1>
     </div>
+
+    {% if not products %}
+    <!-- Empty state -->
+    <div id="empty-wishlist" class="bg-gray-50 rounded-2xl shadow-xl p-12 text-center border border-gray-200">
+      <div class="max-w-md mx-auto">
+        <div class="w-32 h-32 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg class="w-16 h-16 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+          </svg>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Your wishlist is empty</h2>
+        <a href="{% url 'shop:shop' %}"
+           class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg transition-colors duration-200 shadow-lg">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          Browse Products
+        </a>
+      </div>
+    </div>
+    {% else %}
+
+    <!-- Summary -->
+    <div class="bg-gray-50 rounded-2xl shadow-xl p-6 mb-8 border border-gray-200">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <div class="bg-red-100 rounded-lg p-3 mr-4">
+            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="text-gray-600">Total Products in Wishlist</p>
+            <p class="text-2xl font-bold text-gray-900">
+              <span id="wishlist-count">{{ products|length }}</span>
+              item{% if products|length != 1 %}s{% endif %}
+            </p>
+          </div>
+        </div>
+        <a href="{% url 'shop:shop' %}"
+           class="inline-flex items-center bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors duration-200">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Continue Shopping
+        </a>
+      </div>
+    </div>
+
+    <!-- Grid -->
+    <div class="bg-gray-50 rounded-2xl shadow-xl p-6 border border-gray-200" id="wishlist-wrapper">
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6" id="wishlist-grid">
+        {% for product in products %}
+        <div class="bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-all duration-200 overflow-hidden wishlist-item"
+             data-product-id="{{ product.id }}">
+          <!-- Image -->
+          <div class="relative aspect-square overflow-hidden">
+            {% if product.thumbnail %}
+              <img src="{{ product.thumbnail }}" alt="{{ product.name }}" class="w-full h-full object-cover">
+            {% else %}
+              <div class="w-full h-full bg-blue-100 flex items-center justify-center">
+                <svg class="w-16 h-16 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm3 4a2 2 0 114 0 2 2 0 01-4 0zm9 9H4l3-4 2 2 3-4 4 6z"/>
+                </svg>
+              </div>
+            {% endif %}
+
+            <!-- Badge -->
+            <div class="absolute top-3 right-3">
+              <div class="bg-red-600 text-white rounded-full p-2 shadow">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Info -->
+          <div class="p-6 space-y-4">
+            <div>
+              <a href="{% url 'shop:product_detail' product.id %}" class="block hover:text-blue-600 transition-colors">
+                <h3 class="text-lg font-semibold text-gray-900 line-clamp-2 min-h-[3rem]">
+                  {{ product.name }}
+                </h3>
+              </a>
+              {% if product.category %}
+              <p class="text-sm text-gray-500 mt-1 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.5 0 1 .2 1.4.6l7 7a2 2 0 010 2.8l-7 7a2 2 0 01-2.8 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/>
+                </svg>
+                {{ product.category }}
+              </p>
+              {% endif %}
+            </div>
+
+            <div class="flex items-center justify-between">
+              <div class="text-2xl font-bold text-blue-600">
+                Rp {{ product.price|floatformat:0 }}
+              </div>
+              {% if product.stock %}
+              <div class="text-sm text-gray-500 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+                Stock: {{ product.stock }}
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Actions -->
+            <div class="space-y-3 pt-4 border-t border-gray-200">
+              <a href="{% url 'shop:product_detail' product.id %}"
+                 class="block w-full bg-blue-600 hover:bg-blue-700 text-white text-center px-4 py-3 rounded-lg font-medium transition-colors duration-200 shadow">
+                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M4 6h8m-8 4h8m-8 4h5"/>
+                </svg>
+                View Details
+              </a>
+
+              <button type="button"
+                      class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-200 shadow flex items-center justify-center remove-from-wishlist-btn"
+                      data-url="{% url 'shop:toggle_wishlist' product.id %}"
+                      data-product-id="{{ product.id }}"
+                      data-product-name="{{ product.name|escape }}">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Remove from Wishlist
+              </button>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- CSRF for JS -->
+    <form style="display:none;">{% csrf_token %}</form>
+
+  </div>
 </div>
+
+<!-- Toast component for toast.js -->
+<div id="toast-component"
+     class="fixed bottom-5 right-5 z-[100] w-[28rem] max-w-[90vw] pointer-events-auto opacity-0 translate-y-64 transition-all duration-300">
+  <div class="flex items-start bg-white border border-gray-300 rounded-xl shadow-lg p-4 space-x-3">
+    <div id="toast-icon" class="mt-0.5 text-gray-500">●</div>
+    <div class="flex-1">
+      <div id="toast-title" class="font-semibold text-gray-800">Info</div>
+      <div id="toast-message" class="text-gray-600 text-sm">Message</div>
+    </div>
+    <button type="button" aria-label="Close"
+            onclick="document.getElementById('toast-component').classList.add('opacity-0','translate-y-64');document.getElementById('toast-component').classList.remove('opacity-100','translate-y-0');"
+            class="text-gray-400 hover:text-gray-600">✕</button>
+  </div>
+</div>
+
+<!-- toast helper -->
+<script src="{% static 'js/toast.js' %}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const csrfToken = document.querySelector('input[name=csrfmiddlewaretoken]')?.value || '';
+  const grid = document.getElementById('wishlist-grid');
+  const countEl = document.getElementById('wishlist-count');
+
+  function showNotification(message, type = 'success') {
+    const title = type === 'error' ? 'Error' : type === 'info' ? 'Info' : 'Success';
+    if (typeof showToast === 'function') {
+      showToast(title, message, type, 4000);
+    } else {
+      alert(`${title}: ${message}`);
+    }
+  }
+
+  function showEmptyState() {
+    const wrapper = document.getElementById('wishlist-wrapper');
+    if (wrapper) wrapper.remove();
+    const empty = document.getElementById('empty-wishlist');
+    if (empty) return; // already there
+
+    const container = document.getElementById('wishlist-page');
+    const html = `
+      <div id="empty-wishlist" class="bg-gray-50 rounded-2xl shadow-xl p-12 text-center border border-gray-200">
+        <div class="max-w-md mx-auto">
+          <div class="w-32 h-32 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-16 h-16 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">Your wishlist is empty</h2>
+          <a href="{% url 'shop:shop' %}" class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg transition-colors duration-200 shadow-lg">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            Browse Products
+          </a>
+        </div>
+      </div>`;
+    container.insertAdjacentHTML('beforeend', html);
+  }
+
+  function handleRemove(btn) {
+    const url = btn.getAttribute('data-url');
+    const productName = btn.getAttribute('data-product-name') || 'Product';
+    const card = btn.closest('.wishlist-item');
+
+    btn.disabled = true;
+    const original = btn.innerHTML;
+    btn.innerHTML = `
+      <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z"></path>
+      </svg> Removing...`;
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrfToken,
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'success') {
+        showNotification(data.message || `${productName} removed from wishlist`, 'success');
+
+        // animate remove
+        if (card) {
+          card.style.transition = 'opacity .2s, transform .2s';
+          card.style.opacity = '0';
+          card.style.transform = 'scale(0.98)';
+          setTimeout(() => {
+            card.remove();
+
+            // update counter
+            if (countEl) {
+              const newCount = Math.max(0, (parseInt(countEl.textContent || '1', 10) - 1));
+              countEl.textContent = newCount;
+              if (newCount === 0) showEmptyState();
+            } else if (!grid || grid.children.length === 0) {
+              showEmptyState();
+            }
+          }, 200);
+        }
+      } else {
+        showNotification(data.message || 'Failed to remove from wishlist', 'error');
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
+    })
+    .catch(() => {
+      showNotification('Network error. Please try again.', 'error');
+      btn.disabled = false;
+      btn.innerHTML = original;
+    });
+  }
+
+  document.querySelectorAll('.remove-from-wishlist-btn').forEach(btn => {
+    btn.addEventListener('click', () => handleRemove(btn));
+  });
+});
+</script>
 {% endblock %}
