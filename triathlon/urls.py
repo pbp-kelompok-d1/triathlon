@@ -28,6 +28,7 @@ urlpatterns = [
     path('ticket/', include('ticket.urls')),
     path('place/', include('place.urls')),
     path('activities/',include('activities.urls')),
+    path('auth/', include('authentication.urls')),
     # path('home/', include('main.urls')),
 ]
 
