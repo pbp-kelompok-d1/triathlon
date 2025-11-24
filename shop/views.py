@@ -13,6 +13,7 @@ import pandas as pd
 from django.conf import settings
 from django.db import transaction
 from django.db.models import F
+from django.views.decorators.http import require_GET
 
 
 def is_admin(user):
@@ -626,16 +627,37 @@ import requests
 from django.http import HttpResponse
 
 
+@require_GET
 def show_json(request):
-    """Return all products as JSON."""
-    category = request.GET.get('category', None)
-    products = Product.objects.all()
-    
+    """
+    Return list of products as JSON.
+    Optional query params:
+      category=running|cycling|swimming
+      mine=true   (produk milik user login)
+    """
+    qs = Product.objects.all()
+
+    category = request.GET.get('category')
     if category:
-        products = products.filter(category=category)
-    
-    data = serializers.serialize('json', products)
-    return HttpResponse(data, content_type='application/json')
+        qs = qs.filter(category=category)
+
+    if request.GET.get('mine') == 'true' and request.user.is_authenticated:
+        qs = qs.filter(seller=request.user)
+
+    data = []
+    for p in qs:
+        data.append({
+            'id': str(p.id),
+            'name': p.name,
+            'description': p.description,
+            'price': float(p.price),
+            'stock': p.stock,
+            'category': p.category,
+            'thumbnail': p.thumbnail or '',
+            'seller': p.seller.username if p.seller else None,
+        })
+
+    return JsonResponse(data, safe=False)
 
 
 def show_json_mine(request):
