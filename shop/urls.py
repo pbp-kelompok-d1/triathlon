@@ -21,4 +21,9 @@ urlpatterns = [
     path('delete-all-products/', views.delete_all_products, name='delete_all_products'),
     path('cart/update/<int:item_id>/', views.update_cart_quantity, name='update_cart_quantity'),
     
+    # JSON API endpoints for Flutter
+    path('api/products/', views.show_json, name='show_json'),
+    path('api/products/mine/', views.show_json_mine, name='show_json_mine'),
+    path('api/products/create/', views.create_product_flutter, name='create_product_flutter'),
+    path('api/proxy-image/', views.proxy_image, name='proxy_image'),
 ]
