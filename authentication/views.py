@@ -5,81 +5,76 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
-from user_profile.models import UserProfile # Pastikan import ini ada
+from user_profile.models import UserProfile 
 
 @csrf_exempt
 def register(request):
-    """
-    Endpoint: POST /api/register/
-    """
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            
-            # Ambil data
-            username = data.get('username')
-            password = data.get('password')
-            email = data.get('email')
-            phone_number = data.get('phone_number', '')
-            role = data.get('role', 'USER')
+    if request.method != 'POST':
+        return JsonResponse({
+            "status": False,
+            "message": "Method not allowed."
+        }, status=405)
 
-            # --- 1. Validasi Input Kosong ---
-            if not username or not password or not email:
-                return JsonResponse({
-                    "status": False,
-                    "message": "Username, email, dan password wajib diisi."
-                }, status=400)
+    try:
+        data = json.loads(request.body)
+        username = data.get('username')
+        password = data.get('password')
+        email = data.get('email')
+        phone_number = data.get('phone_number', '')
+        role = data.get('role', 'USER')
 
-            # --- 2. Validasi Format Email ---
-            try:
-                validate_email(email)
-            except ValidationError:
-                return JsonResponse({
-                    "status": False,
-                    "message": "Format email tidak valid."
-                }, status=400)
-
-            # --- 3. Validasi Uniqueness (Username & Email) ---
-            if User.objects.filter(username=username).exists():
-                return JsonResponse({
-                    "status": False,
-                    "message": "Username sudah terdaftar."
-                }, status=409) # 409 Conflict
-
-            if User.objects.filter(email=email).exists():
-                return JsonResponse({
-                    "status": False,
-                    "message": "Email sudah terdaftar."
-                }, status=409)
-
-            # --- 4. Proses Pembuatan User ---
-            user = User.objects.create_user(username=username, email=email, password=password)
-            user.save()
-
-            # Update Profile (Mirip logic di forms.py kamu)
-            # Menggunakan try-except untuk handle jika profile belum terbuat otomatis oleh signals
-            try:
-                profile = user.profile
-            except:
-                profile = UserProfile.objects.create(user=user)
-            
-            profile.phone_number = phone_number
-            profile.role = role
-            profile.save()
-
+        # 1. Input validation
+        if not username or not password or not email:
             return JsonResponse({
-                "status": True,
-                "message": "Registrasi berhasil!",
-                "username": user.username
-            }, status=201)
+                "status": False,
+                "message": "Username, email, dan password wajib diisi."
+            }, status=400)
 
-        except json.JSONDecodeError:
-            return JsonResponse({"status": False, "message": "Invalid JSON."}, status=400)
-        except Exception as e:
-            return JsonResponse({"status": False, "message": str(e)}, status=500)
+        # 2. Email format validation
+        try:
+            validate_email(email)
+        except ValidationError:
+            return JsonResponse({
+                "status": False,
+                "message": "Format email tidak valid."
+            }, status=400)
 
-    return JsonResponse({"status": False, "message": "Method not allowed."}, status=405)
+        # 3. Uniqueness
+        if User.objects.filter(username=username).exists():
+            return JsonResponse({"status": False, "message": "Username sudah terdaftar."}, status=409)
 
+        if User.objects.filter(email=email).exists():
+            return JsonResponse({"status": False, "message": "Email sudah terdaftar."}, status=409)
+
+        # 4. Role validation
+        valid_roles = [choice[0] for choice in UserProfile.ROLE_CHOICES]
+        if role not in valid_roles:
+            return JsonResponse({
+                "status": False,
+                "message": "Role tidak valid."
+            }, status=400)
+
+        # 5. Create user
+        user = User.objects.create_user(username=username, email=email, password=password)
+
+        # 6. Update auto-created profile
+        profile = user.profile
+        profile.phone_number = phone_number
+        profile.role = role
+        profile.save()
+
+        return JsonResponse({
+            "status": True,
+            "message": "Registrasi berhasil!",
+            "username": user.username
+        }, status=201)
+
+    except json.JSONDecodeError:
+        return JsonResponse({"status": False, "message": "Invalid JSON."}, status=400)
+
+    except Exception as e:
+        print("REGISTER ERROR:", e)   # <--- TAMBAHKAN INI
+        return JsonResponse({"status": False, "message": str(e)}, status=500)
 
 @csrf_exempt
 def login(request):
@@ -88,9 +83,8 @@ def login(request):
     """
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)
-            username = data.get('username')
-            password = data.get('password')
+            username = request.POST.get('username')
+            password = request.POST.get('password')
 
             # --- 1. Cek Username Ada atau Tidak ---
             # Kita cek manual dulu ke DB untuk pesan error yang spesifik
