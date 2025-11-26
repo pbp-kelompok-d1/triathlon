@@ -4,6 +4,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
+import json
+import uuid
+
 # ================================ LIKE/UNLIKE POST ================================
 @require_POST
 @login_required(login_url='/login/')
@@ -68,7 +71,6 @@ def show_forums(request):
     return render(request, "forums.html", context)
 
 
-@login_required(login_url='/login/')
 def post_detail(request, id):
    
     post = get_object_or_404(ForumPost, pk=id)
@@ -115,6 +117,65 @@ def post_detail(request, id):
     except Exception:
         linked_place = None
 
+    # Check if JSON response is requested (for Flutter app)
+    is_json_request = (
+        request.GET.get('format') == 'json' or 
+        'application/json' in request.headers.get('Accept', '')
+    )
+    
+    if is_json_request:
+        # Return JSON response for Flutter
+        post_data = {
+            'id': str(post.id),
+            'title': post.title,
+            'content': post.content,
+            'category': post.category,
+            'category_display': post.get_category_display(),
+            'sport_category': post.sport_category,
+            'sport_category_display': post.get_sport_category_display(),
+            'post_views': post.post_views,
+            'is_pinned': post.is_pinned,
+            'product_id': str(post.product_id) if post.product_id else None,
+            'location_id': post.location_id,
+            'created_at': post.created_at.strftime('%b %d, %Y'),
+            'author': post.author.username if post.author else 'Anonymous',
+            'author_id': post.author.id if post.author else None,
+            'author_initial': post.author.username[0].upper() if post.author else 'A',
+            'author_role': post.author.profile.role if post.author and hasattr(post.author, 'profile') else 'USER',
+            'like_count': post.like_count(),
+            'user_has_liked': user_has_liked_post,
+            'original_poster_total_posts': original_poster_total_posts,
+        }
+        
+        replies_data = [
+            {
+                'id': str(reply.id),
+                'content': reply.content,
+                'created_at': reply.created_at.strftime('%b %d, %Y %I:%M %p'),
+                'author': reply.author.username if reply.author else 'Anonymous',
+                'author_id': reply.author.id if reply.author else None,
+                'author_initial': reply.author.username[0].upper() if reply.author else 'A',
+                'author_role': reply.author.profile.role if reply.author and hasattr(reply.author, 'profile') else 'USER',
+                'total_posts': reply.total_posts,
+                'quote_info': {
+                    'id': str(reply.quote_reply.id),
+                    'author': reply.quote_reply.author.username if reply.quote_reply.author else 'Anonymous',
+                    'content': reply.quote_reply.content[:100] + ('...' if len(reply.quote_reply.content) > 100 else '')
+                } if reply.quote_reply else None,
+            }
+            for reply in replies_with_counts
+        ]
+        
+        return JsonResponse({
+            'post': post_data,
+            'replies': replies_data,
+            'user_has_liked': user_has_liked_post,
+        })
+
+    # For web browser HTML view, require login
+    if not request.user.is_authenticated:
+        return redirect('/login/')
+
     context = {
         'post': post,
         'replies': replies_with_counts,
@@ -158,20 +219,46 @@ def show_json(request):
 # =================================== ADDING FORUMS AND REPLIES ================================
 
 @require_POST
-@login_required(login_url='/login/')
+@csrf_exempt
 def add_post_ajax(request):
-    # Add new forum post via AJAX
-    title = request.POST.get("title")
-    content = request.POST.get("content")
-    category = request.POST.get("category")
-    sport_category = request.POST.get("sport_category")
-    product_id = request.POST.get("product_id")
-    location_id = request.POST.get("location_id")
+    # Add new forum post via AJAX or JSON (for Flutter)
+    
+    # Check authentication
+    if not request.user.is_authenticated:
+        # For JSON requests (Flutter), return JSON error
+        if request.content_type == 'application/json':
+            return JsonResponse({'status': 'error', 'message': 'Login required'}, status=401)
+        # For web requests, redirect to login
+        return redirect('/login/')
+    
+    # Check if JSON body or form data
+    if request.content_type == 'application/json':
+        try:
+            data = json.loads(request.body)
+            title = data.get('title')
+            content = data.get('content')
+            category = data.get('category')
+            sport_category = data.get('sport_category')
+            product_id = data.get('product_id')
+            location_id = data.get('location_id')
+            is_pinned_raw = data.get('is_pinned', False)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    else:
+        # Form data (existing web interface)
+        title = request.POST.get("title")
+        content = request.POST.get("content")
+        category = request.POST.get("category")
+        sport_category = request.POST.get("sport_category")
+        product_id = request.POST.get("product_id")
+        location_id = request.POST.get("location_id")
+        is_pinned_raw = request.POST.get("is_pinned") == 'on'
+    
     user = request.user
     
     # Only allow admins to pin posts
     is_admin = hasattr(user, 'profile') and user.profile.role == 'ADMIN'
-    is_pinned = (request.POST.get("is_pinned") == 'on') if is_admin else False
+    is_pinned = is_pinned_raw if is_admin else False
 
     # Convert product/location IDs safely
     def _to_uuid_or_none(val):
@@ -197,6 +284,15 @@ def add_post_ajax(request):
         location_id=_to_int_or_none(location_id),
     )
     new_post.save()
+    
+    # Return JSON for Flutter, simple response for web
+    if request.content_type == 'application/json':
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Post created successfully',
+            'post_id': str(new_post.id)
+        }, status=201)
+    
     return HttpResponse(b"CREATED", status=201)
 
 @require_POST
@@ -483,3 +579,4 @@ def user_profile_content(request, username):
     replies = ForumReply.objects.filter(author=user_obj)
     context.update({'posts': posts, 'replies': replies, 'wishlist': []})
     return render(request, 'user_profile/_user_content.html', context)
+
