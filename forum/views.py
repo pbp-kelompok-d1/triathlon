@@ -128,7 +128,8 @@ def post_detail(request, id):
         post_data = {
             'id': str(post.id),
             'title': post.title,
-            'content': post.content,
+            'content': post.content[:150] + '...' if len(post.content) > 150 else post.content,
+            'full_content': post.content,  # Add full_content field
             'category': post.category,
             'category_display': post.get_category_display(),
             'sport_category': post.sport_category,
