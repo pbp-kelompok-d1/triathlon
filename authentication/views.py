@@ -20,7 +20,7 @@ def register(request):
         username = data.get('username')
         password = data.get('password')
         email = data.get('email')
-        phone_number = data.get('phone_number', '')
+        phone_number = data.get('phone_number', '')        
         role = data.get('role', 'USER')
 
         # 1. Input validation
@@ -73,7 +73,7 @@ def register(request):
         return JsonResponse({"status": False, "message": "Invalid JSON."}, status=400)
 
     except Exception as e:
-        print("REGISTER ERROR:", e)   # <--- TAMBAHKAN INI
+
         return JsonResponse({"status": False, "message": str(e)}, status=500)
 
 @csrf_exempt

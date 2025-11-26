@@ -1,4 +1,5 @@
 import os
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
@@ -616,3 +617,96 @@ def update_cart_quantity(request, item_id):
         return JsonResponse({'status': 'error', 'message': 'Cart item not found'}, status=404)
     except (ValueError, json.JSONDecodeError):
         return JsonResponse({'status': 'error', 'message': 'Invalid quantity'}, status=400)
+
+
+# JSON API endpoints for Flutter app
+from django.views.decorators.csrf import csrf_exempt
+from django.core import serializers
+import requests
+from django.http import HttpResponse
+
+
+def show_json(request):
+    """Return all products as JSON."""
+    category = request.GET.get('category', None)
+    products = Product.objects.all()
+    
+    if category:
+        products = products.filter(category=category)
+    
+    data = serializers.serialize('json', products)
+    return HttpResponse(data, content_type='application/json')
+
+
+def show_json_mine(request):
+    """Return products owned by the current user as JSON."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+    
+    products = Product.objects.filter(seller=request.user)
+    data = serializers.serialize('json', products)
+    return HttpResponse(data, content_type='application/json')
+
+
+@csrf_exempt
+def create_product_flutter(request):
+    """Create a new product from Flutter app via JSON."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'}, status=400)
+    
+    if not request.user.is_authenticated:
+        return JsonResponse({'status': 'error', 'message': 'Login required'}, status=401)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+    
+    name = data.get('name', '').strip()
+    price = data.get('price')
+    description = data.get('description', '').strip()
+    thumbnail = data.get('thumbnail', '').strip()
+    category = data.get('category', '').strip()
+    stock = data.get('stock', 0)
+    
+    if not name or not description:
+        return JsonResponse({'status': 'error', 'message': 'Name and description required'}, status=400)
+    
+    try:
+        price = float(price) if price else 0
+        stock = int(stock) if stock else 0
+    except (ValueError, TypeError):
+        return JsonResponse({'status': 'error', 'message': 'Invalid price or stock'}, status=400)
+    
+    if price <= 0:
+        return JsonResponse({'status': 'error', 'message': 'Price must be > 0'}, status=400)
+    
+    product = Product.objects.create(
+        name=name,
+        price=price,
+        description=description,
+        thumbnail=thumbnail or '',
+        category=category or 'running',
+        stock=stock,
+        seller=request.user,
+    )
+    
+    return JsonResponse({
+        'status': 'success',
+        'message': 'Product created',
+        'product_id': str(product.id),
+    }, status=201)
+
+
+def proxy_image(request):
+    """Proxy external images to avoid CORS issues in Flutter."""
+    url = request.GET.get('url', '')
+    if not url:
+        return JsonResponse({'error': 'URL parameter required'}, status=400)
+    
+    try:
+        response = requests.get(url, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
+        response.raise_for_status()
+        return HttpResponse(response.content, content_type=response.headers.get('Content-Type', 'image/jpeg'))
+    except requests.RequestException as e:
+        return JsonResponse({'error': str(e)}, status=500)
