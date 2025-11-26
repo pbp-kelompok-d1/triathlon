@@ -49,9 +49,17 @@ def register(request):
 
             # Try to create/update profile if model exists
             try:
-                profile = user.profile
+                # Check if profile exists, if not create it
+                if hasattr(user, 'profile'):
+                    profile = user.profile
+                else:
+                    # Create profile manually if it doesn't exist
+                    from user_profile.models import UserProfile
+                    profile = UserProfile.objects.create(user=user)
                 profile.save()
-            except:
+            except Exception as profile_error:
+                # Log but don't fail registration if profile creation fails
+                print(f"Profile creation failed: {profile_error}")
                 pass
 
             return JsonResponse({
@@ -60,15 +68,20 @@ def register(request):
                 "username": user.username
             }, status=201)
 
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as json_err:
             return JsonResponse({
                 "status": "error",
-                "message": "Invalid JSON."
+                "message": f"Invalid JSON: {str(json_err)}"
             }, status=400)
         except Exception as e:
+            # Log the full error for debugging
+            import traceback
+            error_detail = traceback.format_exc()
+            print(f"Registration error: {error_detail}")
+            
             return JsonResponse({
                 "status": "error",
-                "message": str(e)
+                "message": f"Server error: {str(e)}"
             }, status=500)
 
     return JsonResponse({

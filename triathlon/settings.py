@@ -32,7 +32,12 @@ DEBUG = False if PRODUCTION else True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", 'muhammad-kaila-triathlon.pbp.cs.ui.ac.id', '10.0.2.2']
 
-CSRF_TRUSTED_ORIGINS = ["https://muhammad-kaila-triathlon.pbp.cs.ui.ac.id"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://muhammad-kaila-triathlon.pbp.cs.ui.ac.id",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+    "http://10.0.2.2:8000",
+]
 
 # Application definition
 
