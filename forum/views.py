@@ -9,8 +9,12 @@ import uuid
 
 # ================================ LIKE/UNLIKE POST ================================
 @require_POST
-@login_required(login_url='/login/')
+@csrf_exempt
 def toggle_like(request, post_id):
+    # Check authentication
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Login required'}, status=401)
+    
     post = get_object_or_404(ForumPost, pk=post_id)
     user = request.user
     if post.user_has_liked(user):
@@ -297,9 +301,14 @@ def add_post_ajax(request):
     return HttpResponse(b"CREATED", status=201)
 
 @require_POST
-@login_required(login_url='/login/')
+@csrf_exempt
 def add_reply(request, post_id):
     # Add reply to forum post
+    
+    # Check authentication
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Login required'}, status=401)
+    
     try:
         post = get_object_or_404(ForumPost, pk=post_id)
         content = request.POST.get('content', '')
