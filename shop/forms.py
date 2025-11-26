@@ -4,7 +4,7 @@ from .models import Product
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'description', 'price', 'stock', 'category']
+        fields = ['name', 'description', 'price', 'stock', 'category', 'thumbnail']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -26,7 +26,12 @@ class ProductForm(forms.ModelForm):
             }),
             'category': forms.Select(attrs={
                 'class': 'form-control'
+            }),
+            'thumbnail': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter product thumbnail URL...'
             })
+
         }
         
     def clean_name(self):

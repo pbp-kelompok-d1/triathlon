@@ -1,58 +1,719 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<div class="container">
-    <h1>Triathlon Shop</h1>
 
-    <div class="user-info">
-        {% if user.is_authenticated %}
-        <h5>Welcome, {{ user.username }}</h5>
-        {% else %}
-        <h5>Welcome, Guest!</h5>
-        {% endif %}
+<div id="shop-hero"
+     class="relative bg-cover bg-center bg-no-repeat text-white mb-10"
+     style="background-image: url('image/hero-cycling.jpg');">
+  <div class="absolute inset-0 bg-gradient-to-br from-black/70 via-blue-900/60 to-indigo-800/50"></div>
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+    <div class="text-center">
+      <h1 class="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight drop-shadow-lg">
+        TRIATHLON SHOP
+      </h1>
+      <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto leading-relaxed drop-shadow-md">
+        Discover, manage, and shop triathlon gears with a clean experience.
+      </p>
+      </div>
     </div>
+  </div>
+</div>
 
-    <div class="actions">
-        <a href="{% url 'shop:add_product' %}">
-            <button class="btn-primary">+ Add New Product</button>
-        </a>
-        <a href="/">
-            <button class="btn-secondary">Back to Main</button>
-        </a>
-    </div>
-
-    <div class="products-list">
-        {% if not products %}
-        <div class="no-products">
-            <p>No products available in the shop. Please check back later!</p>
+<div class="min-h-screen bg-white py-8">
+    <div class="container mx-auto px-4">
+        <!-- Header (breadcrumbs removed) -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <h1 class="text-4xl font-bold text-gray-900 flex items-center">
+                    <div class="w-12 h-12 rounded-xl bg-green-600 text-white flex items-center justify-center mr-4 shadow-lg">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                        </svg>
+                    </div>
+                    Triathlon Shop
+                </h1>
+                <div class="flex gap-3">
+                    <button type="button" id="openModalBtn"
+                            class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-3 rounded-lg transition-colors shadow-md">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m6-6H6"></path>
+                        </svg>
+                        Add Product
+                    </button>
+                    <a href="{% url 'shop:view_cart' %}"
+                       class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-3 rounded-lg transition-colors shadow-md">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                        View Cart
+                    </a>
+                    <a href="{% url 'shop:view_wishlist' %}"
+                       class="inline-flex items-center bg-rose-600 hover:bg-rose-700 text-white font-semibold px-5 py-3 rounded-lg transition-colors shadow-md">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                        </svg>
+                        View Wishlist
+                    </a>
+                </div>
+            </div>
         </div>
-        {% else %}
-        {% for product in products %}
-        <div class="product-card">
-            <h2><a href="{% url 'shop:product_detail' product.id %}">{{ product.name }}</a></h2>
-            <p>Price: ${{ product.price }}</p>
-            <p>{{ product.description|truncatewords:20 }}</p>
+
+        {% csrf_token %}
+
+        <!-- MODAL ADD PRODUCT -->
+        <div id="addProductModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-gray-200">
+                <div class="sticky top-0 bg-white border-b px-8 py-6 rounded-t-2xl">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">Add New Product</h2>
+                            <p class="text-sm text-gray-500 mt-1">Share your product with the triathlon community</p>
+                        </div>
+                        <button type="button" id="closeModalBtn" class="text-gray-400 hover:text-gray-600 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="px-8 py-6">
+                    <div id="modal-form-messages" class="mb-4"></div>
+                    <form id="add-product-modal-form" class="space-y-5">
+                        {% csrf_token %}
+                        <div>
+                            <label for="product_name" class="block text-sm font-semibold text-gray-700 mb-2">Product Name</label>
+                            <input type="text" id="product_name" name="name" required placeholder="Enter product name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                            <div class="form-error text-red-600 text-sm mt-1" id="modal_error_name"></div>
+                        </div>
+                        <div>
+                            <label for="product_description" class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                            <textarea id="product_description" name="description" rows="4" required placeholder="Describe your product..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"></textarea>
+                            <div class="form-error text-red-600 text-sm mt-1" id="modal_error_description"></div>
+                        </div>
+                        <div>
+                            <label for="product_category" class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                            <div class="relative">
+                                <select id="product_category" name="category" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none bg-white cursor-pointer pr-10">
+                                    <option value="">Select a category</option>
+                                    <option value="running">Running</option>
+                                    <option value="cycling">Cycling</option>
+                                    <option value="swimming">Swimming</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                            </div>
+                            <div class="form-error text-red-600 text-sm mt-1" id="modal_error_category"></div>
+                        </div>
+                        <div>
+                            <label for="product_price" class="block text-sm font-semibold text-gray-700 mb-2">Price (Rp)</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">Rp</span>
+                                <input type="number" id="product_price" name="price" step="0.01" min="0" required placeholder="0" class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                            </div>
+                            <div class="form-error text-red-600 text-sm mt-1" id="modal_error_price"></div>
+                        </div>
+                        <div>
+                            <label for="product_stock" class="block text-sm font-semibold text-gray-700 mb-2">Stock Quantity</label>
+                            <input type="number" id="product_stock" name="stock" min="0" required placeholder="Enter stock quantity" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                            <div class="form-error text-red-600 text-sm mt-1" id="modal_error_stock"></div>
+                        </div>
+                        <div>
+                            <label for="product_thumbnail" class="block text-sm font-semibold text-gray-700 mb-2">Thumbnail URL</label>
+                            <input type="url" id="product_thumbnail" name="thumbnail" required placeholder="https://example.com/image.jpg" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                            <div class="form-error text-red-600 text-sm mt-1" id="modal_error_thumbnail"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="border-t px-8 py-5 flex justify-between items-center bg-gray-50 rounded-b-2xl">
+                    <button type="button" id="cancelModalBtn" class="px-6 py-2.5 text-gray-700 font-medium hover:bg-gray-200 rounded-lg transition-all duration-200">Cancel</button>
+                    <button type="button" id="submit-product-btn" class="px-8 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg">Add Product</button>
+                </div>
+            </div>
         </div>
-        {% endfor %}
-        {% endif %}
 
+        <!-- MODAL EDIT PRODUCT -->
+        <div id="editProductModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200">
+                <div class="sticky top-0 bg-white border-b px-8 py-6 flex justify-between items-center rounded-t-2xl">
+                    <h5 class="text-xl font-semibold" id="editModalTitle">Edit Product</h5>
+                    <button type="button" id="closeEditModalBtn" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">&times;</button>
+                </div>
+                <div class="p-8">
+                    <div id="edit-modal-form-messages" class="mb-4"></div>
+                    <form id="edit-product-modal-form" class="space-y-5">
+                        {% csrf_token %}
+                        <div>
+                            <label for="edit_product_name" class="block text-sm font-semibold text-gray-700 mb-2">Product Name</label>
+                            <input type="text" id="edit_product_name" name="name" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_name"></div>
+                        </div>
+                        <div>
+                            <label for="edit_product_description" class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                            <textarea id="edit_product_description" name="description" rows="4" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                            <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_description"></div>
+                        </div>
+                        <div>
+                            <label for="edit_product_category" class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                            <select id="edit_product_category" name="category" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Select a category</option>
+                                <option value="running">Running</option>
+                                <option value="cycling">Cycling</option>
+                                <option value="swimming">Swimming</option>
+                            </select>
+                            <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_category"></div>
+                        </div>
+                        <div>
+                            <label for="edit_product_price" class="block text-sm font-semibold text-gray-700 mb-2">Price (Rp)</label>
+                            <input type="number" id="edit_product_price" name="price" step="0.01" min="0" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_price"></div>
+                        </div>
+                        <div>
+                            <label for="edit_product_stock" class="block text-sm font-semibold text-gray-700 mb-2">Stock Quantity</label>
+                            <input type="number" id="edit_product_stock" name="stock" min="0" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_stock"></div>
+                        </div>
+                        <div>
+                            <label for="edit_product_thumbnail" class="block text-sm font-semibold text-gray-700 mb-2">Thumbnail URL</label>
+                            <input type="url" id="edit_product_thumbnail" name="thumbnail" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="form-error text-red-600 text-sm mt-1" id="edit_modal_error_thumbnail"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="border-t px-8 py-6 flex justify-end gap-3 bg-gray-50 rounded-b-2xl">
+                    <button type="button" id="cancelEditModalBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2.5 rounded-lg transition">Cancel</button>
+                    <button type="button" id="submit-edit-product-btn" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-5 py-2.5 rounded-lg transition">Update Product</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Panel -->
+         <div class="bg-gray-50 rounded-2xl shadow-xl border border-gray-200">
+      <div class="border-b border-gray-200 px-6 py-4">
+        <div class="text-sm text-gray-600">
+          Showing <span id="product-count-display">{{ products|length }}</span> results for <strong id="current-category-display">"All"</strong>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 gap-8 p-6">
+        <div class="col-span-12 lg:col-span-3">
+          <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm sticky top-8">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Filter by Category</h3>
+            <div class="space-y-2" id="filter-container">
+              <button class="w-full text-left px-4 py-2.5 rounded-full bg-gray-900 text-white font-medium transition filter-btn" data-category="">All Products</button>
+              <button class="w-full text-left px-4 py-2.5 rounded-full border border-gray-300 text-gray-800 hover:bg-gray-900 hover:text-white font-medium transition filter-btn" data-category="running">Running</button>
+              <button class="w-full text-left px-4 py-2.5 rounded-full border border-gray-300 text-gray-800 hover:bg-gray-900 hover:text-white font-medium transition filter-btn" data-category="cycling">Cycling</button>
+              <button class="w-full text-left px-4 py-2.5 rounded-full border border-gray-300 text-gray-800 hover:bg-gray-900 hover:text-white font-medium transition filter-btn" data-category="swimming">Swimming</button>
+            </div>
+          </div>
+        </div>
+
+                <!-- Right Side - Products -->
+                <div class="col-span-12 lg:col-span-9">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="product-list-container">
+                        {% if not products %}
+                        <div class="col-span-full">
+                            <div class="bg-white rounded-2xl shadow-md p-12 text-center border border-gray-200">
+                                <div class="max-w-md mx-auto">
+                                    <div class="w-28 h-28 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <svg class="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                    </div>
+                                    <h2 class="text-2xl font-bold text-gray-900 mb-4">No Products Found</h2>
+                                    <p class="text-gray-600 mb-6">There are currently no products in the shop. Please check back later or add a new product!</p>
+                                    <button type="button" id="openModalBtnEmpty" class="inline-flex items-center bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-lg transition-all shadow-md hover:shadow-lg">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m6-6H6"></path></svg>
+                                        Add First Product
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        {% for product in products %}
+                        <div class="product-card bg-white rounded-xl border border-gray-300 hover:shadow-xl transition-all duration-300 group overflow-hidden flex flex-col" data-product-id="{{ product.id }}" data-category="{{ product.category|lower }}">
+                            <div class="relative">
+                                <div class="aspect-square overflow-hidden">
+                                    {% if product.thumbnail %}
+                                        <img src="{{ product.thumbnail }}" alt="{{ product.name }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                                    {% else %}
+                                        <div class="w-full h-full bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center">
+                                            <svg class="w-16 h-16 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% if user == product.seller or user_is_admin %}
+                                <div class="absolute top-3 right-3 flex gap-2">
+                                    <button type="button" data-product-id="{{ product.id }}" data-product-name="{{ product.name|escapejs }}" data-seller-name="{{ product.seller.username|escapejs }}" data-is-staff="{% if user_is_admin %}true{% else %}false{% endif %}" data-is-owner="{% if user == product.seller %}true{% else %}false{% endif %}" class="edit-product-btn bg-white bg-opacity-90 hover:bg-opacity-100 text-blue-600 p-2 rounded-full shadow-md transition-all">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                    </button>
+                                    <button type="button" data-product-id="{{ product.id }}" data-product-name="{{ product.name|escapejs }}" data-seller-name="{{ product.seller.username|escapejs }}" data-thumbnail="{{ product.thumbnail|default:'' }}" data-is-staff="{% if user_is_admin %}true{% else %}false{% endif %}" data-is-owner="{% if user == product.seller %}true{% else %}false{% endif %}" class="delete-product-btn bg-white bg-opacity-90 hover:bg-opacity-100 text-red-600 p-2 rounded-full shadow-md transition-all">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="p-5 flex-1 flex flex-col">
+                                <a href="{% url 'shop:product_detail' product.id %}" class="block group-hover:text-blue-600 transition-colors mb-2">
+                                    <h5 class="text-base font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem]">{{ product.name }}</h5>
+                                </a>
+                                <div class="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                                    <a href="#" class="flex items-center gap-1 category-chip text-blue-600 hover:text-blue-800 transition-colors" data-category="{{ product.category|lower }}">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                                        <span class="underline truncate">{{ product.category|title }}</span>
+                                    </a>
+                                    <span class="mx-1">•</span>
+                                    <span>Stock: {{ product.stock }}</span>
+                                </div>
+                                <div class="mt-auto">
+                                    <div class="text-2xl font-bold text-blue-600 mb-4">Rp {{ product.price|floatformat:0 }}</div>
+                                    <div class="space-y-2">
+                                    <a href="{% url 'shop:add_to_cart' product.id %}"
+                                       class="block w-full bg-green-600 hover:bg-green-700 text-white text-center px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-md ajax-action-btn"
+                                       data-action="add-to-cart">Add to Cart</a>
+                                    <a href="{% url 'shop:toggle_wishlist' product.id %}"
+                                       class="block w-full bg-rose-600 hover:bg-rose-700 text-white text-center px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-md ajax-action-btn"
+                                       data-action="toggle-wishlist">Wishlist</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 
-    <div class="filters">
-        <h3>Filter Products:</h3>
-        <a href="?filter=all">
-            <button type="button" class="filter-btn">All Products</button>
-        </a>
-        <a href="?category=running">
-            <button type="button" class="filter-btn">Running</button>
-        </a>
-        <a href="?category=cycling">
-            <button type="button" class="filter-btn">Cycling</button>
-        </a>
-        <a href="?category=swimming">
-            <button type="button" class="filter-btn">Swimming</button>
-        </a>
+<!-- MODAL KONFIRMASI DELETE -->
+<div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-2xl bg-white">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900" id="modalTitle">Konfirmasi Hapus Produk</h3>
+            <button type="button" onclick="closeDeleteModal()" class="text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        </div>
+        <div class="mb-6">
+            <div class="flex items-center space-x-4 mb-4">
+                <img id="modalProductImage" src="" alt="" class="w-16 h-16 object-cover rounded-lg border" style="display: none;">
+                <div>
+                    <h4 id="modalProductName" class="font-semibold text-gray-800"></h4>
+                    <p id="modalProductSeller" class="text-sm text-gray-600"></p>
+                </div>
+            </div>
+            <div id="adminWarning" class="hidden bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
+                <div class="flex">
+                    <svg class="w-5 h-5 text-yellow-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>
+                    <div>
+                        <h5 class="font-medium text-yellow-800">Aksi Admin</h5>
+                        <p class="text-sm text-yellow-700">Anda akan menghapus produk milik pengguna lain.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-red-50 border border-red-200 rounded-md p-3">
+                <div class="flex">
+                    <svg class="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>
+                    <div>
+                        <h5 class="font-medium text-red-800">Peringatan!</h5>
+                        <p class="text-sm text-red-700">Tindakan ini tidak dapat dibatalkan. Produk akan dihapus secara permanen.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center justify-end space-x-3">
+            <button type="button" onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors duration-200">Batal</button>
+            <button type="button" id="confirmDeleteBtn" onclick="confirmDelete()" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200">Hapus Produk</button>
+        </div>
     </div>
+</div>
 
+<!-- Toast component (dipakai oleh toast.js) -->
+<div id="toast-component"
+     class="fixed bottom-5 right-5 z-[100] w-[28rem] max-w-[90vw] pointer-events-auto
+            flex items-start gap-3 px-4 py-3 rounded-xl border shadow-2xl bg-white
+            opacity-0 translate-y-64 transition-all duration-300">
+  <div id="toast-icon" class="mt-0.5 text-gray-500">●</div>
+  <div class="flex-1">
+    <div id="toast-title" class="font-semibold text-gray-800">Notice</div>
+    <div id="toast-message" class="text-sm text-gray-600">Message</div>
+  </div>
+  <button type="button" aria-label="Close"
+          class="text-gray-400 hover:text-gray-600"
+          onclick="(function(){const t=document.getElementById('toast-component');t.classList.remove('opacity-100','translate-y-0');t.classList.add('opacity-0','translate-y-64');})();">×</button>
+</div>
 
+<!-- Pakai toast.js -->
+<script src="{% static 'js/toast.js' %}"></script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const productContainer = document.getElementById('product-list-container');
+    
+    const modal = document.getElementById('addProductModal');
+    const openModalBtn = document.getElementById('openModalBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const cancelModalBtn = document.getElementById('cancelModalBtn');
+    
+    const editModal = document.getElementById('editProductModal');
+    const closeEditModalBtn = document.getElementById('closeEditModalBtn');
+    const cancelEditModalBtn = document.getElementById('cancelEditModalBtn');
+
+    let currentProductId = null;
+    let isAdminAction = false;
+    let currentEditProductId = null;
+    let isEditAdminAction = false;
+
+    const hero = document.getElementById('shop-hero');
+    const heroImages = [
+    'image/hero-cycling.jpg',
+    'image/hero-running.jpeg',
+    'image/hero-swimming.jpg',
+  ];
+  // Filter gambar yang benar-benar ada (optional)
+  const preload = url => new Promise(res => { const i=new Image(); i.onload=()=>res(url); i.onerror=()=>res(null); i.src=url; });
+  Promise.all(heroImages.map(preload)).then(list => {
+    const imgs = list.filter(Boolean);
+    if (!hero || imgs.length === 0) return;
+    let idx = 0;
+    hero.style.backgroundImage = `url('${imgs[0]}')`;
+    setInterval(() => {
+      idx = (idx + 1) % imgs.length;
+      hero.style.backgroundImage = `url('${imgs[idx]}')`;
+    }, 6000);
+  });
+
+    // Hanya wrapper ke toast.js
+    function showNotification(message, type = 'success') {
+        const title = type === 'error' ? 'Error' : type === 'info' ? 'Info' : 'Success';
+        if (typeof showToast === 'function') showToast(title, message, type, 5000);
+    }
+
+    function openModal() {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        document.getElementById('add-product-modal-form').reset();
+        document.getElementById('modal-form-messages').innerHTML = '';
+        document.querySelectorAll('.form-error').forEach(function(holder) { holder.innerHTML = ''; });
+    }
+
+    if (openModalBtn) openModalBtn.addEventListener('click', openModal);
+    const openModalBtnEmpty = document.getElementById('openModalBtnEmpty');
+    if (openModalBtnEmpty) openModalBtnEmpty.addEventListener('click', openModal);
+    
+    closeModalBtn.addEventListener('click', closeModal);
+    cancelModalBtn.addEventListener('click', closeModal);
+
+    // ============================================
+    // FILTER FUNCTIONALITY
+    // ============================================
+    const filterButtons = document.querySelectorAll('.filter-btn');
+
+    function clearFilterActive() {
+        filterButtons.forEach(function(btn) {
+            btn.classList.remove('bg-gray-900', 'text-white');
+            btn.classList.add('border', 'border-gray-300', 'text-gray-800');
+        });
+    }
+
+    function setActiveFilterBtn(activeBtn) {
+        clearFilterActive();
+        if (activeBtn) {
+            activeBtn.classList.add('bg-gray-900', 'text-white');
+            activeBtn.classList.remove('border', 'border-gray-300', 'text-gray-800');
+        }
+    }
+
+    function applyCategoryFilter(category) {
+        const normalized = (category || '').toLowerCase();
+        const targetBtn = Array.from(filterButtons).find(b => (b.getAttribute('data-category') || '').toLowerCase() === normalized);
+        setActiveFilterBtn(targetBtn);
+
+        const productCards = document.querySelectorAll('.product-card');
+        let visibleCount = 0;
+        productCards.forEach(function(card) {
+            const cardCategory = (card.getAttribute('data-category') || '').toLowerCase();
+            const show = !normalized || cardCategory === normalized;
+            card.classList.toggle('hidden', !show);
+            card.style.display = show ? 'flex' : 'none';
+            if (show) visibleCount++;
+        });
+
+        const productCountEl = document.getElementById('product-count-display');
+        if (productCountEl) productCountEl.textContent = visibleCount;
+
+        const categoryDisplayEl = document.getElementById('current-category-display');
+        if (categoryDisplayEl) {
+            const label = normalized ? '"' + normalized.charAt(0).toUpperCase() + normalized.slice(1) + '"' : '"All"';
+            categoryDisplayEl.textContent = label;
+        }
+
+        const url = new URL(window.location);
+        if (normalized) url.searchParams.set('category', normalized);
+        else url.searchParams.delete('category');
+        window.history.pushState({}, '', url);
+    }
+
+    filterButtons.forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            applyCategoryFilter(btn.getAttribute('data-category') || '');
+        });
+    });
+
+    function wireCategoryChips() {
+        document.querySelectorAll('.category-chip').forEach(function(chip) {
+            chip.addEventListener('click', function(e) {
+                e.preventDefault();
+                applyCategoryFilter(chip.getAttribute('data-category') || '');
+            });
+        });
+    }
+    wireCategoryChips();
+
+    const params = new URLSearchParams(window.location.search);
+    const initCategory = params.get('category') || '';
+    if (initCategory) applyCategoryFilter(initCategory);
+
+    // ============================================
+    // MODAL & AJAX LOGIC
+    // ============================================
+    function openEditModal() {
+        editModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditModal() {
+        editModal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        document.getElementById('edit-product-modal-form').reset();
+        document.getElementById('edit-modal-form-messages').innerHTML = '';
+        document.querySelectorAll('.form-error').forEach(function(holder) { holder.innerHTML = ''; });
+        currentEditProductId = null;
+    }
+
+    closeEditModalBtn.addEventListener('click', closeEditModal);
+    cancelEditModalBtn.addEventListener('click', closeEditModal);
+
+    modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+    editModal.addEventListener('click', function(e) { if (e.target === editModal) closeEditModal(); });
+
+    const submitProductBtn = document.getElementById('submit-product-btn');
+    const addProductModalForm = document.getElementById('add-product-modal-form');
+    const modalFormMessages = document.getElementById('modal-form-messages');
+
+    if (submitProductBtn && addProductModalForm) {
+        submitProductBtn.addEventListener('click', function() {
+            modalFormMessages.innerHTML = '';
+            document.querySelectorAll('.form-error').forEach(function(holder) { holder.innerHTML = ''; });
+
+            const formData = new FormData(addProductModalForm);
+            fetch("{% url 'shop:add_product' %}", {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.ok ? response.json() : response.json().then(data => { throw data; }))
+            .then(data => {
+                if (data.status === 'success') {
+                    closeModal();
+                    showNotification(data.message || 'Produk berhasil ditambahkan.', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                }
+            })
+            .catch(errorData => {
+                if (errorData.status === 'error' && errorData.errors) {
+                    showNotification('Silakan perbaiki kesalahan pada formulir.', 'error');
+                    for (const fieldName in errorData.errors) {
+                        const errorField = document.getElementById('modal_error_' + fieldName);
+                        if (errorField) {
+                            errorField.innerHTML = errorData.errors[fieldName][0].message || errorData.errors[fieldName][0];
+                        }
+                    }
+                } else {
+                    showNotification('Terjadi kesalahan tak terduga. Coba lagi.', 'error');
+                }
+            });
+        });
+    }
+
+    const submitEditProductBtn = document.getElementById('submit-edit-product-btn');
+    const editProductModalForm = document.getElementById('edit-product-modal-form');
+    const editModalFormMessages = document.getElementById('edit-modal-form-messages');
+
+    if (submitEditProductBtn && editProductModalForm) {
+        submitEditProductBtn.addEventListener('click', function() {
+            if (!currentEditProductId) return;
+            editModalFormMessages.innerHTML = '';
+            document.querySelectorAll('.form-error').forEach(holder => holder.innerHTML = '');
+            const formData = new FormData(editProductModalForm);
+            fetch('/shop/' + currentEditProductId + '/edit/', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.ok ? response.json() : response.json().then(data => { throw data; }))
+            .then(data => {
+                if (data.status === 'success') {
+                    closeEditModal();
+                    showNotification(data.message, 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                }
+            })
+            .catch(errorData => {
+                if (errorData.status === 'error' && errorData.errors) {
+                    editModalFormMessages.innerHTML = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Please fix the errors below.</div>';
+                    for (const fieldName in errorData.errors) {
+                        const errorField = document.getElementById('edit_modal_error_' + fieldName);
+                        if (errorField) {
+                            errorField.innerHTML = errorData.errors[fieldName][0].message || errorData.errors[fieldName][0];
+                        }
+                    }
+                } else {
+                    editModalFormMessages.innerHTML = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">An unexpected error occurred. Please try again.</div>';
+                }
+            });
+        });
+    }
+
+    if (productContainer) {
+        productContainer.addEventListener('click', function(event) {
+            const editBtn = event.target.closest('.edit-product-btn');
+            if (editBtn) {
+                openEditProductModal(
+                    editBtn.dataset.productId,
+                    editBtn.dataset.productName,
+                    editBtn.dataset.sellerName,
+                    editBtn.dataset.isStaff === 'true',
+                    editBtn.dataset.isOwner === 'true'
+                );
+                return;
+            }
+
+            const deleteBtn = event.target.closest('.delete-product-btn');
+            if (deleteBtn) {
+                openDeleteModal(
+                    deleteBtn.dataset.productId,
+                    deleteBtn.dataset.productName,
+                    deleteBtn.dataset.sellerName,
+                    deleteBtn.dataset.thumbnail,
+                    deleteBtn.dataset.isStaff === 'true',
+                    deleteBtn.dataset.isOwner === 'true'
+                );
+                return;
+            }
+
+            const target = event.target.closest('.ajax-action-btn');
+            if (!target) return;
+            event.preventDefault();
+            fetch(target.href, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => showNotification(data.message, data.status))
+            .catch(() => showNotification('An error occurred. Please try again.', 'error'));
+        });
+    }
+
+    function openEditProductModal(productId, productName, sellerName, userIsStaff, userIsOwner) {
+        currentEditProductId = productId;
+        isEditAdminAction = userIsStaff && !userIsOwner;
+        document.getElementById('editModalTitle').textContent = isEditAdminAction ? `[ADMIN] Edit: ${productName}` : `Edit: ${productName}`;
+        fetch(`/shop/${productId}/edit/`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const product = data.product;
+                document.getElementById('edit_product_name').value = product.name;
+                document.getElementById('edit_product_description').value = product.description;
+                document.getElementById('edit_product_category').value = product.category;
+                document.getElementById('edit_product_price').value = product.price;
+                document.getElementById('edit_product_stock').value = product.stock;
+                document.getElementById('edit_product_thumbnail').value = product.thumbnail;
+                openEditModal();
+            } else {
+                showNotification('Failed to load product data.', 'error');
+            }
+        })
+        .catch(() => showNotification('Error loading product data.', 'error'));
+    }
+
+    window.openDeleteModal = function(productId, productName, sellerName, thumbnailUrl, userIsStaff, userIsOwner) {
+        currentProductId = productId;
+        isAdminAction = userIsStaff && !userIsOwner;
+        document.getElementById('modalProductName').textContent = productName;
+        document.getElementById('modalProductSeller').textContent = `Seller: ${sellerName}`;
+        const modalImage = document.getElementById('modalProductImage');
+        modalImage.src = thumbnailUrl || '';
+        modalImage.style.display = thumbnailUrl ? 'block' : 'none';
+        document.getElementById('adminWarning').classList.toggle('hidden', !isAdminAction);
+        document.getElementById('modalTitle').textContent = isAdminAction ? '[ADMIN] Confirm Deletion' : 'Confirm Deletion';
+        document.getElementById('confirmDeleteBtn').textContent = isAdminAction ? 'Delete (Admin)' : 'Delete Product';
+        document.getElementById('deleteModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.closeDeleteModal = function() {
+        document.getElementById('deleteModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        currentProductId = null;
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = isAdminAction ? 'Delete (Admin)' : 'Delete Product';
+    };
+
+    window.confirmDelete = function() {
+        if (!currentProductId) return;
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = 'Deleting...';
+        fetch(`/shop/${currentProductId}/delete/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                closeDeleteModal();
+                showNotification(data.message, 'success');
+                const productCard = document.querySelector(`[data-product-id="${currentProductId}"]`);
+                if (productCard) {
+                    productCard.style.transition = 'opacity 0.3s, transform 0.3s';
+                    productCard.style.opacity = '0';
+                    productCard.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        productCard.remove();
+                        const remainingCards = document.querySelectorAll('.product-card:not(.hidden)');
+                        const productCountEl = document.getElementById('product-count-display');
+                        if (productCountEl) productCountEl.textContent = remainingCards.length;
+                    }, 300);
+                } else {
+                    setTimeout(() => window.location.reload(), 1000);
+                }
+            } else {
+                showNotification(data.message || 'Error deleting product.', 'error');
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = isAdminAction ? 'Delete (Admin)' : 'Delete Product';
+            }
+        })
+        .catch(() => {
+            showNotification('Error deleting product.', 'error');
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = isAdminAction ? 'Delete (Admin)' : 'Delete Product';
+        });
+    };
+
+    document.getElementById('deleteModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDeleteModal(); });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            if (!document.getElementById('deleteModal').classList.contains('hidden')) closeDeleteModal();
+            if (!document.getElementById('editProductModal').classList.contains('hidden')) closeEditModal();
+            if (!document.getElementById('addProductModal').classList.contains('hidden')) closeModal();
+        }
+    });
+});
+</script>
 {% endblock %}

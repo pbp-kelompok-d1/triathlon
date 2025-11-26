@@ -1,24 +1,400 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
-  <head>
+<html lang="en" class="h-full">
+<head>
     {% block meta %}
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% endblock meta %}
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="{% static 'css/global.css' %}" />
-  </head>
-  <body class="bg-gray-50 text-gray-900">
-    <!-- Navbar -->
+    <link rel="stylesheet" href="{% static 'css/global.css' %}">
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-full flex flex-col">
     {% include 'navbar.html' %}
     
-    <!-- Main content -->
-    <div class="min-h-screen">
-      {% block content %} {% endblock content %}
+    {% if messages %}
+    <div id="django-messages" style="display: none;">
+        {% for message in messages %}
+        <div data-message="{{ message }}" data-tags="{{ message.tags }}"></div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <main class="flex-1">
+        {% block content %}{% endblock content %}
+    </main>
+
+    {% include 'toast.html' %}
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="confirmation-modal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4"> 
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm" aria-hidden="true"></div> 
+        
+        <!-- Modal Content -->
+        <div class="relative z-10 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-auto transform transition-all" 
+             id="modal-content">
+            
+            <!-- Icon -->
+            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mb-4">
+                <svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+            </div>
+            
+            <!-- Title & Message -->
+            <h3 class="text-xl font-bold text-gray-900 text-center mb-2" id="modal-title">Konfirmasi Hapus</h3>
+            <p class="text-gray-600 text-center mb-6" id="modal-message">Apakah Anda yakin ingin menghapus item ini?</p>
+            
+            <!-- Buttons -->
+            <div class="flex justify-center gap-3">
+                <button id="modal-cancel-btn" 
+                        class="px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold">
+                    Batal
+                </button>
+                <button id="modal-confirm-btn" 
+                        class="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold shadow-lg">
+                    Hapus
+                </button>
+            </div>
+        </div>
     </div>
 
-    <!-- Toast and Modal functionality commented out - will be implemented later -->
+    <footer class="bg-gray-900 text-gray-300 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 fade-in delay-400">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <h5 class="text-white font-bold mb-4">About</h5>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white transition">About Us</a></li>
+                        <li><a href="#" class="hover:text-white transition">Blog</a></li>
+                        <li><a href="#" class="hover:text-white transition">Careers</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="text-white font-bold mb-4">Features</h5>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white transition">Forum</a></li>
+                        <li><a href="#" class="hover:text-white transition">Shop</a></li>
+                        <li><a href="#" class="hover:text-white transition">Events</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="text-white font-bold mb-4">Support</h5>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white transition">Help Center</a></li>
+                        <li><a href="#" class="hover:text-white transition">Contact</a></li>
+                        <li><a href="#" class="hover:text-white transition">FAQ</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="text-white font-bold mb-4">Follow Us</h5>
+                    <div class="flex space-x-4">
+                        <a href="#" class="hover:text-white transition">Facebook</a>
+                        <a href="#" class="hover:text-white transition">Twitter</a>
+                        <a href="#" class="hover:text-white transition">Instagram</a>
+                    </div>
+                </div>
+            </div>
 
-  </body>
+            <div class="border-t border-gray-800 pt-8 text-center text-sm">
+                <p>&copy; 2025 Triathlon Platform. All rights reserved.</p>
+            </div>
+        </div>
+        <div
+    class="fixed bottom-8 right-8 p-4 px-6 rounded-lg shadow-2xl z-[100] transition-all duration-500 ease-out flex items-center gap-4 border-l-4 max-w-md"
+    id="toast-component"
+    style="transform: translateY(150px); opacity: 0; pointer-events: none;"
+>
+    <!-- Icon -->
+    <span id="toast-icon" class="text-3xl flex-shrink-0"></span>
+    
+    <!-- Content -->
+    <div class="flex-1 min-w-0">
+        <h3 class="font-bold text-base" id="toast-title"></h3>
+        <p class="text-sm mt-1 line-clamp-3" id="toast-message"></p>
+    </div>
+
+    <!-- Close Button -->
+    <button onclick="hideToast()" class="text-2xl hover:opacity-75 transition flex-shrink-0 ml-2" aria-label="Close">&times;</button>
+</div>
+    </footer>
+
+    <script>
+        // --- Toast Elements & Functions ---
+        const toastComponent = document.getElementById('toast-component');
+        const toastIcon = document.getElementById('toast-icon');
+        const toastTitle = document.getElementById('toast-title');
+        const toastMessage = document.getElementById('toast-message');
+        let toastTimeout;
+
+        function showToast(title, message, type = 'success') {
+            if (!toastComponent) return;
+            
+            clearTimeout(toastTimeout);
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+            toastComponent.className = 'fixed bottom-8 right-8 p-4 px-6 rounded-lg shadow-xl z-[100] transition-all duration-500 ease-out translate-y-10 flex items-center gap-4 border-l-4 opacity-0';
+
+            let bgColor, borderColor, textColor, icon;
+            if (type.includes('success')) {
+                bgColor = 'bg-green-100'; borderColor = 'border-green-500'; textColor = 'text-green-800'; icon = '✅'; title = title || 'Sukses!';
+            } else if (type.includes('error')) {
+                bgColor = 'bg-red-100'; borderColor = 'border-red-500'; textColor = 'text-red-800'; icon = '❌'; title = title || 'Error!';
+            } else {
+                bgColor = 'bg-yellow-100'; borderColor = 'border-yellow-500'; textColor = 'text-yellow-800'; icon = '⚠️'; title = title || (type.includes('warning') ? 'Peringatan!' : 'Info');
+            }
+
+            toastComponent.classList.add(bgColor, borderColor, textColor);
+            toastTitle.classList.add(textColor);
+            toastIcon.innerHTML = icon;
+
+            requestAnimationFrame(() => {
+                toastComponent.style.transform = 'translateY(0)';
+                toastComponent.style.opacity = '1';
+            });
+
+            toastTimeout = setTimeout(() => hideToast(), 5000);
+        }
+
+        function hideToast() {
+            if (!toastComponent) return;
+            clearTimeout(toastTimeout);
+            toastComponent.style.transform = 'translateY(100px)';
+            toastComponent.style.opacity = '0';
+        }
+
+        // --- Modal Elements & Functions ---
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const modalContent = document.getElementById('modal-content');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        let confirmCallback = null;
+
+        function showConfirmModal(message, onConfirm, title = 'Konfirmasi Hapus') {
+            if (!confirmationModal || !modalContent) {
+                console.error("Modal elements not found!");
+                return;
+            }
+            
+            console.log("Showing modal:", message); // Debug log
+            
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            confirmCallback = onConfirm;
+
+            // Show modal
+            confirmationModal.classList.remove('hidden');
+            confirmationModal.classList.add('flex');
+            
+            // Animate in
+            setTimeout(() => {
+                modalContent.style.opacity = '1';
+                modalContent.style.transform = 'scale(1)';
+            }, 10);
+        }
+
+        function hideConfirmModal() {
+            if (!confirmationModal || !modalContent) return;
+            
+            // Animate out
+            modalContent.style.opacity = '0';
+            modalContent.style.transform = 'scale(0.95)';
+            
+            setTimeout(() => {
+                confirmationModal.classList.add('hidden');
+                confirmationModal.classList.remove('flex');
+                confirmCallback = null;
+            }, 300);
+        }
+        
+        // --- Helper Functions ---
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function submitPostForm(actionUrl) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const csrftoken = getCookie('csrftoken');
+                    if (!csrftoken) throw new Error("CSRF token not found!");
+                    
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = actionUrl;
+                    form.style.display = 'none';
+                    
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrfmiddlewaretoken';
+                    csrfInput.value = csrftoken;
+                    form.appendChild(csrfInput);
+                    
+                    document.body.appendChild(form);
+                    form.submit();
+                    resolve();
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        }
+
+        async function deleteReviewAJAX(reviewId) {
+            const csrfToken = getCookie('csrftoken');
+            const url = `/place/review/${reviewId}/delete/`;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const responseData = await response.json();
+                
+                if (response.ok && responseData.success) {
+                    const reviewElement = document.getElementById(`review-${reviewId}`);
+                    if (reviewElement) {
+                        reviewElement.remove();
+                    }
+                    
+                    // Check if container is empty
+                    const container = document.getElementById('reviews-container');
+                    if (container && container.children.length === 0) {
+                        const noReviewsP = document.createElement('p');
+                        noReviewsP.id = 'no-reviews-yet';
+                        noReviewsP.className = 'text-gray-500 text-center py-4';
+                        noReviewsP.textContent = 'Belum ada ulasan untuk tempat ini.';
+                        container.appendChild(noReviewsP);
+                    }
+                    
+                    showToast('Sukses!', responseData.message || 'Ulasan berhasil dihapus.', 'success');
+                } else {
+                    showToast('Error', responseData.error || 'Gagal menghapus ulasan.', 'error');
+                }
+            } catch (error) {
+                console.error('Delete review error:', error);
+                showToast('Error', 'Terjadi kesalahan saat menghapus ulasan.', 'error');
+            }
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM Loaded, setting up event listeners"); // Debug log
+            
+            // 1. Check Django Messages for Toast
+            const messagesDiv = document.getElementById('django-messages');
+            if (messagesDiv) {
+                const messageElements = messagesDiv.querySelectorAll('div[data-message]');
+                if (messageElements.length > 0) {
+                    // Show the LAST message (in case there are multiple)
+                    const lastMessage = messageElements[messageElements.length - 1];
+                    const messageText = lastMessage.getAttribute('data-message');
+                    const messageTags = lastMessage.getAttribute('data-tags') || 'info';
+                    
+                    console.log("Django message found:", messageText, messageTags); // Debug
+                    
+                    // Delay slightly to ensure page is fully loaded
+                    setTimeout(() => {
+                        showToast(null, messageText, messageTags);
+                    }, 100);
+                }
+            }
+
+            // 2. Modal Button Event Listeners
+            if (modalConfirmBtn) {
+                modalConfirmBtn.addEventListener('click', () => {
+                    console.log("Confirm button clicked"); // Debug log
+                    if (confirmCallback) {
+                        confirmCallback();
+                    }
+                    hideConfirmModal();
+                });
+            }
+
+            if (modalCancelBtn) {
+                modalCancelBtn.addEventListener('click', () => {
+                    console.log("Cancel button clicked"); // Debug log
+                    hideConfirmModal();
+                });
+            }
+
+            // Close modal on backdrop click
+            if (confirmationModal) {
+                confirmationModal.addEventListener('click', (e) => {
+                    if (e.target === confirmationModal) {
+                        hideConfirmModal();
+                    }
+                });
+            }
+
+            // 3. Delete Button Event Listeners (Event Delegation)
+            document.body.addEventListener('click', (e) => {
+                // Check for Delete Place Button
+                const deletePlaceBtn = e.target.closest('.delete-place-btn');
+                if (deletePlaceBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const deleteUrl = deletePlaceBtn.dataset.deleteUrl;
+                    const placeName = deletePlaceBtn.dataset.placeName || 'tempat ini';
+                    
+                    console.log("Delete place clicked:", placeName, deleteUrl); // Debug log
+                    
+                    if (deleteUrl) {
+                        showConfirmModal(
+                            `Apakah Anda yakin ingin menghapus '${placeName}'?`,
+                            () => submitPostForm(deleteUrl),
+                            'Hapus Tempat'
+                        );
+                    }
+                    return;
+                }
+
+                // Check for Delete Review Button
+                const deleteReviewBtn = e.target.closest('.delete-review-btn');
+                if (deleteReviewBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const reviewId = deleteReviewBtn.dataset.reviewId;
+                    
+                    console.log("Delete review clicked:", reviewId); // Debug log
+                    
+                    if (reviewId) {
+                        showConfirmModal(
+                            'Apakah Anda yakin ingin menghapus ulasan ini?',
+                            () => deleteReviewAJAX(reviewId),
+                            'Hapus Ulasan'
+                        );
+                    }
+                }
+            });
+        });
+    </script>
+
+    <style>
+        /* Modal animation styles */
+        #modal-content {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+    </style>
+</body>
 </html>

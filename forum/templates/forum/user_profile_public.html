@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+    <div class="lg:col-span-2 space-y-8">
+      <!-- Profile header + filters (mirrors user_profile dashboard shell) -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+          <div class="flex items-center gap-4">
+            <div class="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xl font-bold">{{ target_user.username|first|upper }}</div>
+            <div>
+              <h1 class="text-2xl font-semibold text-gray-900">{{ target_user.username }}</h1>
+              <p class="text-sm text-gray-600">Member since {{ target_user.date_joined|date:"M Y" }}</p>
+            </div>
+          </div>
+
+          <form id="category-filter-form" method="get" class="flex-shrink-0 flex gap-2">
+            <input type="hidden" name="view" id="view-hidden-input" value="{{ view|default:'all' }}">
+            <select name="category" id="category-select" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="" {% if not initial_category %}selected{% endif %}>All Sport Categories</option>
+              <option value="swimming" {% if initial_category == "swimming" %}selected{% endif %}>Swimming</option>
+              <option value="running" {% if initial_category == "running" %}selected{% endif %}>Running</option>
+              <option value="cycling" {% if initial_category == "cycling" %}selected{% endif %}>Cycling</option>
+            </select>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 text-sm font-medium shadow-sm">Filter</button>
+          </form>
+        </div>
+
+        <div class="border-t border-gray-200 mt-6 pt-4">
+          <div class="flex flex-wrap gap-2" id="view-filter-buttons">
+            {% if target_user_role == 'USER' %}
+              <a href="?view=all{% if initial_category %}&category={{ initial_category }}{% endif %}" class="px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 {% if view == 'all' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-800{% endif %}">All Activities</a>
+              <a href="?view=posts{% if initial_category %}&category={{ initial_category }}{% endif %}" class="px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 {% if view == 'posts' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-800{% endif %}">Posts</a>
+              <a href="?view=replies{% if initial_category %}&category={{ initial_category }}{% endif %}" class="px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 {% if view == 'replies' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-800{% endif %}">Replies</a>
+              <a href="?view=wishlist{% if initial_category %}&category={{ initial_category }}{% endif %}" class="px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 {% if view == 'wishlist' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-800{% endif %}">Wishlist</a>
+            {% elif target_user_role == 'SELLER' %}
+              <a href="?view=all{% if initial_category %}&category={{ initial_category }}{% endif %}" class="px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 {% if view == 'all' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-800{% endif %}">All</a>
+              <a href="?view=products{% if initial_category %}&category={{ initial_category }}{% endif %}" class="px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 {% if view == 'products' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-800{% endif %}">Products</a>
+              <a href="?view=posts{% if initial_category %}&category={{ initial_category }}{% endif %}" class="px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 {% if view == 'posts' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-800{% endif %}">Posts</a>
+            {% else %}
+              <a href="?view=all{% if initial_category %}&category={{ initial_category }}{% endif %}" class="px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 {% if view == 'all' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-800{% endif %}">All</a>
+              <a href="?view=facilities{% if initial_category %}&category={{ initial_category }}{% endif %}" class="px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 {% if view == 'facilities' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-800{% endif %}">Facilities</a>
+              <a href="?view=tickets{% if initial_category %}&category={{ initial_category }}{% endif %}" class="px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 {% if view == 'tickets' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-800{% endif %}">Tickets</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Main content container (matches user_profile shell structure) -->
+      <div id="dashboard-content-container" class="space-y-10 mt-6">
+        {% include 'user_profile/_user_content.html' %}
+      </div>
+    </div>
+
+    <div class="lg:col-span-1">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center sticky top-12">
+        <div class="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">
+          {{ target_user.username|first|upper }}
+        </div>
+        <h2 class="text-lg font-semibold text-gray-900">{{ target_user.get_full_name|default:target_user.username }}</h2>
+        <p class="text-sm text-gray-500">@{{ target_user.username }}</p>
+
+        {% if target_user.profile and target_user.profile.bio %}
+        <p id="profile_bio_text" class="text-sm text-gray-600 mt-3">{{ target_user.profile.bio }}</p>
+        {% endif %}
+
+        <div class="mt-6 border-t border-gray-100 pt-4 text-sm text-gray-600">
+          <div class="flex justify-between">
+            <span>Posts</span>
+            <span>{{ posts.count }}</span>
+          </div>
+          <div class="flex justify-between mt-2">
+            <span>Replies</span>
+            <span>{{ replies.count }}</span>
+          </div>
+          {% if target_user.profile and target_user.profile.phone_number %}
+          <div class="flex justify-between mt-2">
+            <span>Contact</span>
+            <span>{{ target_user.profile.phone_number }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+  {% block extra_js %}
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const dataUrl = '{% url "forum:user_profile_content" target_user.username %}';
+    let currentView = '{{ view|default:"all" }}';
+    let currentCategory = '{{ initial_category|default:"" }}';
+    const contentContainer = document.getElementById('dashboard-content-container');
+    const categoryForm = document.getElementById('category-filter-form');
+    const categorySelect = document.getElementById('category-select');
+
+    function showLoader() {
+      if (!contentContainer) return;
+      contentContainer.innerHTML = '<div class="bg-white rounded-xl shadow-sm border p-12 text-center">\n      <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>\n      <p class="mt-4 text-gray-500">Loading...</p>\n    </div>';
+    }
+
+    async function fetchContent(view, category) {
+      if (!contentContainer) return;
+      showLoader();
+      const url = new URL(dataUrl, window.location.origin);
+      url.searchParams.set('view', view);
+      if (category) url.searchParams.set('category', category);
+
+      try {
+        const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!res.ok) throw new Error('Failed to load content');
+        const html = await res.text();
+        contentContainer.innerHTML = html;
+        updateActiveButtons(view);
+        updateBrowserURL(view, category);
+      } catch (err) {
+        contentContainer.innerHTML = '<div class="bg-white rounded-xl shadow-sm border p-6 text-center text-red-600">Error loading content</div>';
+        console.error(err);
+      }
+    }
+
+    function updateActiveButtons(activeView) {
+      const buttons = document.querySelectorAll('#view-filter-buttons a');
+      buttons.forEach(btn => {
+        // reset classes
+        btn.classList.remove('bg-blue-600','text-white');
+        btn.classList.add('bg-gray-100','text-gray-800');
+        const href = new URL(btn.href, window.location.origin);
+        const params = new URLSearchParams(href.search);
+        const v = params.get('view') || 'all';
+        if (v === activeView) {
+          btn.classList.add('bg-blue-600','text-white');
+          btn.classList.remove('bg-gray-100','text-gray-800');
+        }
+      });
+    }
+
+    function updateBrowserURL(view, category) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('view', view);
+      if (category) url.searchParams.set('category', category);
+      else url.searchParams.delete('category');
+      history.replaceState({}, '', url.toString());
+    }
+
+    // Wire view buttons
+    document.querySelectorAll('#view-filter-buttons a').forEach(a => {
+      a.addEventListener('click', function(e) {
+        e.preventDefault();
+        const params = new URLSearchParams(this.search);
+        currentView = params.get('view') || 'all';
+        fetchContent(currentView, currentCategory);
+      });
+    });
+
+    // Category filter
+    if (categoryForm) {
+      categoryForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        currentCategory = categorySelect ? categorySelect.value : '';
+        // keep the current view
+        fetchContent(currentView, currentCategory);
+      });
+    }
+
+    // Init
+    fetchContent(currentView, currentCategory);
+  });
+  </script>
+  {% endblock %}

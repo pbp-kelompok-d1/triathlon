@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-12">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-200">
+            <h1 id="form-title" class="text-3xl font-bold text-gray-900 mb-6 border-b border-gray-100 pb-4">
+                {% if is_create %}Book a New Ticket{% else %}Edit Ticket #{{ ticket.id }}{% endif %}
+            </h1>
+
+            <form id="ticket-form" method="POST" 
+                  action="{% if is_create %}{% url 'ticket:ticket_create' %}{% else %}{% url 'ticket:ticket_update' ticket.pk %}{% endif %}">
+                {% csrf_token %}
+
+                <!-- Global Error Box -->
+                <div id="form-errors" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6"></div>
+
+                <div class="space-y-6">
+                    <!-- Customer Name -->
+                    <div>
+                        <label for="id_customer_name" class="block text-sm font-medium text-gray-700 mb-2">Customer Name</label>
+                        <input type="text" name="customer_name" id="id_customer_name"
+                            value="{% if not is_create %}{{ ticket.customer_name }}{% endif %}"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Enter customer name" required>
+                        <div id="error-customer_name" class="text-red-500 text-sm mt-1"></div>
+                    </div>
+
+                    <!-- Place -->
+                    <div>
+                        <label for="id_place" class="block text-sm font-medium text-gray-700 mb-2">Place Name</label>
+                        <select name="place" id="id_place"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required>
+                            <option value="">-- Select Place --</option>
+                            {% for place in places %}
+                            <option value="{{ place.id }}" data-price="{{ place.price }}"
+                                {% if not is_create and ticket.place.id == place.id %}selected{% endif %}>
+                                {{ place.name }} - Rp {{ place.price|floatformat:0 }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div id="error-place" class="text-red-500 text-sm mt-1"></div>
+                    </div>
+
+                    <!-- Booking Date -->
+                    <div>
+                        <label for="id_booking_date" class="block text-sm font-medium text-gray-700 mb-2">Booking Date</label>
+                        <input type="date" name="booking_date" id="id_booking_date"
+                            value="{% if not is_create %}{{ ticket.booking_date|date:'Y-m-d' }}{% endif %}"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required>
+                        <div id="error-booking_date" class="text-red-500 text-sm mt-1"></div>
+                    </div>
+
+                    <!-- Ticket Quantity -->
+                    <div>
+                        <label for="id_ticket_quantity" class="block text-sm font-medium text-gray-700 mb-2">Ticket Quantity</label>
+                        <input type="number" name="ticket_quantity" id="id_ticket_quantity"
+                            value="{% if not is_create %}{{ ticket.ticket_quantity }}{% else %}1{% endif %}" min="1"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required>
+                        <div id="error-ticket_quantity" class="text-red-500 text-sm mt-1"></div>
+                    </div>
+
+                    <!-- Estimated Total Price -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Estimated Total Price</label>
+                        <div class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 font-semibold">
+                            <span id="display-total-price">Rp 0</span>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1">Price will be calculated automatically</p>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="mt-8 pt-6 border-t border-gray-100 flex justify-end gap-4">
+                    <a href="{% url 'ticket:ticket_list' %}"
+                        class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors">
+                        Cancel
+                    </a>
+                    <button id="submit-button" type="submit"
+                        class="inline-flex items-center justify-center px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                        <span id="submit-button-text">{% if is_create %}Book Ticket{% else %}Save Changes{% endif %}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Script for Form Handling -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('ticket-form');
+    const formErrorsDiv = document.getElementById('form-errors');
+    const submitButton = document.getElementById('submit-button');
+    const submitButtonText = document.getElementById('submit-button-text');
+    const placeSelect = document.getElementById('id_place');
+    const quantityInput = document.getElementById('id_ticket_quantity');
+    const totalPriceDisplay = document.getElementById('display-total-price');
+
+    function updateTotalPrice() {
+        const selectedOption = placeSelect.options[placeSelect.selectedIndex];
+        const price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+        const quantity = parseInt(quantityInput.value) || 1;
+        const total = price * quantity;
+        totalPriceDisplay.textContent = `Rp ${total.toLocaleString('id-ID')}`;
+    }
+
+    placeSelect.addEventListener('change', updateTotalPrice);
+    quantityInput.addEventListener('input', updateTotalPrice);
+    updateTotalPrice();
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        submitButton.disabled = true;
+        submitButtonText.textContent = 'Processing...';
+        formErrorsDiv.classList.add('hidden');
+        document.querySelectorAll('[id^=error-]').forEach(el => el.textContent = '');
+
+        const formData = new FormData(form);
+        const url = form.getAttribute('action');
+        const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                showToast(data.toast?.title || "Success", data.toast?.message || data.message, data.toast?.type || "success");
+                setTimeout(() => window.location.href = "{% url 'ticket:ticket_list' %}", 1000);
+            } else {
+                if (data.errors) {
+                    for (const field in data.errors) {
+                        const errorEl = document.getElementById(`error-${field}`);
+                        if (errorEl) errorEl.textContent = data.errors[field][0];
+                    }
+                    formErrorsDiv.innerHTML = '<strong>Please correct the errors below.</strong>';
+                    formErrorsDiv.classList.remove('hidden');
+                } else {
+                    formErrorsDiv.textContent = data.message || 'An unknown error occurred.';
+                    formErrorsDiv.classList.remove('hidden');
+                }
+            }
+        } catch (error) {
+            console.error('Form submission error:', error);
+            showToast('Error', 'Server error. Please try again.', 'error');
+        } finally {
+            submitButton.disabled = false;
+            submitButtonText.textContent = '{% if is_create %}Book Ticket{% else %}Save Changes{% endif %}';
+        }
+    });
+});
+</script>
+
+<!-- Include Toast Component & Static Toast JS -->
+<div id="toast-component" class="fixed bottom-5 right-5 px-5 py-4 border rounded-xl shadow-lg bg-white opacity-0 translate-y-64 transition-all duration-500 z-50">
+    <div class="flex items-start gap-3">
+        <span id="toast-icon" class="text-gray-500 text-xl">●</span>
+        <div>
+            <div id="toast-title" class="font-semibold text-gray-800">Title</div>
+            <div id="toast-message" class="text-sm text-gray-600">Message</div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/toast.js' %}"></script>
+{% endblock %}

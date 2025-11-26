@@ -1,0 +1,342 @@
+{% load static %}
+{% include 'navbar.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Triathlon - Home</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Animasi Ketik */
+  @keyframes typing {
+    from {
+      width: 0;
+    }
+    to {
+      width: 100%;
+    }
+  }
+  @keyframes blink-caret {
+    from,
+    to {
+      border-color: transparent;
+    }
+    50% {
+      border-color: white;
+    }
+  }
+  .typing-effect {
+    overflow: hidden;
+    border-right: 0.15em solid white;
+    white-space: nowrap;
+    animation: typing 2.5s steps(19, end) forwards,
+      blink-caret 0.75s step-end infinite;
+    width: 0;
+    display: inline-block;
+  }
+
+  /* Fade in text setelah animasi */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .hero-bg-image {
+    background-image: url("{% static 'img/hero-background.png' %}");
+  }
+  .fade-in-delay {
+    opacity: 0;
+    animation: fadeIn 1s ease-out 2.5s forwards;
+  }
+</style>
+</head>
+
+<body class="bg-white text-slate-800">
+
+  <section
+ class="relative min-h-screen flex items-center justify-center text-center p-4 md:p-8 bg-cover bg-center hero-bg-image"> 
+
+    <div class="absolute inset-0 bg-black opacity-50 z-0"></div>
+
+    <div class="absolute inset-0 bg-black opacity-50 z-0"></div>
+
+  <!-- Konten utama hero -->
+  <div class="relative z-10 max-w-4xl mx-auto">
+    <div class="mb-4 inline-block">
+      <h1
+        class="text-4xl md:text-5xl lg:text-6xl font-bold text-white typing-effect"
+      >
+        Welcome, Champion!
+      </h1>
+    </div>
+
+    <div class="fade-in-delay">
+      <p
+        class="text-xl md:text-2xl text-gray-100 mb-8 max-w-2xl mx-auto font-medium italic"
+      >
+        "We Achieve, We Persevere, We Triumph."
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a
+          href="{% url 'main:register' %}"
+          class="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-lg font-bold transition transform hover:scale-105 shadow-lg"
+        >
+          Join The Challenge
+        </a>
+        <a
+          href="#about"
+          class="bg-white bg-opacity-20 hover:bg-opacity-30 border border-white text-white px-8 py-3 rounded-lg font-bold transition backdrop-blur-sm"
+        >
+          Want to know about Triathlon?
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section ABOUT -->
+<section id="about" class="py-16 md:py-24 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid md:grid-cols-2 gap-10 items-center">
+      <div class="bg-white rounded-xl p-12 flex flex-col items-center justify-center shadow-md hover:shadow-lg transition">
+        <img
+          src="{% static 'img/123.png' %}"
+          alt="Triathlon Logo"
+          class="w-70 h-70 object-contain mb-4"
+        />
+      </div>
+      <div
+        class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-12 shadow-lg hover:shadow-xl transition"
+      >
+        <h3 class="text-3xl font-bold text-gray-900 mb-6">About Triathlon</h3>
+        <p class="text-gray-700 leading-relaxed mb-4">
+          Triathlon adalah olahraga yang menggabungkan tiga disiplin: renang,
+          bersepeda, dan lari. Ini adalah tantangan ultimate untuk atlet yang
+          mencari pengalaman komprehensif.
+        </p>
+        <p class="text-gray-600 leading-relaxed">
+          Platform kami menyediakan semua yang Anda butuhkan untuk memulai,
+          berkembang, dan bersaing dalam dunia triathlon.
+        </p>
+        <div class="mt-6 flex items-center space-x-2">
+          <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+          <span class="text-sm font-semibold text-gray-700"
+            >Bergabunglah dengan ribuan atlet</span
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  <!-- BENEFITS -->
+  <section id="benefits" class="py-16 md:py-24 bg-gradient-to-br from-gray-50 to-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12 fade-in delay-200">
+        <h2 class="text-4xl font-bold text-gray-900 mb-4">Benefit Triathlon</h2>
+        <p class="text-lg text-gray-600">Temukan mengapa triathlon adalah pilihan terbaik untuk kesehatan dan kebugaran Anda</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Card 1 -->
+        <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2 flex flex-col items-start fade-in delay-400">
+          <div class="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center mb-6">
+            <span class="text-3xl">💪</span>
+          </div>
+          <h4 class="text-xl font-bold text-gray-900 mb-3">Full Body Workout</h4>
+          <p class="text-gray-600 leading-relaxed">Latih semua kelompok otot dengan kombinasi sempurna dari renang, bersepeda, dan lari.</p>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2 flex flex-col items-start fade-in delay-600">
+          <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
+            <span class="text-3xl">❤️</span>
+          </div>
+          <h4 class="text-xl font-bold text-gray-900 mb-3">Kesehatan Kardiovaskular</h4>
+          <p class="text-gray-600 leading-relaxed">Tingkatkan stamina dan kesehatan jantung Anda dengan latihan aerobik yang intens.</p>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2 flex flex-col items-start fade-in delay-800">
+          <div class="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mb-6">
+            <span class="text-3xl">🧠</span>
+          </div>
+          <h4 class="text-xl font-bold text-gray-900 mb-3">Mental Resilience</h4>
+          <p class="text-gray-600 leading-relaxed">Bangun ketahanan mental dan kepercayaan diri melalui tantangan yang bermakna.</p>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2 flex flex-col items-start fade-in delay-400">
+          <div class="w-16 h-16 bg-yellow-100 rounded-lg flex items-center justify-center mb-6">
+            <span class="text-3xl">🤝</span>
+          </div>
+          <h4 class="text-xl font-bold text-gray-900 mb-3">Komunitas Global</h4>
+          <p class="text-gray-600 leading-relaxed">Terhubung dengan atlet dari seluruh dunia dan bagikan pengalaman Anda.</p>
+        </div>
+
+        <!-- Card 5 -->
+        <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2 flex flex-col items-start fade-in delay-600">
+          <div class="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
+            <span class="text-3xl">🏆</span>
+          </div>
+          <h4 class="text-xl font-bold text-gray-900 mb-3">Kompetisi & Prestasi</h4>
+          <p class="text-gray-600 leading-relaxed">Ikuti kompetisi lokal dan internasional untuk menguji kemampuan Anda.</p>
+        </div>
+
+        <!-- Card 6 -->
+        <div class="bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition transform hover:-translate-y-2 flex flex-col items-start fade-in delay-800">
+          <div class="w-16 h-16 bg-pink-100 rounded-lg flex items-center justify-center mb-6">
+            <span class="text-3xl">📊</span>
+          </div>
+          <h4 class="text-xl font-bold text-gray-900 mb-3">Progress Tracking</h4>
+          <p class="text-gray-600 leading-relaxed">Pantau perkembangan Anda dengan analytics mendalam dan insights personal.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEAM -->
+  <section id="team" class="py-16 md:py-24 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16 fade-in delay-200">
+        <h2 class="text-4xl font-bold text-gray-900 mb-4">Team Behind Triathlon</h2>
+        <p class="text-lg text-gray-600">Bertemu dengan para ahli yang membangun platform ini</p>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-10">
+        <!-- member 1 -->
+        <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg fade-in delay-400">
+          <div class="rounded-2xl h-36 w-36 overflow-hidden shadow-lg mx-auto mb-5">
+            <img src="{% static 'img/jarred.png' %}" alt="Jarred" class="object-cover w-full h-full">
+          </div>
+          <h4 class="text-base font-bold text-gray-900">Jarred Muhammad Raditya</h4>
+          <p class="text-gray-600 text-sm">Shop Developer</p>
+        </div>
+
+        <!-- member 2 -->
+        <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg fade-in delay-400">
+          <div class="rounded-2xl h-36 w-36 overflow-hidden shadow-lg mx-auto mb-5">
+            <img src="{% static 'img/justin.png' %}" alt="Justin" class="object-cover w-full h-full">
+          </div>
+          <h4 class="text-base font-bold text-gray-900">Justin Dwitama Seniang</h4>
+          <p class="text-gray-600 text-sm">Place Developer</p>
+        </div>
+
+        <!-- member 3 -->
+        <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg fade-in delay-600">
+          <div class="rounded-2xl h-36 w-36 overflow-hidden shadow-lg mx-auto mb-5">
+            <img src="{% static 'img/helmi.png' %}" alt="Helmi" class="object-cover w-full h-full">
+          </div>
+          <h4 class="text-base font-bold text-gray-900">Muhammad Helmi Alfarissi</h4>
+          <p class="text-gray-600 text-sm">User & Profile Developer</p>
+        </div>
+
+        <!-- member 4 -->
+        <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg fade-in delay-600">
+          <div class="rounded-2xl h-36 w-36 overflow-hidden shadow-lg mx-auto mb-5">
+            <img src="{% static 'img/aidam.png' %}" alt="Aidam" class="object-cover w-full h-full">
+          </div>
+          <h4 class="text-base font-bold text-gray-900">Muhammad Kaila Aidam Riyan</h4>
+          <p class="text-gray-600 text-sm">Forum Developer</p>
+        </div>
+
+        <!-- member 5 -->
+        <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg fade-in delay-800">
+          <div class="rounded-2xl h-36 w-36 overflow-hidden shadow-lg mx-auto mb-5">
+            <img src="{% static 'img/touya.png' %}" alt="Touya" class="object-cover w-full h-full">
+          </div>
+          <h4 class="text-base font-bold text-gray-900">Randuichi Touya</h4>
+          <p class="text-gray-600 text-sm">Activity Developer</p>
+        </div>
+
+        <!-- member 6 -->
+        <div class="text-center transform transition duration-300 hover:-translate-y-2 hover:shadow-lg fade-in delay-800">
+          <div class="rounded-2xl h-36 w-36 overflow-hidden shadow-lg mx-auto mb-5">
+            <img src="{% static 'img/syakirah.png' %}" alt="Syakirah" class="object-cover w-full h-full">
+          </div>
+          <h4 class="text-base font-bold text-gray-900">Syakirah Zahra Dhawini</h4>
+          <p class="text-gray-600 text-sm">Ticket Developer</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-16 md:py-24 bg-gradient-to-r from-blue-600 to-blue-700">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center fade-in delay-400">
+      <h2 class="text-4xl font-bold text-white mb-6">Siap Memulai Perjalanan Triathlon Anda?</h2>
+      <p class="text-xl text-blue-100 mb-8">Bergabunglah dengan ribuan atlet yang telah mengubah hidup mereka</p>
+      <a href="{% url 'main:register' %}" class="bg-red-500 hover:bg-red-600 text-white px-10 py-4 rounded-lg font-bold text-lg transition transform hover:scale-105">Daftar Sekarang</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-gray-900 text-gray-300 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 fade-in delay-400">
+      <div class="grid md:grid-cols-4 gap-8 mb-8">
+        <div>
+          <h5 class="text-white font-bold mb-4">About</h5>
+          <ul class="space-y-2 text-sm">
+            <li><a href="#" class="hover:text-white transition">About Us</a></li>
+            <li><a href="#" class="hover:text-white transition">Blog</a></li>
+            <li><a href="#" class="hover:text-white transition">Careers</a></li>
+          </ul>
+        </div>
+        <div>
+          <h5 class="text-white font-bold mb-4">Features</h5>
+          <ul class="space-y-2 text-sm">
+            <li><a href="#" class="hover:text-white transition">Forum</a></li>
+            <li><a href="#" class="hover:text-white transition">Shop</a></li>
+            <li><a href="#" class="hover:text-white transition">Events</a></li>
+          </ul>
+        </div>
+        <div>
+          <h5 class="text-white font-bold mb-4">Support</h5>
+          <ul class="space-y-2 text-sm">
+            <li><a href="#" class="hover:text-white transition">Help Center</a></li>
+            <li><a href="#" class="hover:text-white transition">Contact</a></li>
+            <li><a href="#" class="hover:text-white transition">FAQ</a></li>
+          </ul>
+        </div>
+        <div>
+          <h5 class="text-white font-bold mb-4">Follow Us</h5>
+          <div class="flex space-x-4">
+            <a href="#" class="hover:text-white transition">Facebook</a>
+            <a href="#" class="hover:text-white transition">Twitter</a>
+            <a href="#" class="hover:text-white transition">Instagram</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-800 pt-8 text-center text-sm">
+        <p>&copy; 2025 Triathlon Platform. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Optional small script: restart typing on window focus (keeps purely optional) -->
+  <script>
+    // if you want the typing to replay on focus, uncomment below
+    // window.addEventListener('focus', () => {
+    //   const el = document.querySelector('.typing-effect');
+    //   if (!el) return;
+    //   el.style.animation = 'none';
+    //   void el.offsetWidth;
+    //   el.style.animation = '';
+    // });
+  </script>
+
+</body>
+</html>

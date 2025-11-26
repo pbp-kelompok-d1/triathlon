@@ -1,0 +1,79 @@
+{% comment %}
+File: _seller_content.html
+Konten parsial HANYA UNTUK SELLER
+{% endcomment %}
+
+{% if view == 'all' or view == 'posts' %}
+<div>
+  <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">My Forum Posts</h2>
+  {% if posts %}
+    <ul class="space-y-4">
+      {% for post in posts %}
+      <li class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-green-500 transition-all duration-300 ease-in-out">
+        <a href="{% url 'forum:post_detail' post.id %}" class="block p-5">
+          <h3 class="text-xl font-semibold text-green-600 hover:text-green-800 transition-colors">{{ post.title }}</h3>
+          <div class="flex flex-wrap gap-2 mt-3">
+            <span class="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              {{ post.get_category_display }}
+            </span>
+            {% with sport=post.sport_category %}
+              {% if sport == 'running' %}
+                <span class="px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">{{ post.get_sport_category_display }}</span>
+              {% elif sport == 'swimming' %}
+                <span class="px-3 py-1 rounded-full text-xs font-medium bg-cyan-100 text-cyan-800">{{ post.get_sport_category_display }}</span>
+              {% elif sport == 'cycling' %}
+                <span class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">{{ post.get_sport_category_display }}</span>
+              {% else %}
+                <span class="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">{{ post.get_sport_category_display }}</span>
+              {% endif %}
+            {% endwith %}
+          </div>
+          <p class="text-gray-600 mt-3 text-sm">{{ post.content|truncatewords:25 }}</p>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="bg-white rounded-xl shadow-sm border border-dashed border-gray-300 p-12 text-center">
+      <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
+        <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+      </div>
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">No Posts Found</h3>
+      <p class="text-gray-500 mb-6">You haven't created any forum posts yet.</p>
+      <a href="{% url 'forum:forums' %}" class="inline-block bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition duration-200 font-medium shadow-sm">
+        Create a Post
+      </a>
+    </div>
+  {% endif %}
+</div>
+{% endif %}
+
+
+{% if view == 'all' or view == 'products' %}
+<div>
+  <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">My Products</h2>
+  {% if products %}
+    <ul class="grid sm:grid-cols-2 gap-4">
+      {% for product in products %}
+      <li class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-green-500 transition-all duration-300 ease-in-out">
+        <a href="#" class="block"> <h3 class="text-lg font-semibold text-green-600 hover:text-green-800 transition-colors">{{ product.name }}</h3>
+          <p class="text-gray-600 text-sm mt-1">Category: {{ product.category }}</p>
+          <p class="text-gray-800 text-md font-medium mt-2">Rp {{ product.price }}</p>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="bg-white rounded-xl shadow-sm border border-dashed border-gray-300 p-12 text-center">
+      <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
+        <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+      </div>
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">No Products Found</h3>
+      <p class="text-gray-500 mb-6">You haven't added any products yet.</p>
+      <a href="{% url 'shop:add_product' %}" class="inline-block bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition duration-200 font-medium shadow-sm">
+        Add a Product
+      </a>
+    </div>
+  {% endif %}
+</div>
+{% endif %}

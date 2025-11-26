@@ -5,7 +5,19 @@ app_name = 'forum'
 
 urlpatterns = [
     path('', views.show_forums, name='forums'),
-    path('create/', views.create_forum_post, name='create_post'),
+    # Alias for older code/tests that expect the name 'show_forums'
+    path('all/', views.show_forums, name='show_forums'),
     path('<uuid:id>/', views.post_detail, name='post_detail'),
+    path('<uuid:post_id>/like/', views.toggle_like, name='toggle_like'),
     path('<uuid:post_id>/reply/', views.add_reply, name='add_reply'),
+    
+    # AJAX endpoints
+    path('json/', views.show_json, name='show_json'),
+    path('ajax/add/', views.add_post_ajax, name='add_post_ajax'),
+    path('<uuid:post_id>/edit/', views.edit_post_ajax, name='edit_post_ajax'),
+    path('<uuid:post_id>/delete/', views.delete_post, name='delete_post'),
+    path('reply/<uuid:reply_id>/delete/', views.delete_reply, name='delete_reply'),
+    # Public user profile view (clickable from forum threads)
+    path('user/<str:username>/', views.user_profile_view, name='user_profile'),
+    path('user/<str:username>/content/', views.user_profile_content, name='user_profile_content'),
 ]

@@ -29,13 +29,27 @@ class ForumPost(models.Model):
     sport_category = models.CharField(max_length=20, choices=SPORT_CATEGORY_CHOICES, default='running')
     post_views = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    
     
     last_activity = models.DateTimeField(default=timezone.now)  # Track latest activity (post creation or reply)
+    last_edited = models.DateTimeField(null=True, blank=True)  # Track when post was last edited
     is_pinned = models.BooleanField(default=False)
     
     # External connections for future apps
-    product_id = models.IntegerField(null=True, blank=True)  # Will link to Product model later
+    # product_id uses UUIDs to match Product.id (Product uses a UUID primary key)
+    product_id = models.UUIDField(null=True, blank=True)
+    # location_id remains IntegerField because Place uses integer PKs
     location_id = models.IntegerField(null=True, blank=True)  # Will link to Location model later
+
+    # each user can like a post only once
+    likes = models.ManyToManyField(User, related_name='liked_posts', blank=True)
+
+    def like_count(self):
+        return self.likes.count()
+
+    def user_has_liked(self, user):
+        return self.likes.filter(id=user.id).exists()
     
     def __str__(self):
         return self.title
@@ -56,6 +70,8 @@ class ForumReply(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     
+    quote_reply = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='quoted_by')
+
     def __str__(self):
         return f"Reply by {self.author} on {self.post.title}"
     

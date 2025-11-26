@@ -3,39 +3,137 @@
 <div class="container">
     <h1>Add your product!</h1>
 
-    <form method="POST">
+    <div id="form-messages" class="mb-3"></div>
+
+    <form method="POST" id="add-product-form">
         {% csrf_token %}
+        
         <div class="form-group">
             <label for="{{ form.name.id_for_label }}">Product Name:</label>
             {{ form.name }}
+            <div class="form-error text-danger" id="error_name"></div>
         </div>
         
         <div class="form-group">
             <label for="{{ form.description.id_for_label }}">Description:</label>
             {{ form.description }}
+            <div class="form-error text-danger" id="error_description"></div>
         </div>
 
-         <div class="form-group">
+        <div class="form-group">
             <label for="{{ form.category.id_for_label }}">Category:</label>
             {{ form.category }}
+            <div class="form-error text-danger" id="error_category"></div>
         </div>
-
 
         <div class="form-group">
             <label for="{{ form.price.id_for_label }}">Price:</label>
             {{ form.price }}
+            <div class="form-error text-danger" id="error_price"></div>
         </div>
 
         <div class="form-group">
             <label for="{{ form.stock.id_for_label }}">Stock Quantity:</label>
             {{ form.stock }}
+            <div class="form-error text-danger" id="error_stock"></div>
         </div>
+
         <div class="form-actions">
             <button type="submit" class="btn-primary">Add Product</button>
             <a href="{% url 'shop:shop' %}" class="btn-secondary">Cancel</a>
         </div>
     </form>
-
-
 </div>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    const addProductForm = document.getElementById('add-product-form');
+    const formMessages = document.getElementById('form-messages');
+    
+    // Ambil semua placeholder error (sesuai ID yang kita tambahkan di atas)
+    const errorHolders = document.querySelectorAll('.form-error');
+
+    if (addProductForm) {
+        addProductForm.addEventListener('submit', function(event) {
+            // 1. Hentikan submit form standar
+            event.preventDefault();
+
+            // 2. Bersihkan semua pesan error lama
+            formMessages.innerHTML = '';
+            errorHolders.forEach(holder => holder.innerHTML = '');
+
+            // 3. Siapkan data form
+            const formData = new FormData(addProductForm);
+            const url = "{% url 'shop:add_product' %}"; // URL target
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            // 4. Kirim data menggunakan Fetch API
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                // Cek jika respons BUKAN 200-299 OK
+                if (!response.ok) {
+                    // Jika 400 (Bad Request), parse JSON untuk dapat error
+                    return response.json().then(data => {
+                        throw data; // Lempar data error ke .catch()
+                    });
+                }
+                // Jika 200 OK, parse JSON sukses
+                return response.json();
+            })
+            .then(data => {
+                // 5. Handle SUKSES (response 200 OK)
+                if (data.status === 'success') {
+                    // Tampilkan pesan sukses di area #form-messages
+                    formMessages.innerHTML = `
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            ${data.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                    // Bersihkan form
+                    addProductForm.reset();
+                }
+            })
+            .catch(errorData => {
+                // 6. Handle ERROR (response 400 dari view)
+                if (errorData.status === 'error' && errorData.errors) {
+                    // Tampilkan pesan error global
+                    formMessages.innerHTML = `
+                        <div class="alert alert-danger" role="alert">
+                            Harap perbaiki kesalahan di bawah ini.
+                        </div>
+                    `;
+                    
+                    // Loop semua error dan tampilkan di placeholder yang sesuai
+                    for (const fieldName in errorData.errors) {
+                        const errorField = document.getElementById(`error_${fieldName}`);
+                        if (errorField) {
+                            // errorData.errors[fieldName] adalah array, jadi kita ambil pesan pertamanya
+                            errorField.innerHTML = errorData.errors[fieldName][0].message || errorData.errors[fieldName][0];
+                        }
+                    }
+                } else {
+                    // Handle error jaringan atau server (500)
+                    formMessages.innerHTML = `
+                        <div class="alert alert-danger" role="alert">
+                            Terjadi kesalahan tak terduga. Coba lagi.
+                        </div>
+                    `;
+                    console.error('Fetch error:', errorData);
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
 {% endblock %}

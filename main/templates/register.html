@@ -1,0 +1,260 @@
+{% extends 'base.html' %} 
+{% load static %}
+{% block meta %}
+<title>Register - Triathlon</title>
+{% endblock meta %} 
+
+{% block content %}
+<div class="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-2xl mx-auto">
+    <!-- Form Container -->
+    <div class="bg-white">
+      <!-- Form Content -->
+      <form id="registerForm" method="POST" class="space-y-6">
+        {% csrf_token %}
+        
+        <!-- Display non-field errors -->
+        {% if form.non_field_errors %}
+        <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <ul class="text-sm text-red-700 list-disc list-inside">
+            {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <!-- Username -->
+        <div>
+          <label for="id_username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+          {{ form.username }}
+          {% if form.username.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ form.username.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Role -->
+        <div>
+          <label for="id_role" class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+          {{ form.role }}
+          {% if form.role.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ form.role.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label for="id_email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+          {{ form.email }}
+          {% if form.email.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ form.email.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Phone Number -->
+        <div>
+          <label for="id_phone_number" class="block text-sm font-medium text-gray-700 mb-2">Phone number</label>
+          {{ form.phone_number }}
+          {% if form.phone_number.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ form.phone_number.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label for="id_password1" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+          <div class="relative">
+            {{ form.password1 }}
+            <button type="button" onclick="togglePassword('id_password1', 'eyeIcon1')" class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer hover:text-gray-600">
+              <svg id="eyeIcon1" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+          </div>
+          {% if form.password1.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ form.password1.errors.0 }}</p>
+          {% endif %}
+          <p class="mt-2 text-xs text-gray-500">Use 8 or more characters, with a mix of letters, numbers & symbols.</p>
+        </div>
+
+        <!-- Confirm Password -->
+        <div>
+          <label for="id_password2" class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+          <div class="relative">
+            {{ form.password2 }}
+            <button type="button" onclick="togglePassword('id_password2', 'eyeIcon2')" class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer hover:text-gray-600">
+              <svg id="eyeIcon2" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+          </div>
+          {% if form.password2.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ form.password2.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Checkbox -->
+        <div class="flex items-start">
+          <div class="flex items-center h-5">
+            <input
+              id="data_declaration"
+              name="data_declaration"
+              type="checkbox"
+              required
+              class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+            />
+          </div>
+          <label for="data_declaration" class="ml-3 text-sm text-gray-600">
+            I hereby declare that all data and/or information I have provided is correct.
+          </label>
+        </div>
+
+        <!-- Submit Button -->
+        <div>
+          <button
+            type="submit"
+            id="registerButton"
+            class="w-full px-4 py-3 text-base font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+          >
+            Register
+          </button>
+        </div>
+
+        <!-- Login Link -->
+        <div class="text-center">
+          <p class="text-sm text-gray-600">
+            Already have an account? 
+            <a href="{% url 'main:login' %}" class="text-indigo-600 hover:text-indigo-700 font-medium">Login here</a>
+          </p>
+        </div>
+      </form>
+
+      {% if messages %}
+      <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <ul class="text-sm text-yellow-800 list-disc list-inside">
+          {% for message in messages %}
+          <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- Footer -->
+      <!-- <div class="mt-12 pt-8 border-t border-gray-200">
+        <div class="flex justify-center space-x-6 text-xs text-gray-500">
+          <a href="#" class="hover:text-gray-700">Terms & Conditions</a>
+          <a href="#" class="hover:text-gray-700">Privacy Policy</a>
+          <a href="#" class="hover:text-gray-700">About CompVerse</a>
+        </div>
+        <p class="text-xs text-gray-400 text-center mt-4">© 2023 Copyright by IK Developers. All rights reserved.</p>
+      </div> -->
+    </div>
+  </div>
+</div>
+
+<script>
+// Toggle password visibility
+function togglePassword(inputId, iconId) {
+  const passwordInput = document.getElementById(inputId);
+  const eyeIcon = document.getElementById(iconId);
+  
+  if (passwordInput.type === 'password') {
+    passwordInput.type = 'text';
+    // Change to "eye-off" icon
+    eyeIcon.innerHTML = `
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+    `;
+  } else {
+    passwordInput.type = 'password';
+    // Change back to "eye" icon
+    eyeIcon.innerHTML = `
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    `;
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  const registerForm = document.getElementById("registerForm");
+  if (registerForm) {
+    registerForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      registerUser();
+    });
+  }
+});
+
+function showToast(title, message, type) {
+  // Simple alert fallback
+  if (type === 'success') {
+    console.log('Success:', title, message);
+  } else {
+    alert(title + (message ? ': ' + message : ''));
+  }
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+async function registerUser() {
+  const registerButton = document.getElementById('registerButton');
+  const originalText = registerButton.textContent;
+  const formElement = document.getElementById('registerForm');
+  const formData = new FormData(formElement);
+
+  // Clear previous error messages
+  document.querySelectorAll('.text-red-600').forEach(el => {
+    if (el.classList.contains('mt-1')) {
+      el.remove();
+    }
+  });
+
+  // Show loading state
+  registerButton.disabled = true;
+  registerButton.textContent = 'Registering...';
+
+  try {
+    const response = await fetch("{% url 'main:register' %}", {
+      method: "POST",
+      body: formData,
+      headers: {
+        'Accept': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      }
+    });
+
+    if (response.ok) {
+      showToast('Registration successful!', 'You can now login with your account', 'success');
+      setTimeout(() => {
+        window.location.href = "{% url 'main:login' %}";
+      }, 1500);
+    } else {
+      const errorData = await response.text();
+      showToast('Registration failed', 'Please check your form and try again', 'error');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    showToast('Registration error', 'Something went wrong', 'error');
+  } finally {
+    // Reset button state
+    registerButton.disabled = false;
+    registerButton.textContent = originalText;
+  }
+}
+</script>
+
+{% endblock content %}

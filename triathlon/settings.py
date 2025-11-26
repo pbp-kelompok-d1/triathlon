@@ -28,10 +28,11 @@ SECRET_KEY = 'django-insecure-9!%p*n7=h@#u_%x&e#c^54*cc(@gd5-@__2!n-j(x#=%q=t$x9
 
 PRODUCTION = os.getenv('PRODUCTION', 'False').lower() == 'true'
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False if PRODUCTION else True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", 'muhammad-kaila-triathlon.pbp.cs.ui.ac.id']
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", 'muhammad-kaila-triathlon.pbp.cs.ui.ac.id', '10.0.2.2']
 
+CSRF_TRUSTED_ORIGINS = ["https://muhammad-kaila-triathlon.pbp.cs.ui.ac.id"]
 
 # Application definition
 
@@ -45,16 +46,24 @@ INSTALLED_APPS = [
     'main',
     'forum',
     'shop',
+    'user_profile',
+    'place',
+    'ticket',
+    'activities',
+    'authentication',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'triathlon.urls'
@@ -69,6 +78,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'shop.context_processor.cart_item_count',
             ],
         },
     },
@@ -140,9 +150,34 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+if DEBUG:
+    STATICFILES_DIRS = [
+        BASE_DIR / 'static' # merujuk ke /static root project pada mode development
+    ]
+else:
+    STATIC_ROOT = BASE_DIR / 'static'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# CORS configuration for Flutter app
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+# Cookie settings: secure for production, permissive for local dev
+if PRODUCTION:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = 'None'
+    CSRF_COOKIE_SAMESITE = 'None'
+else:
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_SAMESITE = 'Lax'
