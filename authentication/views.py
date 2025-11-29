@@ -5,7 +5,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
-from user_profile.models import UserProfile # Pastikan import ini ada
+from user_profile.models import UserProfile 
+from django.conf import settings # Pastikan import ini ada
 
 @csrf_exempt
 def register(request):
@@ -79,61 +80,52 @@ def register(request):
 
 @csrf_exempt
 def login(request):
-    """
-    Endpoint: POST /auth/login/
-    Handles form-encoded data from pbp_django_auth login() method.
-    """
-    if request.method == 'POST':
-        # pbp_django_auth sends form data, not JSON
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+    if request.method != 'POST':
+        return JsonResponse({"status": False, "message": "Method not allowed."}, status=405)
 
-        if not username or not password:
-            return JsonResponse({
-                "status": False,
-                "message": "Username and password are required."
-            }, status=400)
+    if request.content_type == 'application/json':
+        try:
+            payload = json.loads(request.body or '{}')
+        except json.JSONDecodeError:
+            return JsonResponse({"status": False, "message": "Invalid JSON."}, status=400)
+        username = payload.get('username', '').strip()
+        password = payload.get('password', '').strip()
+    else:
+        username = (request.POST.get('username') or '').strip()
+        password = (request.POST.get('password') or '').strip()
 
-        # --- 1. Cek Username Ada atau Tidak ---
-        if not User.objects.filter(username=username).exists():
-            return JsonResponse({
-                "status": False,
-                "message": "Username not found."
-            }, status=401)
+    if not username or not password:
+        return JsonResponse({"status": False, "message": "Username and password are required."}, status=400)
 
-        # --- 2. Coba Autentikasi (Cek Password) ---
-        user = authenticate(username=username, password=password)
+    if not User.objects.filter(username=username).exists():
+        return JsonResponse({"status": False, "message": "Username not found."}, status=401)
 
-        if user is not None:
-            if user.is_active:
-                # PENTING: auth_login membuat session cookie di server
-                auth_login(request, user)
-                
-                # Get role safely
-                try:
-                    role = user.profile.role
-                except:
-                    role = 'USER'
-                
-                return JsonResponse({
-                    "status": True,
-                    "message": "Login successful!",
-                    "username": user.username,
-                    "role": role
-                }, status=200)
-            else:
-                return JsonResponse({
-                    "status": False,
-                    "message": "Account is disabled."
-                }, status=401)
-        else:
-            # Jika user ada tapi authenticate return None, berarti password salah
-            return JsonResponse({
-                "status": False,
-                "message": "Invalid password."
-            }, status=401)
+    user = authenticate(request, username=username, password=password)
+    if not user or not user.is_active:
+        return JsonResponse({"status": False, "message": "Invalid credentials."}, status=401)
 
-    return JsonResponse({"status": False, "message": "Method not allowed."}, status=405)
+    auth_login(request, user)
+
+    try:
+        role = user.profile.role
+    except Exception:
+        role = 'USER'
+
+    response = JsonResponse({
+        "status": True,
+        "message": "Login successful!",
+        "username": user.username,
+        "role": role,
+    })
+
+    response.set_cookie(
+        key=settings.SESSION_COOKIE_NAME,
+        value=request.session.session_key,
+        httponly=True,
+        samesite='None',
+        secure=False,
+    )
+    return response
 
 
 @csrf_exempt
