@@ -38,7 +38,38 @@ from django.shortcuts import get_object_or_404
 from .models import Place, Review
 import json
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .serializers import PlaceSerializer, ReviewSerializer
 
+# 1. API untuk List Tempat (Flutter Home)
+@api_view(['GET'])
+def api_place_list(request):
+    places = Place.objects.all()
+    serializer = PlaceSerializer(places, many=True)
+    return Response(serializer.data)
+
+# 2. API untuk Detail Tempat (Flutter Detail Page)
+@api_view(['GET'])
+def api_place_detail(request, pk):
+    try:
+        place = Place.objects.get(pk=pk)
+    except Place.DoesNotExist:
+        return Response({'error': 'Place not found'}, status=404)
+
+    serializer = PlaceSerializer(place)
+    return Response(serializer.data)
+
+# 3. API untuk Lihat Review di suatu tempat
+@api_view(['GET'])
+def api_place_reviews(request, pk):
+    try:
+        place = Place.objects.get(pk=pk)
+        reviews = Review.objects.filter(place=place)
+        serializer = ReviewSerializer(reviews, many=True)
+        return Response(serializer.data)
+    except Place.DoesNotExist:
+        return Response({'error': 'Place not found'}, status=404)
 
 @transaction.atomic
 def create_facility_admin_group():

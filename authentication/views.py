@@ -160,3 +160,10 @@ def get_user_data(request):
             }, status=401)
 
     return JsonResponse({"status": False, "message": "Method not allowed."}, status=405)
+
+from django.contrib.auth import logout
+from django.shortcuts import redirect
+
+def logout_user(request):
+    logout(request)
+    return redirect('authentication:login') # Ganti 'authentication:login' sesuai nama url login kamu
