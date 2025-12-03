@@ -5,146 +5,123 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
-from user_profile.models import UserProfile # Pastikan import ini ada
+from user_profile.models import UserProfile 
 
 @csrf_exempt
 def register(request):
-    """
-    Endpoint: POST /auth/register/
-    Handles JSON data from Flutter postJson() method.
-    """
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            
-            # Get data - support both password/password1 formats
-            username = data.get('username', '').strip()
-            password1 = data.get('password1') or data.get('password')
-            password2 = data.get('password2') or password1
-            
-            # --- 1. Validasi Input Kosong ---
-            if not username or not password1:
-                return JsonResponse({
-                    "status": "error",
-                    "message": "Username and password are required."
-                }, status=400)
+    if request.method != 'POST':
+        return JsonResponse({
+            "status": False,
+            "message": "Method not allowed."
+        }, status=405)
 
-            # --- 2. Validasi Password Match ---
-            if password1 != password2:
-                return JsonResponse({
-                    "status": "error",
-                    "message": "Passwords do not match."
-                }, status=400)
+    try:
+        data = json.loads(request.body)
+        username = data.get('username')
+        password = data.get('password')
+        email = data.get('email')
+        phone_number = data.get('phone_number', '')        
+        role = data.get('role', 'USER')
 
-            # --- 3. Validasi Uniqueness (Username) ---
-            if User.objects.filter(username=username).exists():
-                return JsonResponse({
-                    "status": "error",
-                    "message": "Username already exists."
-                }, status=400)
-
-            # --- 4. Proses Pembuatan User ---
-            user = User.objects.create_user(username=username, password=password1)
-            user.save()
-
-            # Try to create/update profile if model exists
-            try:
-                # Check if profile exists, if not create it
-                if hasattr(user, 'profile'):
-                    profile = user.profile
-                else:
-                    # Create profile manually if it doesn't exist
-                    from user_profile.models import UserProfile
-                    profile = UserProfile.objects.create(user=user)
-                profile.save()
-            except Exception as profile_error:
-                # Log but don't fail registration if profile creation fails
-                print(f"Profile creation failed: {profile_error}")
-                pass
-
+        # 1. Input validation
+        if not username or not password or not email:
             return JsonResponse({
-                "status": "success",
-                "message": "Registration successful!",
-                "username": user.username
-            }, status=201)
-
-        except json.JSONDecodeError as json_err:
-            return JsonResponse({
-                "status": "error",
-                "message": f"Invalid JSON: {str(json_err)}"
+                "status": False,
+                "message": "Username, email, dan password wajib diisi."
             }, status=400)
-        except Exception as e:
-            # Log the full error for debugging
-            import traceback
-            error_detail = traceback.format_exc()
-            print(f"Registration error: {error_detail}")
-            
+
+        # 2. Email format validation
+        try:
+            validate_email(email)
+        except ValidationError:
             return JsonResponse({
-                "status": "error",
-                "message": f"Server error: {str(e)}"
-            }, status=500)
+                "status": False,
+                "message": "Format email tidak valid."
+            }, status=400)
 
-    return JsonResponse({
-        "status": "error",
-        "message": "Method not allowed."
-    }, status=405)
+        # 3. Uniqueness
+        if User.objects.filter(username=username).exists():
+            return JsonResponse({"status": False, "message": "Username sudah terdaftar."}, status=409)
 
+        if User.objects.filter(email=email).exists():
+            return JsonResponse({"status": False, "message": "Email sudah terdaftar."}, status=409)
+
+        # 4. Role validation
+        valid_roles = [choice[0] for choice in UserProfile.ROLE_CHOICES]
+        if role not in valid_roles:
+            return JsonResponse({
+                "status": False,
+                "message": "Role tidak valid."
+            }, status=400)
+
+        # 5. Create user
+        user = User.objects.create_user(username=username, email=email, password=password)
+
+        # 6. Update auto-created profile
+        profile = user.profile
+        profile.phone_number = phone_number
+        profile.role = role
+        profile.save()
+
+        return JsonResponse({
+            "status": True,
+            "message": "Registrasi berhasil!",
+            "username": user.username
+        }, status=201)
+
+    except json.JSONDecodeError:
+        return JsonResponse({"status": False, "message": "Invalid JSON."}, status=400)
+
+    except Exception as e:
+
+        return JsonResponse({"status": False, "message": str(e)}, status=500)
 
 @csrf_exempt
 def login(request):
     """
-    Endpoint: POST /auth/login/
-    Handles form-encoded data from pbp_django_auth login() method.
+    Endpoint: POST /api/login/
     """
     if request.method == 'POST':
-        # pbp_django_auth sends form data, not JSON
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+        try:
+            username = request.POST.get('username')
+            password = request.POST.get('password')
 
-        if not username or not password:
-            return JsonResponse({
-                "status": False,
-                "message": "Username and password are required."
-            }, status=400)
-
-        # --- 1. Cek Username Ada atau Tidak ---
-        if not User.objects.filter(username=username).exists():
-            return JsonResponse({
-                "status": False,
-                "message": "Username not found."
-            }, status=401)
-
-        # --- 2. Coba Autentikasi (Cek Password) ---
-        user = authenticate(username=username, password=password)
-
-        if user is not None:
-            if user.is_active:
-                # PENTING: auth_login membuat session cookie di server
-                auth_login(request, user)
-                
-                # Get role safely
-                try:
-                    role = user.profile.role
-                except:
-                    role = 'USER'
-                
-                return JsonResponse({
-                    "status": True,
-                    "message": "Login successful!",
-                    "username": user.username,
-                    "role": role
-                }, status=200)
-            else:
+            # --- 1. Cek Username Ada atau Tidak ---
+            # Kita cek manual dulu ke DB untuk pesan error yang spesifik
+            if not User.objects.filter(username=username).exists():
                 return JsonResponse({
                     "status": False,
-                    "message": "Account is disabled."
+                    "message": "Username tidak ditemukan."
                 }, status=401)
-        else:
-            # Jika user ada tapi authenticate return None, berarti password salah
-            return JsonResponse({
-                "status": False,
-                "message": "Invalid password."
-            }, status=401)
+
+            # --- 2. Coba Autentikasi (Cek Password) ---
+            user = authenticate(username=username, password=password)
+
+            if user is not None:
+                if user.is_active:
+                    # PENTING: auth_login membuat session cookie di server
+                    auth_login(request, user)
+                    
+                    return JsonResponse({
+                        "status": True,
+                        "message": "Login berhasil!",
+                        "username": user.username,
+                        "role": user.profile.role
+                    }, status=200)
+                else:
+                    return JsonResponse({
+                        "status": False,
+                        "message": "Akun dinonaktifkan."
+                    }, status=401)
+            else:
+                # Jika user ada tapi authenticate return None, berarti password salah
+                return JsonResponse({
+                    "status": False,
+                    "message": "Password salah."
+                }, status=401)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"status": False, "message": "Invalid JSON."}, status=400)
 
     return JsonResponse({"status": False, "message": "Method not allowed."}, status=405)
 
@@ -184,24 +161,9 @@ def get_user_data(request):
 
     return JsonResponse({"status": False, "message": "Method not allowed."}, status=405)
 
+from django.contrib.auth import logout
+from django.shortcuts import redirect
 
-@csrf_exempt
-def logout(request):
-    """
-    Endpoint: POST /auth/logout/
-    Logs out the current user.
-    """
-    username = request.user.username if request.user.is_authenticated else ""
-    
-    try:
-        auth_logout(request)
-        return JsonResponse({
-            "username": username,
-            "status": True,
-            "message": "Logged out successfully!"
-        }, status=200)
-    except Exception:
-        return JsonResponse({
-            "status": False,
-            "message": "Logout failed."
-        }, status=500)
+def logout_user(request):
+    logout(request)
+    return redirect('authentication:login') # Ganti 'authentication:login' sesuai nama url login kamu

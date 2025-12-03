@@ -23,7 +23,9 @@ urlpatterns = [
     path('load/running/', views.load_places_running, name='load_running'),
     path('load/swimming/', views.load_places_swimming, name='load_swimming'),
     
-
+    path('api/places/', views.api_place_list, name='api_place_list'),
+    path('api/places/<int:pk>/', views.api_place_detail, name='api_place_detail'),
+    path('api/places/<int:pk>/reviews/', views.api_place_reviews, name='api_place_reviews'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
