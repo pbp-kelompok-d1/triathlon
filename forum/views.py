@@ -379,9 +379,16 @@ def add_reply(request, post_id):
 
 
 @require_POST
-@login_required(login_url='/login/')
+@csrf_exempt
 def delete_post(request, post_id):
-    # Delete forum post - only author or admin can delete
+    """
+    Delete forum post - only author or admin can delete.
+    Uses @csrf_exempt for Flutter compatibility with manual auth check.
+    """
+    # Check authentication (manual check for Flutter compatibility)
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Login required'}, status=401)
+    
     post = get_object_or_404(ForumPost, pk=post_id)
     
     # Check if user is the author or admin
@@ -389,42 +396,58 @@ def delete_post(request, post_id):
     is_admin = hasattr(request.user, 'profile') and request.user.profile.role == 'ADMIN'
     
     if not (is_author or is_admin):
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
+        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
     
     post.delete()
-    
-    # Return JSON response for AJAX requests
-    if request.headers.get('Accept') == 'application/json' or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({'success': True, 'message': 'Forum post deleted successfully'})
     
     return JsonResponse({'success': True, 'message': 'Forum post deleted successfully'})
 
 
 @require_POST
-@login_required(login_url='/login/')
+@csrf_exempt
 def edit_post_ajax(request, post_id):
-    # Edit forum post via AJAX - only author can edit
+    """
+    Edit forum post via AJAX/Flutter - only author can edit.
+    Admins can additionally pin/unpin posts.
+    Uses @csrf_exempt for Flutter compatibility with manual auth check.
+    """
+    # Check authentication (manual check for Flutter compatibility)
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Login required'}, status=401)
+    
     post = get_object_or_404(ForumPost, pk=post_id)
     
     # Check if user is the author (ONLY author, not admin)
     if post.author != request.user:
-        return JsonResponse({'error': 'Unauthorized - only the author can edit'}, status=403)
+        return JsonResponse({'success': False, 'error': 'Unauthorized - only the author can edit'}, status=403)
+    
+    # Handle both form data (web) and JSON body (Flutter)
+    if request.content_type == 'application/json':
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+    else:
+        data = request.POST
     
     # Update post fields
-    post.title = request.POST.get("title")
-    post.content = request.POST.get("content")
-    post.category = request.POST.get("category")
-    post.sport_category = request.POST.get("sport_category")
+    post.title = data.get("title", post.title)
+    post.content = data.get("content", post.content)
+    post.category = data.get("category", post.category)
+    post.sport_category = data.get("sport_category", post.sport_category)
     
     # Only allow admins to pin/unpin posts
     is_admin = hasattr(request.user, 'profile') and request.user.profile.role == 'ADMIN'
     if is_admin:
-        post.is_pinned = request.POST.get("is_pinned") == 'on'
+        is_pinned_value = data.get("is_pinned")
+        if is_pinned_value is not None:
+            # Handle both 'on' (web form) and boolean (Flutter JSON)
+            post.is_pinned = is_pinned_value == 'on' or is_pinned_value == True
     # If not admin, don't change the pin status
     
     # Update product_id and location_id
-    product_id = request.POST.get("product_id")
-    location_id = request.POST.get("location_id")
+    product_id = data.get("product_id")
+    location_id = data.get("location_id")
     def _to_uuid_or_none(val):
         try:
             return uuid.UUID(val) if val else None
@@ -445,13 +468,25 @@ def edit_post_ajax(request, post_id):
     
     post.save()
     
-    return HttpResponse(b"UPDATED", status=200)
+    # Return JSON response for Flutter
+    return JsonResponse({
+        'success': True,
+        'message': 'Post updated successfully',
+        'post_id': str(post.id)
+    })
 
 
 @require_POST
-@login_required(login_url='/login/')
+@csrf_exempt
 def delete_reply(request, reply_id):
-    # Delete forum reply - only author or admin can delete
+    """
+    Delete forum reply - only author or admin can delete.
+    Uses @csrf_exempt for Flutter compatibility with manual auth check.
+    """
+    # Check authentication (manual check for Flutter compatibility)
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Login required'}, status=401)
+    
     reply = get_object_or_404(ForumReply, pk=reply_id)
     
     # Check if user is the author or admin
@@ -459,7 +494,7 @@ def delete_reply(request, reply_id):
     is_admin = hasattr(request.user, 'profile') and request.user.profile.role == 'ADMIN'
     
     if not (is_author or is_admin):
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
+        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
     
     # Store post info before deleting reply
     post = reply.post
