@@ -515,6 +515,13 @@ def delete_reply(request, reply_id):
 def user_profile_view(request, username):
     """Public view of a user's profile - reuses user_profile partials for content.
     This view lives in the forum app so clicking a username from a thread can open it.
+    
+    Supports JSON response for Flutter app when format=json is requested.
+    Returns user profile data including:
+    - User info (username, role, join date)
+    - Posts by this user
+    - Replies by this user
+    - Stats (total posts, total replies)
     """
     user_obj = get_object_or_404(User, username=username)
 
@@ -537,7 +544,68 @@ def user_profile_view(request, username):
         wishlist = Wishlist.objects.filter(user=user_obj)
     except Exception:
         wishlist = []
+    
+    # Get user role
+    target_user_role = getattr(getattr(user_obj, 'profile', None), 'role', 'USER')
+    
+    # =========================================================================
+    # JSON Response for Flutter App
+    # =========================================================================
+    # Check if JSON response is requested (for Flutter mobile app)
+    is_json_request = (
+        request.GET.get('format') == 'json' or 
+        'application/json' in request.headers.get('Accept', '')
+    )
+    
+    if is_json_request:
+        # Serialize user posts for JSON response
+        posts_data = [
+            {
+                'id': str(post.id),
+                'title': post.title,
+                'content': post.content[:150] + '...' if len(post.content) > 150 else post.content,
+                'category_display': post.get_category_display(),
+                'sport_category_display': post.get_sport_category_display(),
+                'created_at': post.created_at.strftime('%b %d, %Y'),
+                'is_pinned': post.is_pinned,
+                'post_views': post.post_views,
+                'like_count': post.like_count(),
+                'reply_count': post.replies.count(),
+            }
+            for post in posts
+        ]
+        
+        # Serialize user replies for JSON response
+        replies_data = [
+            {
+                'id': str(reply.id),
+                'content': reply.content[:150] + '...' if len(reply.content) > 150 else reply.content,
+                'created_at': reply.created_at.strftime('%b %d, %Y'),
+                'post_id': str(reply.post.id),
+                'post_title': reply.post.title,
+            }
+            for reply in replies
+        ]
+        
+        # Return comprehensive user profile JSON
+        return JsonResponse({
+            'user': {
+                'username': user_obj.username,
+                'initial': user_obj.username[0].upper() if user_obj.username else 'U',
+                'role': target_user_role,
+                'date_joined': user_obj.date_joined.strftime('%b %d, %Y'),
+            },
+            'stats': {
+                'total_posts': ForumPost.objects.filter(author=user_obj).count(),
+                'total_replies': ForumReply.objects.filter(author=user_obj).count(),
+            },
+            'posts': posts_data,
+            'replies': replies_data,
+        })
 
+    # =========================================================================
+    # HTML Response for Web Browser
+    # =========================================================================
     context = {
         'target_user': user_obj,
         'posts': posts,
@@ -545,7 +613,7 @@ def user_profile_view(request, username):
         'wishlist': wishlist,
         'view': view,
         'initial_category': category,
-        'target_user_role': getattr(getattr(user_obj, 'profile', None), 'role', 'USER'),
+        'target_user_role': target_user_role,
     }
 
     return render(request, 'forum/user_profile_public.html', context)
