@@ -687,8 +687,76 @@ def show_json_mine(request):
     return JsonResponse(data, safe=False)
 
 
+# ...existing code...
+
 @csrf_exempt
 def create_product_flutter(request):
+    """Create a new product from Flutter app via JSON."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'}, status=400)
+    
+    # Check if user is authenticated
+    if not request.user.is_authenticated:
+        return JsonResponse({'status': 'error', 'message': 'Login required'}, status=401)
+    
+    # ✅ VALIDASI ROLE SELLER
+    try:
+        user_profile = request.user.profile
+        if user_profile.role not in ['SELLER', 'ADMIN']:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Only sellers and admins can add products. Please switch to seller role first.',
+                'current_role': user_profile.role,
+                'required_role': 'SELLER or ADMIN'
+            }, status=403)
+    except Exception as e:
+        # Jika profile tidak ada, anggap user biasa
+        return JsonResponse({
+            'status': 'error',
+            'message': 'User profile not found. Please contact administrator.',
+        }, status=403)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+    
+    name = data.get('name', '').strip()
+    price = data.get('price')
+    description = data.get('description', '').strip()
+    thumbnail = data.get('thumbnail', '').strip()
+    category = data.get('category', '').strip()
+    stock = data.get('stock', 0)
+    
+    if not name or not description:
+        return JsonResponse({'status': 'error', 'message': 'Name and description required'}, status=400)
+    
+    try:
+        price = float(price) if price else 0
+        stock = int(stock) if stock else 0
+    except (ValueError, TypeError):
+        return JsonResponse({'status': 'error', 'message': 'Invalid price or stock'}, status=400)
+    
+    if price <= 0:
+        return JsonResponse({'status': 'error', 'message': 'Price must be > 0'}, status=400)
+    
+    product = Product.objects.create(
+        name=name,
+        price=price,
+        description=description,
+        thumbnail=thumbnail or '',
+        category=category or 'running',
+        stock=stock,
+        seller=request.user,
+    )
+    
+    return JsonResponse({
+        'status': 'success',
+        'message': 'Product created',
+        'product_id': str(product.id),
+    }, status=201)
+
+# ...existing code...
     """Create a new product from Flutter app via JSON."""
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'POST required'}, status=400)
@@ -821,6 +889,7 @@ def _serialize_cart(cart):
             'subtotal': float(subtotal),
             'thumbnail': item.product.thumbnail or '',
             'stock': item.product.stock,
+            'seller_username': item.product.seller.username if item.product.seller else None,
         })
     return serialized, total
 
@@ -976,3 +1045,30 @@ def update_cart_quantity_flutter(request, item_id):
         'items': items,
         'total': float(total),
     })
+
+# ...existing code...
+
+@login_required
+@require_http_methods(["GET"])
+def check_wishlist_flutter(request, product_id):
+    """Check if a product is in user's wishlist"""
+    try:
+        product = get_object_or_404(Product, pk=product_id)
+        wishlist = Wishlist.objects.filter(user=request.user).first()
+        
+        in_wishlist = False
+        if wishlist:
+            in_wishlist = wishlist.products.filter(pk=product.pk).exists()
+        
+        return JsonResponse({
+            'status': 'success',
+            'in_wishlist': in_wishlist,
+            'product_id': str(product.id),
+            'product_name': product.name,
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e),
+            'in_wishlist': False,
+        }, status=400)

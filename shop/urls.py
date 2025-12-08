@@ -35,4 +35,5 @@ urlpatterns = [
     path('api/cart/remove/<uuid:product_id>/', views.remove_from_cart_flutter, name='remove_from_cart_flutter'),
     path('api/checkout/', views.checkout_flutter, name='checkout_flutter'),
     path('api/cart/update/<int:item_id>/', views.update_cart_quantity_flutter, name='update_cart_quantity_flutter'),
+    path('api/wishlist/check/<uuid:product_id>/', views.check_wishlist_flutter, name='check_wishlist_flutter'),
 ]

@@ -184,3 +184,30 @@ def logout(request):
             "status": False,
             "message": "Logout failed."
         }, status=500)
+    
+# authentication/views.py
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def check_admin(request):
+    """Check if user is admin/staff"""
+    is_admin = (
+        request.user.is_superuser or 
+        request.user.is_staff or
+        request.user.groups.filter(name__iexact='admin').exists()
+    )
+    
+    # Juga check role dari profile jika ada
+    try:
+        if hasattr(request.user, 'profile') and request.user.profile.role == 'ADMIN':
+            is_admin = True
+    except Exception:
+        pass
+    
+    return JsonResponse({
+        'is_admin': is_admin,
+        'is_staff': request.user.is_staff,
+        'is_superuser': request.user.is_superuser,
+        'username': request.user.username,
+    })
