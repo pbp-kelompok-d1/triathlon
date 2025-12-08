@@ -106,7 +106,12 @@ def login(request):
                         "status": True,
                         "message": "Login berhasil!",
                         "username": user.username,
-                        "role": user.profile.role
+                        "email": user.email,
+                        "role": user.profile.role,
+                        "first_name": user.first_name,
+                        "last_name": user.last_name,
+                        "phone_number": user.profile.phone_number or '',
+                        "bio": user.profile.bio or '',
                     }, status=200)
                 else:
                     return JsonResponse({
@@ -161,9 +166,18 @@ def get_user_data(request):
 
     return JsonResponse({"status": False, "message": "Method not allowed."}, status=405)
 
-from django.contrib.auth import logout
-from django.shortcuts import redirect
-
-def logout_user(request):
-    logout(request)
-    return redirect('authentication:login') # Ganti 'authentication:login' sesuai nama url login kamu
+@csrf_exempt
+def logout(request):
+    username = request.user.username
+    try:
+        auth_logout(request)
+        return JsonResponse({
+            "username": username,
+            "status": True,
+            "message": "Logged out successfully!"
+        }, status=200)
+    except:
+        return JsonResponse({
+            "status": False,
+            "message": "Logout failed."
+        }, status=401)
