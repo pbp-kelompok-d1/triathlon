@@ -13,6 +13,9 @@ import pandas as pd
 from django.conf import settings
 from django.db import transaction
 from django.db.models import F
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
+from django.views.decorators.csrf import csrf_exempt
+
 
 
 def is_admin(user):
@@ -285,6 +288,7 @@ def product_detail(request, id):
     })
 
 @login_required
+@csrf_exempt
 def delete_product(request, id):
     """Delete product from the shop"""
     product = get_object_or_404(Product, pk=id)
@@ -321,6 +325,7 @@ def delete_product(request, id):
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
         
 @login_required
+@csrf_exempt
 def edit_product(request, id):
     """Edit product in the shop"""
     product = get_object_or_404(Product, pk=id)
@@ -460,10 +465,13 @@ def remove_from_cart(request, product_id):
         return JsonResponse({'status': 'error', 'message': 'Item not found'}, status=404)
 
 @login_required
+@csrf_exempt
 def toggle_wishlist(request, product_id):
     
     product = get_object_or_404(Product, pk=product_id)
     wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
+    print(f"[DEBUG] toggle_wishlist called with product_id={product_id}")
+    print(f"[DEBUG] Product found: {product.name}")
 
     if wishlist.products.filter(pk=product.pk).exists():
         wishlist.products.remove(product)
@@ -491,6 +499,7 @@ def toggle_wishlist(request, product_id):
     return redirect('shop:view_wishlist')
 
 @login_required
+@csrf_exempt
 def view_wishlist(request):
     """Tampilkan wishlist user (M2M)"""
     wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
@@ -626,33 +635,132 @@ import requests
 from django.http import HttpResponse
 
 
+@require_GET
 def show_json(request):
-    """Return all products as JSON."""
-    category = request.GET.get('category', None)
-    products = Product.objects.all()
-    
+    """
+    Return list of products as JSON.
+    Optional query params:
+      category=running|cycling|swimming
+      mine=true   (produk milik user login)
+    """
+    qs = Product.objects.all()
+
+    category = request.GET.get('category')
     if category:
-        products = products.filter(category=category)
-    
-    data = serializers.serialize('json', products)
-    return HttpResponse(data, content_type='application/json')
+        qs = qs.filter(category=category)
+
+    if request.GET.get('mine') == 'true' and request.user.is_authenticated:
+        qs = qs.filter(seller=request.user)
+
+    data = []
+    for p in qs:
+        data.append({
+            'id': str(p.id),
+            'name': p.name,
+            'description': p.description,
+            'price': float(p.price),
+            'stock': p.stock,
+            'category': p.category,
+            'thumbnail': p.thumbnail or '',
+            'seller': p.seller.username if p.seller else None,
+        })
+
+    return JsonResponse(data, safe=False)
 
 
+@login_required
 def show_json_mine(request):
-    """Return products owned by the current user as JSON."""
-    if not request.user.is_authenticated:
-        return JsonResponse({'error': 'Authentication required'}, status=401)
-    
-    products = Product.objects.filter(seller=request.user)
-    data = serializers.serialize('json', products)
-    return HttpResponse(data, content_type='application/json')
+    qs = Product.objects.filter(seller=request.user).select_related("seller")
+    data = []
+    for p in qs:
+        data.append({
+            'id': str(p.id),
+            'name': p.name,
+            'description': p.description,
+            'price': float(p.price),
+            'stock': p.stock,
+            'category': p.category,
+            'thumbnail': p.thumbnail or '',
+            'seller': p.seller.username if p.seller else None,
+        })
 
+    return JsonResponse(data, safe=False)
+
+
+# ...existing code...
 
 @csrf_exempt
 def create_product_flutter(request):
     """Create a new product from Flutter app via JSON."""
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'POST required'}, status=400)
+    
+    # Check if user is authenticated
+    if not request.user.is_authenticated:
+        return JsonResponse({'status': 'error', 'message': 'Login required'}, status=401)
+    
+    # ✅ VALIDASI ROLE SELLER
+    try:
+        user_profile = request.user.profile
+        if user_profile.role not in ['SELLER', 'ADMIN']:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Only sellers and admins can add products. Please switch to seller role first.',
+                'current_role': user_profile.role,
+                'required_role': 'SELLER or ADMIN'
+            }, status=403)
+    except Exception as e:
+        # Jika profile tidak ada, anggap user biasa
+        return JsonResponse({
+            'status': 'error',
+            'message': 'User profile not found. Please contact administrator.',
+        }, status=403)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+    
+    name = data.get('name', '').strip()
+    price = data.get('price')
+    description = data.get('description', '').strip()
+    thumbnail = data.get('thumbnail', '').strip()
+    category = data.get('category', '').strip()
+    stock = data.get('stock', 0)
+    
+    if not name or not description:
+        return JsonResponse({'status': 'error', 'message': 'Name and description required'}, status=400)
+    
+    try:
+        price = float(price) if price else 0
+        stock = int(stock) if stock else 0
+    except (ValueError, TypeError):
+        return JsonResponse({'status': 'error', 'message': 'Invalid price or stock'}, status=400)
+    
+    if price <= 0:
+        return JsonResponse({'status': 'error', 'message': 'Price must be > 0'}, status=400)
+    
+    product = Product.objects.create(
+        name=name,
+        price=price,
+        description=description,
+        thumbnail=thumbnail or '',
+        category=category or 'running',
+        stock=stock,
+        seller=request.user,
+    )
+    
+    return JsonResponse({
+        'status': 'success',
+        'message': 'Product created',
+        'product_id': str(product.id),
+    }, status=201)
+
+# ...existing code...
+    """Create a new product from Flutter app via JSON."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'}, status=400)
+    
     
     if not request.user.is_authenticated:
         return JsonResponse({'status': 'error', 'message': 'Login required'}, status=401)
@@ -710,3 +818,257 @@ def proxy_image(request):
         return HttpResponse(response.content, content_type=response.headers.get('Content-Type', 'image/jpeg'))
     except requests.RequestException as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+@require_http_methods(["GET"])
+def view_wishlist_flutter(request):
+    wishlist, _ = Wishlist.objects.prefetch_related('products__seller').get_or_create(user=request.user)
+    products = wishlist.products.all()
+
+    return JsonResponse({
+        'status': 'success',
+        'count': products.count(),
+        'products': [
+            {
+                'id': str(p.id),
+                'name': p.name,
+                'description': p.description,
+                'price': float(p.price),
+                'stock': p.stock,
+                'category': p.category,
+                'thumbnail': p.thumbnail or '',
+                'seller_username': p.seller.username if p.seller else None,
+            }
+            for p in products
+        ],
+    })
+
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def toggle_wishlist_flutter(request, product_id):
+    product = get_object_or_404(Product, pk=product_id)
+    wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
+
+    if wishlist.products.filter(pk=product.pk).exists():
+        wishlist.products.remove(product)
+        in_wishlist = False
+        message = f'Removed {product.name} from wishlist'
+    else:
+        wishlist.products.add(product)
+        in_wishlist = True
+        message = f'Added {product.name} to wishlist'
+
+    return JsonResponse({
+        'status': 'success',
+        'message': message,
+        'in_wishlist': in_wishlist,
+        'count': wishlist.products.count(),
+    })
+
+from decimal import Decimal
+# ...existing code...
+
+def _serialize_cart(cart):
+    items = (
+        CartItem.objects
+        .filter(cart=cart)
+        .select_related('product')
+    )
+    serialized = []
+    total = Decimal('0')
+    for item in items:
+        subtotal = item.product.price * item.quantity
+        total += subtotal
+        serialized.append({
+            'item_id': item.id,
+            'product_id': str(item.product.id),
+            'name': item.product.name,
+            'price': float(item.product.price),
+            'quantity': item.quantity,
+            'subtotal': float(subtotal),
+            'thumbnail': item.product.thumbnail or '',
+            'stock': item.product.stock,
+            'seller_username': item.product.seller.username if item.product.seller else None,
+        })
+    return serialized, total
+
+@login_required
+@csrf_exempt
+def view_cart_flutter(request):
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+    items, total = _serialize_cart(cart)
+    return JsonResponse({
+        'status': 'success',
+        'cart_id': cart.id,
+        'items': items,
+        'total': float(total),
+    })
+
+@login_required
+@csrf_exempt
+def add_to_cart_flutter(request, product_id):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+    product = get_object_or_404(Product, pk=product_id)
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+
+    cart_item, created = CartItem.objects.get_or_create(
+        cart=cart,
+        product=product,
+        defaults={'quantity': 1}
+    )
+
+    if not created:
+        if cart_item.quantity >= product.stock:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Cannot add more. Only {product.stock} items in stock'
+            }, status=400)
+        cart_item.quantity += 1
+        cart_item.save()
+        message = f'{product.name} quantity updated in cart'
+    else:
+        message = f'{product.name} added to cart'
+
+    items, total = _serialize_cart(cart)
+    return JsonResponse({
+        'status': 'success',
+        'message': message,
+        'items': items,
+        'total': float(total),
+    })
+
+@login_required
+@csrf_exempt
+def remove_from_cart_flutter(request, product_id):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+    cart = get_object_or_404(Cart, user=request.user)
+    try:
+        cart_item = CartItem.objects.get(cart=cart, product_id=product_id)
+    except CartItem.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Item not found'}, status=404)
+
+    product_name = cart_item.product.name
+    cart_item.delete()
+
+    items, total = _serialize_cart(cart)
+    return JsonResponse({
+        'status': 'success',
+        'message': f'{product_name} removed from cart',
+        'items': items,
+        'total': float(total),
+    })
+
+@login_required
+@transaction.atomic
+@csrf_exempt
+def checkout_flutter(request):
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+    items, total = _serialize_cart(cart)
+
+    if not items:
+        return JsonResponse({'status': 'error', 'message': 'Keranjang kosong'}, status=400)
+
+    if request.method != 'POST':
+        return JsonResponse({
+            'status': 'ready',
+            'items': items,
+            'total': float(total),
+        })
+
+    qty_map = {}
+    for entry in items:
+        qty_map[entry['product_id']] = qty_map.get(entry['product_id'], 0) + entry['quantity']
+
+    products = list(Product.objects.select_for_update().filter(id__in=qty_map.keys()))
+    kurang = []
+    for product in products:
+        if qty_map[str(product.id)] > product.stock:
+            kurang.append(f'{product.name} (butuh {qty_map[str(product.id)]}, tersedia {product.stock})')
+
+    if kurang:
+        return JsonResponse({'status': 'error', 'message': 'Stok tidak cukup', 'details': kurang}, status=400)
+
+    for product in products:
+        Product.objects.filter(id=product.id).update(
+            stock=F('stock') - qty_map[str(product.id)]
+        )
+
+    CartItem.objects.filter(cart=cart).delete()
+
+    return JsonResponse({
+        'status': 'success',
+        'message': f'Pembelian berhasil untuk {len(items)} item.',
+        'total': float(total),
+    })
+
+@login_required
+@csrf_exempt
+def update_cart_quantity_flutter(request, item_id):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+    try:
+        # Coba parse sebagai JSON dulu
+        if request.content_type == 'application/json' and request.body:
+            payload = json.loads(request.body)
+            new_quantity = int(payload.get('quantity', 1))
+        else:
+            # Jika bukan JSON, ambil dari POST data (untuk pbp_django_auth)
+            new_quantity = int(request.POST.get('quantity', 1))
+    except (ValueError, json.JSONDecodeError, TypeError):
+        return JsonResponse({'status': 'error', 'message': 'Invalid quantity'}, status=400)
+
+    if new_quantity < 1:
+        return JsonResponse({'status': 'error', 'message': 'Quantity must be at least 1'}, status=400)
+
+    cart = get_object_or_404(Cart, user=request.user)
+    cart_item = get_object_or_404(CartItem, id=item_id, cart=cart)
+
+    if new_quantity > cart_item.product.stock:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Only {cart_item.product.stock} items available in stock'
+        }, status=400)
+
+    cart_item.quantity = new_quantity
+    cart_item.save()
+
+    items, total = _serialize_cart(cart)
+    return JsonResponse({
+        'status': 'success',
+        'message': 'Quantity updated',
+        'items': items,
+        'total': float(total),
+    })
+
+# ...existing code...
+
+@login_required
+@require_http_methods(["GET"])
+def check_wishlist_flutter(request, product_id):
+    """Check if a product is in user's wishlist"""
+    try:
+        product = get_object_or_404(Product, pk=product_id)
+        wishlist = Wishlist.objects.filter(user=request.user).first()
+        
+        in_wishlist = False
+        if wishlist:
+            in_wishlist = wishlist.products.filter(pk=product.pk).exists()
+        
+        return JsonResponse({
+            'status': 'success',
+            'in_wishlist': in_wishlist,
+            'product_id': str(product.id),
+            'product_name': product.name,
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e),
+            'in_wishlist': False,
+        }, status=400)
