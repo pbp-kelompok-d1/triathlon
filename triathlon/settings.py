@@ -15,7 +15,7 @@ import os
 from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
-
+ 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -32,7 +32,7 @@ DEBUG = False if PRODUCTION else True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", 'muhammad-kaila-triathlon.pbp.cs.ui.ac.id', '10.0.2.2']
 
-CSRF_TRUSTED_ORIGINS = ["https://muhammad-kaila-triathlon.pbp.cs.ui.ac.id", "http://localhost:53355", "http://localhost:60464"]
+CSRF_TRUSTED_ORIGINS = ["http://localhost", "http://127.0.0.1", "https://muhammad-kaila-triathlon.pbp.cs.ui.ac.id"]
 
 # Application definition
 
@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'activities',
     'authentication',
     'corsheaders',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -64,6 +65,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'triathlon.urls'

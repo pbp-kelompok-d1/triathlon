@@ -1,5 +1,6 @@
 import os
 import json
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
@@ -976,3 +977,31 @@ def update_cart_quantity_flutter(request, item_id):
         'items': items,
         'total': float(total),
     })
+
+@login_required
+@require_http_methods(["GET"])
+def check_wishlist_status_flutter(request, product_id):
+    """
+    Check if a specific product is in user's wishlist.
+    Returns JSON with in_wishlist boolean.
+    """
+    try:
+        product = get_object_or_404(Product, pk=product_id)
+        wishlist = Wishlist.objects.filter(user=request.user).first()
+        
+        in_wishlist = False
+        if wishlist:
+            in_wishlist = wishlist.products.filter(pk=product.pk).exists()
+        
+        return JsonResponse({
+            'status': 'success',
+            'product_id': str(product_id),
+            'product_name': product.name,
+            'in_wishlist': in_wishlist,
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e),
+            'in_wishlist': False,
+        }, status=500)
