@@ -32,7 +32,7 @@ DEBUG = False if PRODUCTION else True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", 'muhammad-kaila-triathlon.pbp.cs.ui.ac.id', '10.0.2.2']
 
-CSRF_TRUSTED_ORIGINS = ["https://muhammad-kaila-triathlon.pbp.cs.ui.ac.id"]
+CSRF_TRUSTED_ORIGINS = ["http://localhost", "http://127.0.0.1", "https://muhammad-kaila-triathlon.pbp.cs.ui.ac.id"]
 
 # Application definition
 
@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'activities',
     'authentication',
     'corsheaders',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -171,13 +172,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 # Cookie settings: secure for production, permissive for local dev
-if PRODUCTION:
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_SAMESITE = 'None'
-    CSRF_COOKIE_SAMESITE = 'None'
-else:
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
-    SESSION_COOKIE_SAMESITE = 'Lax'
-    CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SAMESITE = 'None'

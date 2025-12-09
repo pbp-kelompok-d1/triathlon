@@ -4,10 +4,17 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
+import json
+import uuid
+
 # ================================ LIKE/UNLIKE POST ================================
 @require_POST
-@login_required(login_url='/login/')
+@csrf_exempt
 def toggle_like(request, post_id):
+    # Check authentication
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Login required'}, status=401)
+    
     post = get_object_or_404(ForumPost, pk=post_id)
     user = request.user
     if post.user_has_liked(user):
@@ -68,7 +75,6 @@ def show_forums(request):
     return render(request, "forums.html", context)
 
 
-@login_required(login_url='/login/')
 def post_detail(request, id):
    
     post = get_object_or_404(ForumPost, pk=id)
@@ -115,6 +121,66 @@ def post_detail(request, id):
     except Exception:
         linked_place = None
 
+    # Check if JSON response is requested (for Flutter app)
+    is_json_request = (
+        request.GET.get('format') == 'json' or 
+        'application/json' in request.headers.get('Accept', '')
+    )
+    
+    if is_json_request:
+        # Return JSON response for Flutter
+        post_data = {
+            'id': str(post.id),
+            'title': post.title,
+            'content': post.content[:150] + '...' if len(post.content) > 150 else post.content,
+            'full_content': post.content,  # Add full_content field
+            'category': post.category,
+            'category_display': post.get_category_display(),
+            'sport_category': post.sport_category,
+            'sport_category_display': post.get_sport_category_display(),
+            'post_views': post.post_views,
+            'is_pinned': post.is_pinned,
+            'product_id': str(post.product_id) if post.product_id else None,
+            'location_id': post.location_id,
+            'created_at': post.created_at.strftime('%b %d, %Y'),
+            'author': post.author.username if post.author else 'Anonymous',
+            'author_id': post.author.id if post.author else None,
+            'author_initial': post.author.username[0].upper() if post.author else 'A',
+            'author_role': post.author.profile.role if post.author and hasattr(post.author, 'profile') else 'USER',
+            'like_count': post.like_count(),
+            'user_has_liked': user_has_liked_post,
+            'original_poster_total_posts': original_poster_total_posts,
+        }
+        
+        replies_data = [
+            {
+                'id': str(reply.id),
+                'content': reply.content,
+                'created_at': reply.created_at.strftime('%b %d, %Y %I:%M %p'),
+                'author': reply.author.username if reply.author else 'Anonymous',
+                'author_id': reply.author.id if reply.author else None,
+                'author_initial': reply.author.username[0].upper() if reply.author else 'A',
+                'author_role': reply.author.profile.role if reply.author and hasattr(reply.author, 'profile') else 'USER',
+                'total_posts': reply.total_posts,
+                'quote_info': {
+                    'id': str(reply.quote_reply.id),
+                    'author': reply.quote_reply.author.username if reply.quote_reply.author else 'Anonymous',
+                    'content': reply.quote_reply.content[:100] + ('...' if len(reply.quote_reply.content) > 100 else '')
+                } if reply.quote_reply else None,
+            }
+            for reply in replies_with_counts
+        ]
+        
+        return JsonResponse({
+            'post': post_data,
+            'replies': replies_data,
+            'user_has_liked': user_has_liked_post,
+        })
+
+    # For web browser HTML view, require login
+    if not request.user.is_authenticated:
+        return redirect('/login/')
+
     context = {
         'post': post,
         'replies': replies_with_counts,
@@ -158,20 +224,46 @@ def show_json(request):
 # =================================== ADDING FORUMS AND REPLIES ================================
 
 @require_POST
-@login_required(login_url='/login/')
+@csrf_exempt
 def add_post_ajax(request):
-    # Add new forum post via AJAX
-    title = request.POST.get("title")
-    content = request.POST.get("content")
-    category = request.POST.get("category")
-    sport_category = request.POST.get("sport_category")
-    product_id = request.POST.get("product_id")
-    location_id = request.POST.get("location_id")
+    # Add new forum post via AJAX or JSON (for Flutter)
+    
+    # Check authentication
+    if not request.user.is_authenticated:
+        # For JSON requests (Flutter), return JSON error
+        if request.content_type == 'application/json':
+            return JsonResponse({'status': 'error', 'message': 'Login required'}, status=401)
+        # For web requests, redirect to login
+        return redirect('/login/')
+    
+    # Check if JSON body or form data
+    if request.content_type == 'application/json':
+        try:
+            data = json.loads(request.body)
+            title = data.get('title')
+            content = data.get('content')
+            category = data.get('category')
+            sport_category = data.get('sport_category')
+            product_id = data.get('product_id')
+            location_id = data.get('location_id')
+            is_pinned_raw = data.get('is_pinned', False)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    else:
+        # Form data (existing web interface)
+        title = request.POST.get("title")
+        content = request.POST.get("content")
+        category = request.POST.get("category")
+        sport_category = request.POST.get("sport_category")
+        product_id = request.POST.get("product_id")
+        location_id = request.POST.get("location_id")
+        is_pinned_raw = request.POST.get("is_pinned") == 'on'
+    
     user = request.user
     
     # Only allow admins to pin posts
     is_admin = hasattr(user, 'profile') and user.profile.role == 'ADMIN'
-    is_pinned = (request.POST.get("is_pinned") == 'on') if is_admin else False
+    is_pinned = is_pinned_raw if is_admin else False
 
     # Convert product/location IDs safely
     def _to_uuid_or_none(val):
@@ -197,12 +289,26 @@ def add_post_ajax(request):
         location_id=_to_int_or_none(location_id),
     )
     new_post.save()
+    
+    # Return JSON for Flutter, simple response for web
+    if request.content_type == 'application/json':
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Post created successfully',
+            'post_id': str(new_post.id)
+        }, status=201)
+    
     return HttpResponse(b"CREATED", status=201)
 
 @require_POST
-@login_required(login_url='/login/')
+@csrf_exempt
 def add_reply(request, post_id):
     # Add reply to forum post
+    
+    # Check authentication
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Login required'}, status=401)
+    
     try:
         post = get_object_or_404(ForumPost, pk=post_id)
         content = request.POST.get('content', '')
@@ -273,9 +379,16 @@ def add_reply(request, post_id):
 
 
 @require_POST
-@login_required(login_url='/login/')
+@csrf_exempt
 def delete_post(request, post_id):
-    # Delete forum post - only author or admin can delete
+    """
+    Delete forum post - only author or admin can delete.
+    Uses @csrf_exempt for Flutter compatibility with manual auth check.
+    """
+    # Check authentication (manual check for Flutter compatibility)
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Login required'}, status=401)
+    
     post = get_object_or_404(ForumPost, pk=post_id)
     
     # Check if user is the author or admin
@@ -283,42 +396,58 @@ def delete_post(request, post_id):
     is_admin = hasattr(request.user, 'profile') and request.user.profile.role == 'ADMIN'
     
     if not (is_author or is_admin):
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
+        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
     
     post.delete()
-    
-    # Return JSON response for AJAX requests
-    if request.headers.get('Accept') == 'application/json' or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({'success': True, 'message': 'Forum post deleted successfully'})
     
     return JsonResponse({'success': True, 'message': 'Forum post deleted successfully'})
 
 
 @require_POST
-@login_required(login_url='/login/')
+@csrf_exempt
 def edit_post_ajax(request, post_id):
-    # Edit forum post via AJAX - only author can edit
+    """
+    Edit forum post via AJAX/Flutter - only author can edit.
+    Admins can additionally pin/unpin posts.
+    Uses @csrf_exempt for Flutter compatibility with manual auth check.
+    """
+    # Check authentication (manual check for Flutter compatibility)
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Login required'}, status=401)
+    
     post = get_object_or_404(ForumPost, pk=post_id)
     
     # Check if user is the author (ONLY author, not admin)
     if post.author != request.user:
-        return JsonResponse({'error': 'Unauthorized - only the author can edit'}, status=403)
+        return JsonResponse({'success': False, 'error': 'Unauthorized - only the author can edit'}, status=403)
+    
+    # Handle both form data (web) and JSON body (Flutter)
+    if request.content_type == 'application/json':
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+    else:
+        data = request.POST
     
     # Update post fields
-    post.title = request.POST.get("title")
-    post.content = request.POST.get("content")
-    post.category = request.POST.get("category")
-    post.sport_category = request.POST.get("sport_category")
+    post.title = data.get("title", post.title)
+    post.content = data.get("content", post.content)
+    post.category = data.get("category", post.category)
+    post.sport_category = data.get("sport_category", post.sport_category)
     
     # Only allow admins to pin/unpin posts
     is_admin = hasattr(request.user, 'profile') and request.user.profile.role == 'ADMIN'
     if is_admin:
-        post.is_pinned = request.POST.get("is_pinned") == 'on'
+        is_pinned_value = data.get("is_pinned")
+        if is_pinned_value is not None:
+            # Handle both 'on' (web form) and boolean (Flutter JSON)
+            post.is_pinned = is_pinned_value == 'on' or is_pinned_value == True
     # If not admin, don't change the pin status
     
     # Update product_id and location_id
-    product_id = request.POST.get("product_id")
-    location_id = request.POST.get("location_id")
+    product_id = data.get("product_id")
+    location_id = data.get("location_id")
     def _to_uuid_or_none(val):
         try:
             return uuid.UUID(val) if val else None
@@ -339,13 +468,25 @@ def edit_post_ajax(request, post_id):
     
     post.save()
     
-    return HttpResponse(b"UPDATED", status=200)
+    # Return JSON response for Flutter
+    return JsonResponse({
+        'success': True,
+        'message': 'Post updated successfully',
+        'post_id': str(post.id)
+    })
 
 
 @require_POST
-@login_required(login_url='/login/')
+@csrf_exempt
 def delete_reply(request, reply_id):
-    # Delete forum reply - only author or admin can delete
+    """
+    Delete forum reply - only author or admin can delete.
+    Uses @csrf_exempt for Flutter compatibility with manual auth check.
+    """
+    # Check authentication (manual check for Flutter compatibility)
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Login required'}, status=401)
+    
     reply = get_object_or_404(ForumReply, pk=reply_id)
     
     # Check if user is the author or admin
@@ -353,7 +494,7 @@ def delete_reply(request, reply_id):
     is_admin = hasattr(request.user, 'profile') and request.user.profile.role == 'ADMIN'
     
     if not (is_author or is_admin):
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
+        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
     
     # Store post info before deleting reply
     post = reply.post
@@ -483,3 +624,4 @@ def user_profile_content(request, username):
     replies = ForumReply.objects.filter(author=user_obj)
     context.update({'posts': posts, 'replies': replies, 'wishlist': []})
     return render(request, 'user_profile/_user_content.html', context)
+

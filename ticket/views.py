@@ -15,12 +15,14 @@ from datetime import datetime
 
 
 def check_user_profile(request):
+    # cek user udah punya profile belum
     if not hasattr(request.user, 'profile'):
         messages.error(request, 'Please complete your profile first.')
         return redirect('account:profile')
     return None
 
 def ajax_permission_denied(message="Permission Denied"):
+    # response json buat ajax kalo akses ditolak
     return JsonResponse({
         'success': False,
         'message': message,
@@ -38,7 +40,7 @@ def ticket_list(request):
     if profile_redirect:
         return profile_redirect
     
-    # Tentukan base queryset SEKALI
+    # admin liat semua tiket, user biasa cuma liat punya sendiri
     if request.user.profile.is_admin():
         base_tickets = Ticket.objects.select_related('place', 'user').all()
     else:
@@ -46,13 +48,13 @@ def ticket_list(request):
             user=request.user 
         )
     
-    # Hitung statistik dari base queryset
+    #itung statistik tiket
     today = date.today()
     past_count = base_tickets.filter(booking_date__lt=today).count()
     today_count = base_tickets.filter(booking_date=today).count()
     upcoming_count = base_tickets.filter(booking_date__gt=today).count()
 
-    # Terapkan filter status dan pencarian
+    # filter berdasarkan status dan search
     status_filter = request.GET.get('status', '')
     search_query = request.GET.get('search', '')
     
@@ -106,6 +108,7 @@ def ticket_create(request):
             ticket.total_price = ticket.place.price * ticket.ticket_quantity
             ticket.save()
 
+            # kalo ajax return json
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
                     'success': True,
@@ -139,6 +142,7 @@ def ticket_create(request):
                 }, status=400)
             messages.error(request, 'Please check your form.')
     
+    # auto select place kalo dari parameter
     if place_id:
         form = TicketForm(initial={'place': place_id})
     else:
@@ -172,6 +176,7 @@ def ticket_update(request, id):
     is_owner = ticket.user == request.user
     is_admin = request.user.profile.is_admin()
 
+    # cuma owner atau admin yang bisa edit
     if not (is_owner or is_admin):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return ajax_permission_denied('You do not have permission to edit this ticket.')
@@ -246,6 +251,7 @@ def ticket_delete(request, id):
     is_owner = ticket.user == request.user
     is_admin = request.user.profile.is_admin()
     
+    # cek permission dulu sebelum delete
     if not (is_owner or is_admin):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return ajax_permission_denied('You do not have permission to delete this ticket.')
@@ -302,6 +308,7 @@ def ticket_detail(request, id):
 
 @login_required
 def get_place_price(request, place_id):
+    # ambil data harga place buat ajax
     try:
         place = Place.objects.get(id=place_id)
         return JsonResponse({
@@ -330,9 +337,8 @@ def place_list_api(request):
 @login_required
 @require_http_methods(["GET"])
 def ticket_list_api(request):
-    """API JSON untuk Flutter - modifikasi dari ticket_list"""
+    # API buat flutter, logic sama kayak ticket_list
     try:
-        # Gunakan logic yang sama dengan ticket_list
         if request.user.profile.is_admin():
             base_tickets = Ticket.objects.select_related('place', 'user', 'user__profile').all()
         else:
@@ -340,7 +346,7 @@ def ticket_list_api(request):
                 user=request.user
             )
         
-        # Filter status
+        # filter berdasarkan status
         status_filter = request.GET.get('status', '')
         today = date.today()
         
@@ -351,7 +357,7 @@ def ticket_list_api(request):
         elif status_filter == 'upcoming':
             base_tickets = base_tickets.filter(booking_date__gt=today)
         
-        # Filter search
+        # filter search
         search_query = request.GET.get('search', '')
         if search_query:
             q_filters = Q(customer_name__icontains=search_query) | \
@@ -360,10 +366,9 @@ def ticket_list_api(request):
                 q_filters |= Q(id=search_query)
             base_tickets = base_tickets.filter(q_filters)
         
-        # Urutkan
         tickets = base_tickets.order_by('-booking_date', '-id')
         
-        # Serialize ke JSON
+        # bikin format json buat flutter
         tickets_data = []
         for ticket in tickets:
             tickets_data.append({
@@ -405,21 +410,31 @@ def ticket_list_api(request):
 @login_required
 @require_http_methods(["POST"])
 def ticket_create_api(request):
-    """API JSON untuk Flutter - modifikasi dari ticket_create"""
     try:
-        # Parse JSON body (untuk Flutter)
-        data = json.loads(request.body)
-        
-        # Buat instance form dengan data dari JSON
-        form = TicketForm(data)
+        # cek data dari form atau json
+        if request.POST:
+            form = TicketForm(request.POST)
+        else:
+            try:
+                data = json.loads(request.body)
+                form = TicketForm(data)
+            except json.JSONDecodeError:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid data format. Expected Form Data or JSON.'
+                }, status=400)
         
         if form.is_valid():
             ticket = form.save(commit=False)
             ticket.user = request.user
-            ticket.total_price = ticket.place.price * ticket.ticket_quantity
+            
+            if ticket.place:
+                ticket.total_price = ticket.place.price * ticket.ticket_quantity
+            else:
+                ticket.total_price = 0
+
             ticket.save()
             
-            # Return response JSON (sama seperti AJAX response di ticket_create)
             return JsonResponse({
                 'success': True,
                 'message': f'Ticket #{ticket.id} successfully booked!',
@@ -437,37 +452,28 @@ def ticket_create_api(request):
                 }
             })
         else:
-            # Return error validation
             return JsonResponse({
                 'success': False,
                 'errors': form.errors,
                 'message': 'Please check your form and try again'
             }, status=400)
     
-    except json.JSONDecodeError:
-        return JsonResponse({
-            'success': False,
-            'message': 'Invalid JSON data'
-        }, status=400)
     except Exception as e:
         return JsonResponse({
             'success': False,
             'message': str(e)
         }, status=500)
 
-
 @csrf_exempt
 @login_required
 @require_http_methods(["GET"])
 def ticket_detail_api(request, id):
-    """API JSON untuk Flutter - modifikasi dari ticket_detail"""
     try:
         ticket = get_object_or_404(
             Ticket.objects.select_related('user', 'place', 'user__profile'),
             pk=id
         )
         
-        # Check permission (sama seperti ticket_detail)
         is_owner = ticket.user == request.user
         is_admin = request.user.profile.is_admin()
         
@@ -477,7 +483,6 @@ def ticket_detail_api(request, id):
                 'message': 'You do not have permission to view this ticket.'
             }, status=403)
         
-        # Return ticket data
         return JsonResponse({
             'success': True,
             'ticket': {
@@ -513,11 +518,10 @@ def ticket_detail_api(request, id):
 @login_required
 @require_http_methods(["POST"])
 def ticket_update_api(request, id):
-    """API JSON untuk Flutter - modifikasi dari ticket_update"""
+    # update ticket dari flutter
     try:
         ticket = get_object_or_404(Ticket, id=id)
         
-        # Check permission (sama seperti ticket_update)
         is_owner = ticket.user == request.user
         is_admin = request.user.profile.is_admin()
         
@@ -527,18 +531,27 @@ def ticket_update_api(request, id):
                 'message': 'You do not have permission to edit this ticket.'
             }, status=403)
         
-        # Parse JSON body
-        data = json.loads(request.body)
-        
-        # Buat form dengan data JSON dan instance ticket
-        form = TicketForm(data, instance=ticket)
+        # cek format data form atau json
+        if request.POST:
+            form = TicketForm(request.POST, instance=ticket)
+        else:
+            try:
+                data = json.loads(request.body)
+                form = TicketForm(data, instance=ticket)
+            except json.JSONDecodeError:
+                 return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid data format. Expected Form Data or JSON.'
+                }, status=400)
         
         if form.is_valid():
             ticket = form.save(commit=False)
-            ticket.total_price = ticket.place.price * ticket.ticket_quantity
+            
+            if ticket.place:
+                ticket.total_price = ticket.place.price * ticket.ticket_quantity
+            
             ticket.save()
             
-            # Return response JSON (sama seperti AJAX response di ticket_update)
             return JsonResponse({
                 'success': True,
                 'message': f'Ticket #{ticket.id} successfully updated!',
@@ -562,11 +575,6 @@ def ticket_update_api(request, id):
                 'message': 'Please check your form and try again.'
             }, status=400)
     
-    except json.JSONDecodeError:
-        return JsonResponse({
-            'success': False,
-            'message': 'Invalid JSON data'
-        }, status=400)
     except Exception as e:
         return JsonResponse({
             'success': False,
@@ -581,7 +589,6 @@ def ticket_delete_api(request, id):
     try:
         ticket = get_object_or_404(Ticket, pk=id)
         
-        # Check permission (sama seperti ticket_delete)
         is_owner = ticket.user == request.user
         is_admin = request.user.profile.is_admin()
         
@@ -595,7 +602,6 @@ def ticket_delete_api(request, id):
         place_name = ticket.place.name
         ticket.delete()
         
-        # Return response JSON (sama seperti AJAX response di ticket_delete)
         return JsonResponse({
             'success': True,
             'message': f'Ticket #{ticket_id} for {place_name} has been deleted'
@@ -612,7 +618,7 @@ def ticket_delete_api(request, id):
 @login_required
 @require_http_methods(["GET"])
 def place_list_api_flutter(request):
-    """API JSON untuk Flutter - modifikasi dari place_list_api"""
+    # list semua place buat flutter
     try:
         places = Place.objects.all().order_by('name')
         places_data = []
