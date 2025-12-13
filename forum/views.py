@@ -586,8 +586,79 @@ def user_profile_view(request, username):
             for reply in replies
         ]
         
-        # Return comprehensive user profile JSON
-        return JsonResponse({
+        # =====================================================================
+        # Role-Specific Data for JSON Response
+        # =====================================================================
+        # This matches the web view's role-specific content display
+        
+        # Initialize role-specific data containers
+        wishlist_data = []
+        products_data = []
+        facilities_data = []
+        ticket_stats = {'total_quantity': 0, 'total_revenue': 0}
+        
+        # USER role: Include wishlist
+        if target_user_role == 'USER':
+            try:
+                wishlist_items = Wishlist.objects.filter(user=user_obj).select_related('product')
+                wishlist_data = [
+                    {
+                        'id': str(item.product.id) if item.product else None,
+                        'product_name': item.product.name if item.product else 'Unknown',
+                        'product_price': str(item.product.price) if item.product and hasattr(item.product, 'price') else None,
+                        'product_category': item.product.category if item.product and hasattr(item.product, 'category') else None,
+                    }
+                    for item in wishlist_items if item.product
+                ]
+            except Exception:
+                wishlist_data = []
+        
+        # SELLER role: Include their products
+        if target_user_role == 'SELLER':
+            try:
+                if hasattr(Product, 'seller'):
+                    seller_products = Product.objects.filter(seller=user_obj)
+                    products_data = [
+                        {
+                            'id': str(product.id),
+                            'name': product.name,
+                            'price': str(product.price) if hasattr(product, 'price') else None,
+                            'category': product.category if hasattr(product, 'category') else None,
+                            'description': product.description[:100] + '...' if hasattr(product, 'description') and len(product.description) > 100 else (product.description if hasattr(product, 'description') else ''),
+                        }
+                        for product in seller_products
+                    ]
+            except Exception:
+                products_data = []
+        
+        # FACILITY_ADMIN role: Include facilities and ticket stats
+        if target_user_role == 'FACILITY_ADMIN':
+            try:
+                user_facilities = Place.objects.filter(admin=user_obj)
+                facilities_data = [
+                    {
+                        'id': facility.pk,
+                        'name': facility.name,
+                        'city': facility.city if hasattr(facility, 'city') else None,
+                        'genre': facility.genre if hasattr(facility, 'genre') else None,
+                    }
+                    for facility in user_facilities
+                ]
+                
+                # Calculate ticket statistics
+                admin_place_ids = user_facilities.values_list('id', flat=True)
+                tickets = Ticket.objects.filter(place_id__in=admin_place_ids)
+                stats = tickets.aggregate(total_quantity=Sum('ticket_quantity'), total_revenue=Sum('total_price'))
+                ticket_stats = {
+                    'total_quantity': stats['total_quantity'] or 0,
+                    'total_revenue': float(stats['total_revenue'] or 0),
+                }
+            except Exception:
+                facilities_data = []
+                ticket_stats = {'total_quantity': 0, 'total_revenue': 0}
+        
+        # Build response with role-specific data
+        response_data = {
             'user': {
                 'username': user_obj.username,
                 'initial': user_obj.username[0].upper() if user_obj.username else 'U',
@@ -600,7 +671,18 @@ def user_profile_view(request, username):
             },
             'posts': posts_data,
             'replies': replies_data,
-        })
+        }
+        
+        # Add role-specific data to response
+        if target_user_role == 'USER':
+            response_data['wishlist'] = wishlist_data
+        elif target_user_role == 'SELLER':
+            response_data['products'] = products_data
+        elif target_user_role == 'FACILITY_ADMIN':
+            response_data['facilities'] = facilities_data
+            response_data['ticket_stats'] = ticket_stats
+        
+        return JsonResponse(response_data)
 
     # =========================================================================
     # HTML Response for Web Browser
