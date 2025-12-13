@@ -602,30 +602,108 @@ def get_current_user_api(request):
             'error': str(e)
         }, status=500)
 
-def serialize_post(post):
-    """Fungsi pembantu untuk serialisasi ForumPost."""
-    # Dipanggil oleh USER dan SELLER
+def get_author_initial(username):
+    """Helper untuk mengambil inisial user."""
+    return username[0].upper() if username else "?"
+
+def serialize_post(post, current_user=None):
+    """
+    Serialisasi ForumPost sesuai Model Flutter 'ForumPost.dart'.
+    """
     return {
-        'id': post.id,
+        'id': str(post.id),
         'title': post.title,
-        'content_snippet': post.content[:100] + '...' if len(post.content) > 100 else post.content,
-        'category_value': post.category,
+        'content': post.content, # Digunakan untuk list view
+        'full_content': post.content, # Digunakan untuk detail view (Flutter: fullContent)
+        'category': post.category,
         'category_display': post.get_category_display(),
         'sport_category': post.sport_category,
         'sport_category_display': post.get_sport_category_display(),
-        'views': getattr(post, 'post_views', 0), # Gunakan getattr untuk menghindari error jika field tdk ada
+        
+        # Engagement Metrics
+        'post_views': getattr(post, 'post_views', 0),
+        'like_count': post.like_count() if hasattr(post, 'like_count') else 0,
+        'user_has_liked': post.user_has_liked(current_user) if current_user and hasattr(post, 'user_has_liked') else False,
+        
+        # Status & Links
+        'is_pinned': post.is_pinned,
+        'product_id': str(post.product_id) if post.product_id else None,
+        'location_id': post.location_id,
+        
+        # Timestamps
         'created_at': post.created_at.strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'last_edited': post.last_edited.strftime('%Y-%m-%dT%H:%M:%SZ') if post.last_edited else None,
+        
+        # Author Info (WAJIB LENGKAP)
+        'author': post.author.username if post.author else "Unknown",
+        'author_id': post.author.id if post.author else None,
+        'author_initial': get_author_initial(post.author.username if post.author else "?"),
+        'author_role': post.author.profile.role if post.author and hasattr(post.author, 'profile') else "USER",
     }
+
+def serialize_reply(reply):
+    """
+    Serialisasi ForumReply sesuai Model Flutter 'ForumReply.dart'.
+    FIX: Menambahkan 'total_posts', 'author_role', 'author_initial'.
+    """
+    author_username = reply.author.username if reply.author else "Unknown"
+    
+    # Hitung total post author untuk field 'total_posts'
+    total_posts = 0
+    if reply.author:
+        total_posts = ForumPost.objects.filter(author=reply.author).count()
+
+    return {
+        'id': str(reply.id),
+        'content': reply.content,
+        'created_at': reply.created_at.strftime('%b %d, %Y'), # Format sesuai contoh di Dart comment
+        
+        # Author Info (WAJIB LENGKAP agar tidak error)
+        'author': author_username,
+        'author_id': reply.author.id if reply.author else None,
+        'author_initial': get_author_initial(author_username),
+        'author_role': reply.author.profile.role if reply.author and hasattr(reply.author, 'profile') else "USER",
+        'total_posts': total_posts, # [CRITICAL FIX] Field ini wajib di ForumReply.dart
+        'post_id': str(reply.post.id), 
+        'post_sport_category': reply.post.sport_category or "",
+        'post_title': reply.post.title or "",
+        # Quote Info (Optional)
+        'quote_info': {
+            'id': str(reply.quote_reply.id),
+            'author': reply.quote_reply.author.username if reply.quote_reply.author else "Unknown",
+            'content': reply.quote_reply.content[:50] + "..." if len(reply.quote_reply.content) > 50 else reply.quote_reply.content
+        } if reply.quote_reply else None
+    }
+
+def serialize_product(product):
+    """
+    Serialisasi Product sesuai Model Flutter 'Product.dart'.
+    """
+    return {
+        'id': str(product.id),
+        'seller_username': product.seller.username if product.seller else None,
+        'name': product.name or "Unnamed Product",
+        'description': product.description or "",
+        'price': float(product.price or 0),
+        'stock': product.stock,
+        'category': product.category or "other",
+        'thumbnail': product.thumbnail or "", # Flutter Product.dart pakai 'thumbnail'
+    }
+
+# ==========================================================
+# 2. VIEW API UTAMA
+# ==========================================================
+
+# user_profile/views.py
 
 def get_dashboard_data_api(request):
     """
     [API VIEW] Mengembalikan data dashboard dalam format JSON untuk Flutter.
-    Menggunakan logika filter yang sama dengan get_dashboard_content.
+    HYBRID FIX: Bisa menangani f.image sebagai String (URLField) ATAU File (ImageField).
     """
     user = request.user
-    role = user.profile.role
+    role = getattr(user, 'profile', None).role if hasattr(user, 'profile') else 'USER'
     
-    # Ambil filter dari parameter GET
     view_filter = request.GET.get('view', 'all')
     category_filter = request.GET.get('category', '')
     
@@ -636,19 +714,16 @@ def get_dashboard_data_api(request):
     
     try:
         if role == 'USER':
-            # 1. Ambil data USER
+            # ... (Bagian USER tidak berubah, silakan copy dari kode sebelumnya) ...
             posts = ForumPost.objects.filter(author=user)
             replies = ForumReply.objects.filter(author=user)
             wishlist_items = Wishlist.objects.filter(user=user)
 
-            # 2. Terapkan filter
             if category_filter:
                 posts = posts.filter(sport_category__icontains=category_filter)
                 replies = replies.filter(post_sport_category_icontains=category_filter)
-                # Filter wishlist items secara lebih aman
                 wishlist_items = wishlist_items.filter(products_category_icontains=category_filter).distinct()
                 
-            # 3. Serialisasi data
             data['posts'] = [serialize_post(p) for p in posts]
             data['replies'] = [{
                 'id': r.id,
@@ -662,54 +737,65 @@ def get_dashboard_data_api(request):
             wishlist_products = []
             for wl in wishlist_items:
                 for product in wl.products.all():
-                    # Jika ada filter kategori, pastikan produk memenuhi filter tersebut
                     if not category_filter or (category_filter and category_filter.lower() in product.category.lower()):
                         wishlist_products.append({
                             'id': product.id,
                             'name': product.name,
                             'category': product.category,
                             'price': float(product.price),
+                            'thumbnail': product.thumbnail if hasattr(product, 'thumbnail') else '',
                         })
             data['wishlist_products'] = wishlist_products
 
 
         elif role == 'SELLER':
-            # 1. Ambil data SELLER
+            # --- SELLER: Logic Hybrid Image ---
             posts = ForumPost.objects.filter(author=user)
             products = Product.objects.filter(seller=user)
 
-            # 2. Terapkan filter
             if category_filter:
                 posts = posts.filter(sport_category__icontains=category_filter)
                 products = products.filter(category__icontains=category_filter) 
                 
-            # 3. Serialisasi data
             data['posts'] = [serialize_post(p) for p in posts]
-            data['products'] = [{
-                'id': p.id,
-                'name': p.name,
-                'category': p.category,
-                'price': float(p.price),
-                'image_url': p.image.url if getattr(p, 'image', None) else None,
-            } for p in products]
+            
+            product_list = []
+            for p in products:
+                # HYBRID IMAGE LOGIC FOR PRODUCT
+                img_url = None
+                if hasattr(p, 'thumbnail') and p.thumbnail:
+                    img_url = p.thumbnail # Jika field namanya thumbnail (string)
+                elif hasattr(p, 'image'):
+                    if p.image:
+                        # Cek apakah string atau file
+                        if isinstance(p.image, str):
+                            img_url = p.image
+                        elif hasattr(p.image, 'url'):
+                            img_url = p.image.url
+                            
+                product_list.append({
+                    'id': p.id,
+                    'name': p.name,
+                    'category': p.category,
+                    'price': float(p.price),
+                    'image_url': img_url,
+                })
+            data['products'] = product_list
             
             
         elif role == 'FACILITY_ADMIN':
-            # 1. Ambil data FACILITY_ADMIN
+            # --- FACILITY ADMIN: Logic Hybrid Image ---
             facilities = Place.objects.filter(admin=user)
             admin_place_ids = facilities.values_list('id', flat=True)
             tickets_base = Ticket.objects.filter(place_id__in=admin_place_ids)
 
-            # Hitung statistik dari SEMUA tiket (TANPA filter category)
             ticket_stats = tickets_base.aggregate(
                 total_quantity=Sum('ticket_quantity'),
                 total_revenue=Sum('total_price')
             )
             data['total_ticket_quantity'] = ticket_stats['total_quantity'] or 0
-            # Konversi Decimal ke float untuk JSON
             data['total_revenue_amount'] = float(ticket_stats['total_revenue'] or 0) 
             
-            # 2. Terapkan filter category pada QuerySet (untuk list yang ditampilkan)
             tickets_filtered = tickets_base
             if category_filter:
                 category_map = {
@@ -720,23 +806,35 @@ def get_dashboard_data_api(request):
                 genre_filter = category_map.get(category_filter)
                 
                 if genre_filter:
-                    # Filter facilities & tickets yang akan diserialisasi
                     facilities = facilities.filter(genre=genre_filter)
                     admin_place_ids = facilities.values_list('id', flat=True)
                     tickets_filtered = tickets_base.filter(place_id__in=admin_place_ids)
 
-            # 3. Serialisasi data
-            data['facilities'] = [{
-                'id': f.id,
-                'name': f.name,
-                'genre': f.genre,
-                'city': f.city,
-                'province': f.province,
-                'description': f.description,
-                'price': float(f.price) if getattr(f, 'price', None) else 0.0,
-                'created_at': f.created_at.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                'image_url': f.image.url if getattr(f, 'image', None) else None,
-            } for f in facilities]
+            data['facilities'] = []
+            for f in facilities:
+                # --- HYBRID IMAGE LOGIC (INTI PERUBAHAN) ---
+                image_val = None
+                if f.image:
+                    if hasattr(f.image, 'url'):
+                        # Jika f.image adalah File (ImageField) -> ambil .url
+                        image_val = f.image.url 
+                    else:
+                        # Jika f.image adalah String (URLField) -> ambil langsung
+                        image_val = str(f.image)
+
+                created_at_val = f.created_at.strftime('%Y-%m-%dT%H:%M:%SZ') if f.created_at else None
+
+                data['facilities'].append({
+                    'id': f.id,
+                    'name': f.name,
+                    'genre': f.genre,
+                    'city': f.city,
+                    'province': f.province,
+                    'description': f.description,
+                    'price': float(f.price) if getattr(f, 'price', None) else 0.0,
+                    'created_at': created_at_val,
+                    'image_url': image_val, # Hasil hybrid logic
+                })
             
             data['tickets'] = [{
                 'id': t.id,
@@ -750,15 +848,12 @@ def get_dashboard_data_api(request):
                 'status_display': t.get_status_display(),
             } for t in tickets_filtered]
             
-            
-        # Mengembalikan response dalam bentuk JSON
         return JsonResponse({'success': True, 'data': data})
 
     except Exception as e:
-        # Tangkap error umum saat memproses data
         print(f"Error in get_dashboard_data_api for role {role}: {e}")
-        return JsonResponse({'success': False, 'error': f'Terjadi kesalahan saat memproses data: {str(e)}'}, status=500)
-
+        return JsonResponse({'success': False, 'error': f'Terjadi kesalahan: {str(e)}'}, status=500)
+    
 @csrf_exempt
 def delete_user_account_api(request):
     """
