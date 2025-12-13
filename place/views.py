@@ -521,6 +521,9 @@ def _load_places_helper(request, csv_filename, genre_name, column_mapping, defau
         except pd.errors.ParserError:
              places_df = pd.read_csv(csv_path, sep=';') # Coba separator ;
 
+        # Normalisasi header (hilangkan spasi & BOM) supaya kolom 'name' terbaca di semua file
+        places_df.rename(columns=lambda c: str(c).strip().lstrip('\ufeff'), inplace=True)
+
         # Opsi: Batasi jumlah baris untuk testing
         # places_df = places_df.head(10)
 
