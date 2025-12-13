@@ -6,7 +6,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from user_profile.models import UserProfile 
-from django.conf import settings # Pastikan import ini ada
 
 @csrf_exempt
 def register(request):
@@ -128,52 +127,8 @@ def login(request):
 
         except json.JSONDecodeError:
             return JsonResponse({"status": False, "message": "Invalid JSON."}, status=400)
-    if request.method != 'POST':
-        return JsonResponse({"status": False, "message": "Method not allowed."}, status=405)
 
-    if request.content_type == 'application/json':
-        try:
-            payload = json.loads(request.body or '{}')
-        except json.JSONDecodeError:
-            return JsonResponse({"status": False, "message": "Invalid JSON."}, status=400)
-        username = payload.get('username', '').strip()
-        password = payload.get('password', '').strip()
-    else:
-        username = (request.POST.get('username') or '').strip()
-        password = (request.POST.get('password') or '').strip()
-
-    if not username or not password:
-        return JsonResponse({"status": False, "message": "Username and password are required."}, status=400)
-
-    if not User.objects.filter(username=username).exists():
-        return JsonResponse({"status": False, "message": "Username not found."}, status=401)
-
-    user = authenticate(request, username=username, password=password)
-    if not user or not user.is_active:
-        return JsonResponse({"status": False, "message": "Invalid credentials."}, status=401)
-
-    auth_login(request, user)
-
-    try:
-        role = user.profile.role
-    except Exception:
-        role = 'USER'
-
-    response = JsonResponse({
-        "status": True,
-        "message": "Login successful!",
-        "username": user.username,
-        "role": role,
-    })
-
-    response.set_cookie(
-        key=settings.SESSION_COOKIE_NAME,
-        value=request.session.session_key,
-        httponly=True,
-        samesite='None',
-        secure=False,
-    )
-    return response
+    return JsonResponse({"status": False, "message": "Method not allowed."}, status=405)
 
 
 @csrf_exempt
@@ -225,31 +180,4 @@ def logout(request):
         return JsonResponse({
             "status": False,
             "message": "Logout failed."
-        }, status=500)
-    
-# authentication/views.py
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-
-@login_required
-def check_admin(request):
-    """Check if user is admin/staff"""
-    is_admin = (
-        request.user.is_superuser or 
-        request.user.is_staff or
-        request.user.groups.filter(name__iexact='admin').exists()
-    )
-    
-    # Juga check role dari profile jika ada
-    try:
-        if hasattr(request.user, 'profile') and request.user.profile.role == 'ADMIN':
-            is_admin = True
-    except Exception:
-        pass
-    
-    return JsonResponse({
-        'is_admin': is_admin,
-        'is_staff': request.user.is_staff,
-        'is_superuser': request.user.is_superuser,
-        'username': request.user.username,
-    })
+        }, status=401)
