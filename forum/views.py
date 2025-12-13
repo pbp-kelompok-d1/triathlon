@@ -1,11 +1,21 @@
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.utils import timezone
+from django.core.paginator import Paginator
 from django.db.models import Sum
 import json
 import uuid
+
+from .models import ForumPost, ForumReply
+from .forms import ForumPostForm
+from ticket.models import Ticket
+from place.models import Place
+from shop.models import Product, Wishlist
+
 
 # ================================ LIKE/UNLIKE POST ================================
 @require_POST
@@ -28,20 +38,6 @@ def toggle_like(request, post_id):
         'liked': liked,
         'like_count': post.like_count(),
     })
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse, HttpResponse
-from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
-from django.utils import timezone
-from .models import ForumPost, ForumReply
-from ticket.models import Ticket
-from .forms import ForumPostForm
-from place.models import Place
-from shop.models import Product
-import uuid
-from django.contrib.auth.models import User
-from django.core.paginator import Paginator
-from shop.models import Wishlist
 
 
 # ================================ SHOWING FORUM POSTS AND DETAILS AND JSON DATA ================================
@@ -545,8 +541,11 @@ def user_profile_view(request, username):
     except Exception:
         wishlist = []
     
-    # Get user role
-    target_user_role = getattr(getattr(user_obj, 'profile', None), 'role', 'USER')
+    # Get user role - safely handle missing profile
+    try:
+        target_user_role = user_obj.profile.role if hasattr(user_obj, 'profile') else 'USER'
+    except Exception:
+        target_user_role = 'USER'
     
     # =========================================================================
     # JSON Response for Flutter App
