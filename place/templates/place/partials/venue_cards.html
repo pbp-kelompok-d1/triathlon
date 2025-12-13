@@ -3,8 +3,8 @@
   
   <!-- Venue Image with Badge -->
   <div class="h-52 relative overflow-hidden">
-    {% if place.image %}
-    <img src="{{ place.image.url }}" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500" alt="{{ place.name }}">
+    {% if place.image_url %}
+    <img src="{{ place.image_url }}" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500" alt="{{ place.name }}">
     {% else %}
     <div class="w-full h-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 flex items-center justify-center text-white animate-gradient">
       <svg class="w-20 h-20 opacity-80" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">

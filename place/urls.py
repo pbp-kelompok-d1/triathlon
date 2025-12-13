@@ -22,6 +22,7 @@ urlpatterns = [
     path('load/cycling/', views.load_places_cycling, name='load_cycling'),
     path('load/running/', views.load_places_running, name='load_running'),
     path('load/swimming/', views.load_places_swimming, name='load_swimming'),
+    path('delete/all/', views.delete_all_places, name='delete_all_places'),
     
     path('api/places/', views.api_place_list, name='api_place_list'),
     path('api/places/<int:pk>/', views.api_place_detail, name='api_place_detail'),
