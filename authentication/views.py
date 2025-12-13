@@ -6,10 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from user_profile.models import UserProfile 
-<<<<<<< HEAD
-=======
 from django.conf import settings # Pastikan import ini ada
->>>>>>> 4719009ab5d84d192e198f89cce3945d37e566a6
 
 @csrf_exempt
 def register(request):
@@ -82,57 +79,6 @@ def register(request):
 
 @csrf_exempt
 def login(request):
-<<<<<<< HEAD
-    """
-    Endpoint: POST /api/login/
-    """
-    if request.method == 'POST':
-        try:
-            username = request.POST.get('username')
-            password = request.POST.get('password')
-
-            # --- 1. Cek Username Ada atau Tidak ---
-            # Kita cek manual dulu ke DB untuk pesan error yang spesifik
-            if not User.objects.filter(username=username).exists():
-                return JsonResponse({
-                    "status": False,
-                    "message": "Username tidak ditemukan."
-                }, status=401)
-
-            # --- 2. Coba Autentikasi (Cek Password) ---
-            user = authenticate(username=username, password=password)
-
-            if user is not None:
-                if user.is_active:
-                    # PENTING: auth_login membuat session cookie di server
-                    auth_login(request, user)
-                    
-                    return JsonResponse({
-                        "status": True,
-                        "message": "Login berhasil!",
-                        "username": user.username,
-                        "email": user.email,
-                        "role": user.profile.role,
-                        "first_name": user.first_name,
-                        "last_name": user.last_name,
-                        "phone_number": user.profile.phone_number or '',
-                        "bio": user.profile.bio or '',
-                    }, status=200)
-                else:
-                    return JsonResponse({
-                        "status": False,
-                        "message": "Akun dinonaktifkan."
-                    }, status=401)
-            else:
-                # Jika user ada tapi authenticate return None, berarti password salah
-                return JsonResponse({
-                    "status": False,
-                    "message": "Password salah."
-                }, status=401)
-
-        except json.JSONDecodeError:
-            return JsonResponse({"status": False, "message": "Invalid JSON."}, status=400)
-=======
     if request.method != 'POST':
         return JsonResponse({"status": False, "message": "Method not allowed."}, status=405)
 
@@ -156,7 +102,6 @@ def login(request):
     user = authenticate(request, username=username, password=password)
     if not user or not user.is_active:
         return JsonResponse({"status": False, "message": "Invalid credentials."}, status=401)
->>>>>>> 4719009ab5d84d192e198f89cce3945d37e566a6
 
     auth_login(request, user)
 
@@ -231,9 +176,6 @@ def logout(request):
         return JsonResponse({
             "status": False,
             "message": "Logout failed."
-<<<<<<< HEAD
-        }, status=401)
-=======
         }, status=500)
     
 # authentication/views.py
@@ -262,4 +204,3 @@ def check_admin(request):
         'is_superuser': request.user.is_superuser,
         'username': request.user.username,
     })
->>>>>>> 4719009ab5d84d192e198f89cce3945d37e566a6
