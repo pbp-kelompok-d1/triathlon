@@ -687,6 +687,10 @@ def show_json_mine(request):
 
     return JsonResponse(data, safe=False)
 
+    return JsonResponse(data, safe=False)
+
+
+# ...existing code...
 
 @csrf_exempt
 def create_product_flutter(request):
