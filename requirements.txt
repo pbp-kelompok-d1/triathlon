@@ -9,4 +9,8 @@ selenium
 pandas
 coverage
 Pillow
+<<<<<<< HEAD
+=======
+django-cors-headers
+>>>>>>> defc6923b75a8b892a61fb1d643bf6d75724e105
 djangorestframework
