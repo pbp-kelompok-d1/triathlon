@@ -18,8 +18,9 @@ class PlaceForm(forms.ModelForm):
             'genre': forms.Select(attrs={'class': tailwind_input_class}),
             'description': forms.Textarea(attrs={'class': tailwind_input_class, 'rows': 4}),
             'price': forms.NumberInput(attrs={'class': tailwind_input_class}),
-            'image': forms.FileInput(attrs={
-                'class': 'w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer'
+            'image': forms.URLInput(attrs={
+                'class': tailwind_input_class,
+                'placeholder': 'https://example.com/image.jpg'
             }),
         }
 class ReviewForm(forms.ModelForm):

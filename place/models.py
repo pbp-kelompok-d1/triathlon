@@ -31,10 +31,18 @@ class Place(models.Model):
     )
 
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = models.ImageField(upload_to='places/', null=True, blank=True)
+    # Store remote or local image URLs as plain text to avoid missing media files in deployment
+    image = models.URLField(max_length=500, null=True, blank=True)
     admin = models.ForeignKey(User, on_delete=models.CASCADE, related_name='administered_places', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+
+    @property
+    def image_url(self):
+        """Unified image URL whether we stored a FieldFile or raw string."""
+        if not self.image:
+            return None
+        return getattr(self.image, 'url', self.image)
 
     def __str__(self):
         return self.name

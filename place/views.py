@@ -17,7 +17,6 @@ from django.contrib import messages
 import pandas as pd
 import os
 from django.conf import settings
-from django.core.files import File
 # place/views.py
 from django.views.decorators.http import require_POST
 import pandas as pd
@@ -37,7 +36,11 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from .models import Place, Review
 import json
-
+from django.shortcuts import render
+from django.db.models import Q, Avg, Count
+from django.contrib.auth.decorators import login_required
+from .models import Place
+import random
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .serializers import PlaceSerializer, ReviewSerializer
@@ -77,11 +80,6 @@ def create_facility_admin_group():
 
    # views.py
 
-from django.shortcuts import render
-from django.db.models import Q, Avg, Count
-from django.contrib.auth.decorators import login_required
-from .models import Place
-import random
 
 @login_required(login_url='/login/')
 def place_list(request):
@@ -498,27 +496,21 @@ def delete_image(request, pk):
 
 
 
-def _load_places_helper(request, csv_filename, genre_name, column_mapping, default_price=0, price_multiplier=1, image_filename=None):
+SWIMMING_IMAGE_URL = "https://img.freepik.com/free-photo/five-male-swimmers-racing-against-each-other_171337-7922.jpg?semt=ais_hybrid&w=740&q=80"
+RUNNING_IMAGE_URL = "https://gallantsports.in/wp-content/uploads/2025/05/running-track-.webp"
+CYCLING_IMAGE_URL = "https://assets.usacycling.org/prod/assets/_1200xAUTO_crop_center-center_none/How-to-Get-Started-with-Track.jpg"
+
+
+def _load_places_helper(request, csv_filename, genre_name, column_mapping, default_price=0, price_multiplier=1, default_image_url=None):
     """
     Helper untuk memuat tempat dari file CSV dengan mapping kolom fleksibel
-    dan opsi menambahkan gambar default dari file lokal.
+    dan menetapkan gambar default berbasis URL untuk masing-masing kategori.
     """
     base_data_path = os.path.join(settings.BASE_DIR, 'place', 'data') # Path ke folder data
     csv_path = os.path.join(base_data_path, csv_filename)
 
     if not os.path.exists(csv_path):
         return {'status': 'error', 'message': f'File CSV tidak ditemukan di: {csv_path}'}
-
-    # --- Persiapan Path Gambar ---
-    image_full_path = None
-    if image_filename:
-        temp_path = os.path.join(base_data_path, image_filename)
-        if os.path.exists(temp_path):
-            image_full_path = temp_path
-            print(f"Gambar ditemukan: {image_full_path}")
-        else:
-            print(f"Peringatan: File gambar '{image_filename}' tidak ditemukan di {base_data_path}. Gambar tidak akan ditambahkan.")
-    # ---------------------------
 
     try:
         # Baca CSV, coba tangani encoding & separator umum
@@ -538,7 +530,7 @@ def _load_places_helper(request, csv_filename, genre_name, column_mapping, defau
     loaded_count = 0
     updated_count = 0
     skipped_count = 0
-    image_added_count = 0 # Counter gambar
+    image_assigned_count = 0
     admin_user = request.user if request.user.is_authenticated else None
 
     # Iterasi per baris DataFrame
@@ -593,7 +585,7 @@ def _load_places_helper(request, csv_filename, genre_name, column_mapping, defau
             else:
                  print(f"-> Harga RAW kosong atau NaN. Menggunakan harga default ({price})") # DEBUG PRINT 6: Harga kosong
 
-            # --- Siapkan data defaults (tanpa image dulu) ---
+            # --- Siapkan data defaults termasuk image URL jika disediakan ---
             defaults = {
                 'description': str(description_raw).strip() if description_raw and not pd.isna(description_raw) else None,
                 'city': str(city_raw).strip() if city_raw and not pd.isna(city_raw) else None,
@@ -602,6 +594,10 @@ def _load_places_helper(request, csv_filename, genre_name, column_mapping, defau
                 'price': price,
                 'admin': admin_user
             }
+
+            if default_image_url:
+                defaults['image'] = default_image_url
+
             # Hapus key dari defaults jika nilainya None (agar tidak menimpa data yang sudah ada)
             defaults_non_null = {k: v for k, v in defaults.items() if v is not None}
 
@@ -611,24 +607,12 @@ def _load_places_helper(request, csv_filename, genre_name, column_mapping, defau
                 defaults=defaults_non_null # Update hanya field yang ada nilainya
             )
 
-            # --- TAMBAHKAN GAMBAR SETELAH INSTANCE ADA ---
-            image_saved = False
-            if image_full_path and (created or not place_instance.image):
-                try:
-                    with open(image_full_path, 'rb') as img_file:
-                        django_file = File(img_file)
-                        place_instance.image.save(image_filename, django_file, save=True) # save=True agar langsung update DB
-                        image_saved = True
-                        image_added_count += 1
-                        print(f"Gambar '{image_filename}' ditambahkan ke '{place_instance.name}'")
-                except Exception as img_e:
-                    print(f"Gagal menambahkan gambar ke '{place_instance.name}': {img_e}")
-            # -----------------------------------------------
+            if default_image_url:
+                image_assigned_count += 1
 
             if created:
                 loaded_count += 1
-            # Hitung update hanya jika instance TIDAK baru dibuat DAN gambar TIDAK baru ditambahkan
-            elif not created and not image_saved: 
+            else:
                 updated_count += 1
 
         except Exception as e:
@@ -638,8 +622,8 @@ def _load_places_helper(request, csv_filename, genre_name, column_mapping, defau
 
     return {
         'status': 'success', 'loaded': loaded_count, 'updated': updated_count,
-        'skipped': skipped_count, 'images_added': image_added_count, 'filename': csv_filename,
-        'message': f'File "{csv_filename}": {loaded_count} tempat baru, {updated_count} update, {image_added_count} gambar ditambah, {skipped_count} dilewati.'
+        'skipped': skipped_count, 'images_assigned': image_assigned_count, 'filename': csv_filename,
+        'message': f'File "{csv_filename}": {loaded_count} tempat baru, {updated_count} update, {image_assigned_count} gambar/url ditetapkan, {skipped_count} dilewati.'
     }
     
 @login_required(login_url='/login/')
@@ -650,7 +634,6 @@ def load_places_cycling(request):
     
     csv_filename = 'cycling_track.csv' 
     genre = 'Bicycle Tracking' 
-    image_filename_to_load = 'cycling_track.png'
 
     column_mapping = {
         'name': 'name', 
@@ -663,7 +646,7 @@ def load_places_cycling(request):
     result = _load_places_helper(
         request, csv_filename, genre, column_mapping,
         price_multiplier=1,
-        image_filename=image_filename_to_load 
+        default_image_url=CYCLING_IMAGE_URL
     )
 
     messages.info(request, result['message'])
@@ -678,7 +661,6 @@ def load_places_running(request):
     
     csv_filename = 'running_tracks.csv'
     genre = 'Running Track'
-    image_filename_to_load = 'running_track.png' 
 
     column_mapping = {
         'name': 'name',
@@ -691,7 +673,7 @@ def load_places_running(request):
     result = _load_places_helper(
         request, csv_filename, genre, column_mapping,
         price_multiplier=1, 
-        image_filename=image_filename_to_load 
+        default_image_url=RUNNING_IMAGE_URL
     )
 
     messages.info(request, result['message'])
@@ -706,7 +688,6 @@ def load_places_swimming(request):
     
     csv_filename = 'swimming_pool.csv'
     genre = 'Swimming Pool'
-    image_filename_to_load = 'swimming_pool.png' 
 
     column_mapping = {
         'name': 'name',
@@ -719,10 +700,22 @@ def load_places_swimming(request):
     result = _load_places_helper(
         request, csv_filename, genre, column_mapping,
         price_multiplier=1, 
-        image_filename=image_filename_to_load 
+        default_image_url=SWIMMING_IMAGE_URL
     )
 
     messages.info(request, result['message'])
+    return redirect('place:place_list')
+
+
+@login_required(login_url='/login/')
+@require_POST
+def delete_all_places(request):
+    """Remove every place; only Admin can trigger this."""
+    if not is_admin(request.user):
+        raise PermissionDenied("Hanya Admin yang dapat menghapus semua tempat.")
+
+    deleted_count, _ = Place.objects.all().delete()
+    messages.success(request, f"✅ Semua {deleted_count} tempat berhasil dihapus.")
     return redirect('place:place_list')
 
 from django.shortcuts import render, get_object_or_404
