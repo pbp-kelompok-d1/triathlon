@@ -301,6 +301,12 @@ def delete_product(request, id):
         }, status=403)
     
     if request.method == 'POST':
+        # ✅ Simpan info SEBELUM delete (karena setelah delete data hilang)
+        is_admin_delete = is_admin(request.user) and request.user != product.seller
+        product_name = product.name
+        product_seller_username = product.seller.username if product.seller else 'Unknown'
+        
+        # Hapus thumbnail jika ada
         if product.thumbnail:
             try:
                 if os.path.isfile(product.thumbnail.path):
@@ -308,14 +314,14 @@ def delete_product(request, id):
             except:
                 pass
         
-        product_name = product.name
-        product_seller = product.seller.username
+        # Delete product
         product.delete()
         
-        if request.user.is_staff and request.user != product.seller:
+        # ✅ Return message berdasarkan kondisi admin
+        if is_admin_delete:
             return JsonResponse({
                 'status': 'success',
-                'message': f'[ADMIN] Produk "{product_name}" milik {product_seller} berhasil dihapus.'
+                'message': f'[ADMIN] Produk "{product_name}" milik {product_seller_username} berhasil dihapus.'
             })
         else:
             return JsonResponse({
@@ -331,7 +337,7 @@ def edit_product(request, id):
     """Edit product in the shop"""
     product = get_object_or_404(Product, pk=id)
 
-    if not (request.user.is_staff or request.user == product.seller):
+    if not (is_admin(request.user) or request.user == product.seller):
         return JsonResponse({
             'status': 'error',
             'message': 'Anda tidak memiliki izin untuk mengedit produk ini.'
@@ -342,7 +348,7 @@ def edit_product(request, id):
         if form.is_valid():
             updated_product = form.save()
             
-            if request.user.is_staff and request.user != product.seller:
+            if is_admin(request.user) and request.user != product.seller:
                 return JsonResponse({
                     'status': 'success',
                     'message': f'[ADMIN] Produk "{updated_product.name}" milik {product.seller.username} berhasil diupdate.'
