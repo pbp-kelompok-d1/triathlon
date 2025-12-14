@@ -45,6 +45,81 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .serializers import PlaceSerializer, ReviewSerializer
 
+# Add to place/views.py
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from django.db.models import Count
+
+# API to add place from Flutter
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_add_place(request):
+    try:
+        data = request.data
+        place = Place.objects.create(
+            name=data.get('name'),
+            price=data.get('price', 0),
+            description=data.get('description', ''),
+            city=data.get('city', ''),
+            province=data.get('province', ''),
+            genre=data.get('genre', ''),
+            image_url=data.get('image_url'),
+            admin=request.user
+        )
+        return Response({'success': True, 'id': place.id, 'message': 'Place created successfully'}, status=201)
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=400)
+
+# API for province stats
+@api_view(['GET'])
+def api_province_stats(request):
+    stats = Place.objects.values('province').annotate(
+        count=Count('id')
+    ).exclude(province__isnull=True).exclude(province='').order_by('-count')
+    
+    return Response([{
+        'province': s['province'],
+        'count': s['count'],
+        'image_url': None  # Add image URLs if you have them
+    } for s in stats])
+
+# API to add review from Flutter
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_add_review(request, pk):
+    try:
+        place = get_object_or_404(Place, pk=pk)
+        data = request.data
+        
+        # Check if user already reviewed
+        if Review.objects.filter(place=place, user=request.user).exists():
+            return Response({'success': False, 'error': 'Anda sudah memberikan review'}, status=400)
+        
+        review = Review.objects.create(
+            place=place,
+            user=request.user,
+            rating=int(data.get('rating', 0)),
+            comment=data.get('comment', '')
+        )
+        return Response({'success': True, 'id': review.id})
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=400)
+
+# API to delete review
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_delete_review(request, review_id):
+    try:
+        review = get_object_or_404(Review, pk=review_id)
+        if review.user != request.user and not is_admin(request.user):
+            return Response({'success': False, 'error': 'Unauthorized'}, status=403)
+        review.delete()
+        return Response({'success': True})
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=400)
+
 # 1. API untuk List Tempat (Flutter Home)
 @api_view(['GET'])
 def api_place_list(request):

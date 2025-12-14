@@ -27,6 +27,11 @@ urlpatterns = [
     path('api/places/', views.api_place_list, name='api_place_list'),
     path('api/places/<int:pk>/', views.api_place_detail, name='api_place_detail'),
     path('api/places/<int:pk>/reviews/', views.api_place_reviews, name='api_place_reviews'),
+    path('api/add-place/', views.api_add_place, name='api_add_place'),
+    path('api/province-stats/', views.api_province_stats, name='api_province_stats'),
+    path('api/places/<int:pk>/reviews/add/', views.api_add_review, name='api_add_review'),
+    path('api/reviews/<int:review_id>/delete/', views.api_delete_review, name='api_delete_review'),
 ]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
