@@ -694,12 +694,11 @@ def serialize_product(product):
 # 2. VIEW API UTAMA
 # ==========================================================
 
-# user_profile/views.py
 
 def get_dashboard_data_api(request):
     """
     [API VIEW] Mengembalikan data dashboard dalam format JSON untuk Flutter.
-    HYBRID FIX: Bisa menangani f.image sebagai String (URLField) ATAU File (ImageField).
+    FIXED: Memastikan serialize_reply dan serialize_product DIPANGGIL.
     """
     user = request.user
     role = getattr(user, 'profile', None).role if hasattr(user, 'profile') else 'USER'
@@ -714,7 +713,6 @@ def get_dashboard_data_api(request):
     
     try:
         if role == 'USER':
-            # ... (Bagian USER tidak berubah, silakan copy dari kode sebelumnya) ...
             posts = ForumPost.objects.filter(author=user)
             replies = ForumReply.objects.filter(author=user)
             wishlist_items = Wishlist.objects.filter(user=user)
@@ -724,32 +722,23 @@ def get_dashboard_data_api(request):
                 replies = replies.filter(post_sport_category_icontains=category_filter)
                 wishlist_items = wishlist_items.filter(products_category_icontains=category_filter).distinct()
                 
-            data['posts'] = [serialize_post(p) for p in posts]
-            data['replies'] = [{
-                'id': r.id,
-                'content_snippet': r.content[:100] + '...' if len(r.content) > 100 else r.content,
-                'created_at': r.created_at.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                'post_title': r.post.title,
-                'post_id': r.post.id,
-                'post_sport_category': r.post.sport_category,
-            } for r in replies]
+            # 1. POSTS (Sudah benar pakai serializer)
+            data['posts'] = [serialize_post(p, user) for p in posts]
             
+            # 2. REPLIES (PERBAIKAN: Panggil serialize_reply!)
+            data['replies'] = [serialize_reply(r) for r in replies]
+            
+            # 3. WISHLIST (PERBAIKAN: Panggil serialize_product!)
             wishlist_products = []
             for wl in wishlist_items:
                 for product in wl.products.all():
                     if not category_filter or (category_filter and category_filter.lower() in product.category.lower()):
-                        wishlist_products.append({
-                            'id': product.id,
-                            'name': product.name,
-                            'category': product.category,
-                            'price': float(product.price),
-                            'thumbnail': product.thumbnail if hasattr(product, 'thumbnail') else '',
-                        })
+                        # Pakai helper biar field 'thumbnail', 'stock', 'description' ikut terkirim
+                        wishlist_products.append(serialize_product(product))
             data['wishlist_products'] = wishlist_products
 
 
         elif role == 'SELLER':
-            # --- SELLER: Logic Hybrid Image ---
             posts = ForumPost.objects.filter(author=user)
             products = Product.objects.filter(seller=user)
 
@@ -757,34 +746,14 @@ def get_dashboard_data_api(request):
                 posts = posts.filter(sport_category__icontains=category_filter)
                 products = products.filter(category__icontains=category_filter) 
                 
-            data['posts'] = [serialize_post(p) for p in posts]
+            data['posts'] = [serialize_post(p, user) for p in posts]
             
-            product_list = []
-            for p in products:
-                # HYBRID IMAGE LOGIC FOR PRODUCT
-                img_url = None
-                if hasattr(p, 'thumbnail') and p.thumbnail:
-                    img_url = p.thumbnail # Jika field namanya thumbnail (string)
-                elif hasattr(p, 'image'):
-                    if p.image:
-                        # Cek apakah string atau file
-                        if isinstance(p.image, str):
-                            img_url = p.image
-                        elif hasattr(p.image, 'url'):
-                            img_url = p.image.url
-                            
-                product_list.append({
-                    'id': p.id,
-                    'name': p.name,
-                    'category': p.category,
-                    'price': float(p.price),
-                    'image_url': img_url,
-                })
-            data['products'] = product_list
+            # 4. PRODUCTS (PERBAIKAN: Panggil serialize_product!)
+            data['products'] = [serialize_product(p) for p in products]
             
             
         elif role == 'FACILITY_ADMIN':
-            # --- FACILITY ADMIN: Logic Hybrid Image ---
+            # --- FACILITY ADMIN: Logic Hybrid Image (Sudah Benar) ---
             facilities = Place.objects.filter(admin=user)
             admin_place_ids = facilities.values_list('id', flat=True)
             tickets_base = Ticket.objects.filter(place_id__in=admin_place_ids)
@@ -812,14 +781,12 @@ def get_dashboard_data_api(request):
 
             data['facilities'] = []
             for f in facilities:
-                # --- HYBRID IMAGE LOGIC (INTI PERUBAHAN) ---
+                # Hybrid Image Logic
                 image_val = None
                 if f.image:
                     if hasattr(f.image, 'url'):
-                        # Jika f.image adalah File (ImageField) -> ambil .url
                         image_val = f.image.url 
                     else:
-                        # Jika f.image adalah String (URLField) -> ambil langsung
                         image_val = str(f.image)
 
                 created_at_val = f.created_at.strftime('%Y-%m-%dT%H:%M:%SZ') if f.created_at else None
@@ -827,25 +794,37 @@ def get_dashboard_data_api(request):
                 data['facilities'].append({
                     'id': f.id,
                     'name': f.name,
-                    'genre': f.genre,
-                    'city': f.city,
-                    'province': f.province,
-                    'description': f.description,
+                    'genre': f.genre or "",
+                    'city': f.city or "",
+                    'province': f.province or "",
+                    'description': f.description or "",
                     'price': float(f.price) if getattr(f, 'price', None) else 0.0,
-                    'created_at': created_at_val,
-                    'image_url': image_val, # Hasil hybrid logic
+                    'created_at': created_at_val or "",
+                    'image_url': image_val or "",
                 })
             
             data['tickets'] = [{
                 'id': t.id,
                 'customer_name': t.customer_name,
-                'place_name': t.place.name,
+                
+                # PERBAIKAN: Kirim 'place' sebagai OBJECT, bukan 'place_name' string
+                'place': {
+                    'id': t.place.id,
+                    'name': t.place.name,
+                    'city': t.place.city or "",
+                    'province': t.place.province or "",
+                    'price': float(t.place.price) if t.place.price else 0,
+                    'description': t.place.description or "",
+                    # Hybrid image logic untuk Place juga perlu di sini jika model Place Flutter memintanya
+                    'image_url': t.place.image.url if (t.place.image and hasattr(t.place.image, 'url')) else str(t.place.image or "")
+                },
+                
                 'created_at': t.created_at.strftime('%Y-%m-%dT%H:%M:%SZ'),
                 'booking_date': t.booking_date.strftime('%Y-%m-%d'),
                 'ticket_quantity': t.ticket_quantity,
                 'total_price': float(t.total_price),
                 'status': t.status,
-                'status_display': t.get_status_display(),
+                'status_display': t.status_display,
             } for t in tickets_filtered]
             
         return JsonResponse({'success': True, 'data': data})
