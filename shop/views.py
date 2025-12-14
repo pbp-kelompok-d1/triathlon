@@ -312,7 +312,7 @@ def delete_product(request, id):
         product_seller = product.seller.username
         product.delete()
         
-        if request.user.is_staff and request.user != product.seller:
+        if is_admin(request.user) and request.user != product.seller:
             return JsonResponse({
                 'status': 'success',
                 'message': f'[ADMIN] Produk "{product_name}" milik {product_seller} berhasil dihapus.'
@@ -331,7 +331,7 @@ def edit_product(request, id):
     """Edit product in the shop"""
     product = get_object_or_404(Product, pk=id)
 
-    if not (request.user.is_staff or request.user == product.seller):
+    if not (is_admin(request.user) or request.user == product.seller):
         return JsonResponse({
             'status': 'error',
             'message': 'Anda tidak memiliki izin untuk mengedit produk ini.'
@@ -342,7 +342,7 @@ def edit_product(request, id):
         if form.is_valid():
             updated_product = form.save()
             
-            if request.user.is_staff and request.user != product.seller:
+            if is_admin(request.user) and request.user != product.seller:
                 return JsonResponse({
                     'status': 'success',
                     'message': f'[ADMIN] Produk "{updated_product.name}" milik {product.seller.username} berhasil diupdate.'
