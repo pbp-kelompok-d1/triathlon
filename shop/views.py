@@ -301,6 +301,12 @@ def delete_product(request, id):
         }, status=403)
     
     if request.method == 'POST':
+        # ✅ Simpan info SEBELUM delete (karena setelah delete data hilang)
+        is_admin_delete = is_admin(request.user) and request.user != product.seller
+        product_name = product.name
+        product_seller_username = product.seller.username if product.seller else 'Unknown'
+        
+        # Hapus thumbnail jika ada
         if product.thumbnail:
             try:
                 if os.path.isfile(product.thumbnail.path):
@@ -308,14 +314,14 @@ def delete_product(request, id):
             except:
                 pass
         
-        product_name = product.name
-        product_seller = product.seller.username
+        # Delete product
         product.delete()
         
-        if is_admin(request.user) and request.user != product.seller:
+        # ✅ Return message berdasarkan kondisi admin
+        if is_admin_delete:
             return JsonResponse({
                 'status': 'success',
-                'message': f'[ADMIN] Produk "{product_name}" milik {product_seller} berhasil dihapus.'
+                'message': f'[ADMIN] Produk "{product_name}" milik {product_seller_username} berhasil dihapus.'
             })
         else:
             return JsonResponse({
