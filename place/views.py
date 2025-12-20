@@ -51,26 +51,56 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.db.models import Count
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
-# API to add place from Flutter
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
+from rest_framework.permissions import AllowAny
+
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from django.views.decorators.http import require_POST
+
+@require_POST
+@csrf_exempt
 def api_add_place(request):
+    # Check authentication (sama seperti forum)
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Login required'}, status=401)
+    
     try:
-        data = request.data
+        # Flutter mengirim form data, bukan JSON
+        # Ambil data dari request.POST (form data)
+        name = request.POST.get('name')
+        price = request.POST.get('price', 0)
+        description = request.POST.get('description', '')
+        city = request.POST.get('city', '')
+        province = request.POST.get('province', '')
+        genre = request.POST.get('genre', '')
+        image_url = request.POST.get('image_url', '')
+        
+        # Debug print
+        print(f"Data received: name={name}, price={price}, city={city}")
+        
         place = Place.objects.create(
-            name=data.get('name'),
-            price=data.get('price', 0),
-            description=data.get('description', ''),
-            city=data.get('city', ''),
-            province=data.get('province', ''),
-            genre=data.get('genre', ''),
-            image_url=data.get('image_url'),
+            name=name,
+            price=price,
+            description=description,
+            city=city,
+            province=province,
+            genre=genre,
+            image=image_url,  # Ubah dari image_url ke image
             admin=request.user
         )
-        return Response({'success': True, 'id': place.id, 'message': 'Place created successfully'}, status=201)
+        return JsonResponse({'success': True, 'id': place.id, 'message': 'Place created successfully'}, status=201)
+        
     except Exception as e:
-        return Response({'success': False, 'error': str(e)}, status=400)
+        print(f"Exception: {e}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
 
 # API for province stats
 @api_view(['GET'])
@@ -584,8 +614,18 @@ def _load_places_helper(request, csv_filename, genre_name, column_mapping, defau
     base_data_path = os.path.join(settings.BASE_DIR, 'place', 'data') # Path ke folder data
     csv_path = os.path.join(base_data_path, csv_filename)
 
+    # Debug logging
+    print(f"=== LOAD PLACES DEBUG ===")
+    print(f"Genre: {genre_name}")
+    print(f"CSV filename: {csv_filename}")
+    print(f"Full CSV path: {csv_path}")
+    print(f"BASE_DIR: {settings.BASE_DIR}")
+    print(f"File exists: {os.path.exists(csv_path)}")
+    
     if not os.path.exists(csv_path):
-        return {'status': 'error', 'message': f'File CSV tidak ditemukan di: {csv_path}'}
+        error_msg = f'File CSV tidak ditemukan di: {csv_path}'
+        print(f"ERROR: {error_msg}")
+        return {'status': 'error', 'message': error_msg}
 
     try:
         # Baca CSV, coba tangani encoding & separator umum
@@ -710,15 +750,15 @@ def load_places_cycling(request):
     if not is_admin_or_facility_admin(request.user):
         raise PermissionDenied("Hanya Admin atau Facility Administrator yang dapat memuat data.")
     
-    csv_filename = 'cycling_track.csv' 
-    genre = 'Bicycle Tracking' 
+    csv_filename = 'cycling_track.csv'
+    genre = 'Bicycle Tracking'
 
     column_mapping = {
-        'name': 'name', 
+        'name': 'name',
+        'price': 'price',
         'description': 'description',
-        'city': 'city',
-        'province': 'province',
-        'price': 'price' 
+        'city': 'city',          
+        'province': 'province'      
     }
    
     result = _load_places_helper(
