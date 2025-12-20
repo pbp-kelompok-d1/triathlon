@@ -115,9 +115,9 @@ def get_dashboard_content(request):
         # 2. Terapkan filter
         if category_filter:
             posts = posts.filter(sport_category__icontains=category_filter)
-            replies = replies.filter(post_sport_category_icontains=category_filter)
+            replies = replies.filter(post__sport_category__icontains=category_filter)
             try:
-                wishlist = wishlist.filter(products_category_icontains=category_filter).distinct()
+                wishlist = wishlist.filter(products__category_icontains=category_filter).distinct()
             except Exception: pass # Abaikan jika filter wishlist gagal
             
         # 3. Update context & render parsial USER
@@ -719,8 +719,8 @@ def get_dashboard_data_api(request):
 
             if category_filter:
                 posts = posts.filter(sport_category__icontains=category_filter)
-                replies = replies.filter(post_sport_category_icontains=category_filter)
-                wishlist_items = wishlist_items.filter(products_category_icontains=category_filter).distinct()
+                replies = replies.filter(post__sport_category__icontains=category_filter)
+                wishlist_items = wishlist_items.filter(products__category__icontains=category_filter).distinct()
                 
             # 1. POSTS (Sudah benar pakai serializer)
             data['posts'] = [serialize_post(p, user) for p in posts]
