@@ -64,26 +64,116 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.views.decorators.http import require_POST
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+import json
+from .models import Place
+
+@csrf_exempt
+@require_POST
+def api_edit_place(request, pk):
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    
+    try:
+        place = Place.objects.get(pk=pk)
+    except Place.DoesNotExist:
+        return JsonResponse({'error': 'Place not found'}, status=404)
+    
+    # Check permission - use 'profile' not 'userprofile'!
+    if not hasattr(request.user, 'profile'):
+        return JsonResponse({'error': 'No profile found'}, status=403)
+    
+    profile = request.user.profile
+    if profile.role == 'ADMIN':
+        pass  # Admin can edit all
+    elif profile.role == 'FACILITY_ADMIN':
+        if place.admin != request.user:
+            return JsonResponse({'error': 'Not authorized to edit this place'}, status=403)
+    else:
+        return JsonResponse({'error': 'Not authorized'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        place.name = data.get('name', place.name)
+        place.description = data.get('description', place.description)
+        place.city = data.get('city', place.city)
+        place.province = data.get('province', place.province)
+        place.genre = data.get('genre', place.genre)
+        place.price = data.get('price', place.price)
+        if data.get('image_url'):
+            place.image = data.get('image_url')
+        place.save()
+        return JsonResponse({'success': True, 'message': 'Place updated'})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@require_POST
+def api_delete_place(request, pk):
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    
+    try:
+        place = Place.objects.get(pk=pk)
+    except Place.DoesNotExist:
+        return JsonResponse({'error': 'Place not found'}, status=404)
+    
+    # Check permission - use 'profile' not 'userprofile'!
+    if not hasattr(request.user, 'profile'):
+        return JsonResponse({'error': 'No profile found'}, status=403)
+    
+    profile = request.user.profile
+    if profile.role == 'ADMIN':
+        pass  # Admin can delete all
+    elif profile.role == 'FACILITY_ADMIN':
+        if place.admin != request.user:
+            return JsonResponse({'error': 'Not authorized to delete this place'}, status=403)
+    else:
+        return JsonResponse({'error': 'Not authorized'}, status=403)
+    
+    try:
+        place.delete()
+        return JsonResponse({'success': True, 'message': 'Place deleted'})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 @require_POST
 @csrf_exempt
 def api_add_place(request):
-    # Check authentication (sama seperti forum)
+    # Check authentication
     if not request.user.is_authenticated:
         return JsonResponse({'success': False, 'error': 'Login required'}, status=401)
     
     try:
-        # Flutter mengirim form data, bukan JSON
-        # Ambil data dari request.POST (form data)
-        name = request.POST.get('name')
-        price = request.POST.get('price', 0)
-        description = request.POST.get('description', '')
-        city = request.POST.get('city', '')
-        province = request.POST.get('province', '')
-        genre = request.POST.get('genre', '')
-        image_url = request.POST.get('image_url', '')
+        # Try to get data from JSON body first (for postJson), fallback to form data (for post)
+        if request.content_type == 'application/json':
+            import json
+            data = json.loads(request.body)
+            name = data.get('name')
+            price = data.get('price', 0)
+            description = data.get('description', '')
+            city = data.get('city', '')
+            province = data.get('province', '')
+            genre = data.get('genre', '')
+            image_url = data.get('image_url', '')
+        else:
+            # Form data
+            name = request.POST.get('name')
+            price = request.POST.get('price', 0)
+            description = request.POST.get('description', '')
+            city = request.POST.get('city', '')
+            province = request.POST.get('province', '')
+            genre = request.POST.get('genre', '')
+            image_url = request.POST.get('image_url', '')
         
-        # Debug print
-        print(f"Data received: name={name}, price={price}, city={city}")
+        print(f"Data received: name={name}, price={price}, image_url={image_url[:50] if image_url else 'empty'}...")
         
         place = Place.objects.create(
             name=name,
@@ -92,7 +182,7 @@ def api_add_place(request):
             city=city,
             province=province,
             genre=genre,
-            image=image_url,  # Ubah dari image_url ke image
+            image=image_url,
             admin=request.user
         )
         return JsonResponse({'success': True, 'id': place.id, 'message': 'Place created successfully'}, status=201)
@@ -115,40 +205,46 @@ def api_province_stats(request):
         'image_url': None  # Add image URLs if you have them
     } for s in stats])
 
-# API to add review from Flutter
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def api_add_review(request, pk):
+# API to add review from Flutter (same pattern as api_add_place)
+@require_POST
+@csrf_exempt
+def api_add_review_flutter(request, pk):
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Login required'}, status=401)
+    
     try:
         place = get_object_or_404(Place, pk=pk)
-        data = request.data
+        rating = request.POST.get('rating', 0)
+        comment = request.POST.get('comment', '')
         
-        # Check if user already reviewed
         if Review.objects.filter(place=place, user=request.user).exists():
-            return Response({'success': False, 'error': 'Anda sudah memberikan review'}, status=400)
+            return JsonResponse({'success': False, 'error': 'Anda sudah memberikan review'}, status=400)
         
         review = Review.objects.create(
             place=place,
             user=request.user,
-            rating=int(data.get('rating', 0)),
-            comment=data.get('comment', '')
+            rating=int(rating),
+            comment=comment
         )
-        return Response({'success': True, 'id': review.id})
+        return JsonResponse({'success': True, 'id': review.id}, status=201)
     except Exception as e:
-        return Response({'success': False, 'error': str(e)}, status=400)
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
-# API to delete review
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def api_delete_review(request, review_id):
+
+@require_POST
+@csrf_exempt
+def api_delete_review_flutter(request, review_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Login required'}, status=401)
+    
     try:
         review = get_object_or_404(Review, pk=review_id)
         if review.user != request.user and not is_admin(request.user):
-            return Response({'success': False, 'error': 'Unauthorized'}, status=403)
+            return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
         review.delete()
-        return Response({'success': True})
+        return JsonResponse({'success': True})
     except Exception as e:
-        return Response({'success': False, 'error': str(e)}, status=400)
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 # 1. API untuk List Tempat (Flutter Home)
 @api_view(['GET'])
