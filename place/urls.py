@@ -29,8 +29,12 @@ urlpatterns = [
     path('api/places/<int:pk>/reviews/', views.api_place_reviews, name='api_place_reviews'),
     path('api/add-place/', views.api_add_place, name='api_add_place'),
     path('api/province-stats/', views.api_province_stats, name='api_province_stats'),
-    path('api/places/<int:pk>/reviews/add/', views.api_add_review, name='api_add_review'),
-    path('api/reviews/<int:review_id>/delete/', views.api_delete_review, name='api_delete_review'),
+
+    path('api/places/<int:pk>/reviews/add/', views.api_add_review_flutter, name='api_add_review_flutter'),
+    path('api/reviews/<int:review_id>/delete/', views.api_delete_review_flutter, name='api_delete_review_flutter'),
+    path('api/edit-place/<int:pk>/', views.api_edit_place, name='api_edit_place'),
+    path('api/delete-place/<int:pk>/', views.api_delete_place, name='api_delete_place'),
+
 ]
 
 if settings.DEBUG:
