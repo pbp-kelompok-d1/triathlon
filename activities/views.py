@@ -86,14 +86,12 @@ def create_activity_ajax(request):
 
     activity.save()
 
-    if request.content_type == 'application/json':
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Activity logged successfully',
-            'activity_id': str(activity.id)
-        }, status=201)
+    return JsonResponse({
+        'status': 'success',
+        'message': 'Activity logged successfully',
+        'activity_id': str(activity.id)
+    }, status=201)
 
-    return HttpResponse(b"CREATED", status=201)
 
 # Show activity list through AJAX
 def show_json(request):
@@ -173,14 +171,12 @@ def edit_activity_ajax(request, actid):
 
     activity.save()
 
-    if request.content_type == 'application/json':
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Activity edited successfully',
-            'activity_id': str(activity.id)
-        }, status=201)
 
-    return HttpResponse(b"UPDATED", status=200)
+    return JsonResponse({
+        'status': 'success',
+        'message': 'Activity edited successfully',
+        'activity_id': str(activity.id)
+    }, status=201)
 
 # Delete activity through AJAX
 @login_required(login_url='/login/')
